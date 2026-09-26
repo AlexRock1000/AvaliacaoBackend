@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 64" role="img" aria-labelledby="titulo descricao">
+  <title id="titulo">Nervo Tattoo Studio</title>
+  <desc id="descricao">Marca Nervo com um lápis de tatuagem em um círculo cor de cobre.</desc>
+  <circle cx="31" cy="32" r="24" fill="none" stroke="#e9833e" stroke-width="1.5"/>
+  <path d="m25 39 2-7 12-12 5 5-12 12-7 2Zm11-15 5 5m-14 3 5 5" fill="none" stroke="#e9833e" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7"/>
+  <text x="68" y="33" fill="#f1e8d8" font-family="Cormorant Garamond, Georgia, serif" font-size="31" font-weight="600">Nervo</text>
+  <text x="70" y="49" fill="#aaa296" font-family="DM Sans, Arial, sans-serif" font-size="9" font-weight="700" letter-spacing="3.2">TATTOO STUDIO</text>
+</svg>

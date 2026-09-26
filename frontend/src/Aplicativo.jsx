@@ -281,7 +281,7 @@ export default function Aplicativo() {
   return (
     <div className={`aplicativo modo-${perfil.tipo}`}>
       <header className="barra-superior">
-        <a className="marca" href="#inicio" onClick={() => definirTela(perfil.tipo === "cliente" ? "pedir" : "agenda")}><span className="marca-simbolo">✒</span><span><b>Tinta Negra</b><small> Tattoo Studio</small></span></a>
+        <a className="marca" href="#inicio" onClick={() => definirTela(perfil.tipo === "cliente" ? "pedir" : "agenda")}><img src={perfil.tipo === "cliente" ? "/imagens/logo-monocromatico.svg" : "/imagens/logo-colorido.svg"} alt="Nervo Tattoo Studio" /></a>
         <nav className="navegacao" aria-label="Navegação principal">
           {perfil.tipo === "cliente" ? <><button className={tela === "pedir" ? "ativo" : ""} onClick={() => definirTela("pedir")}>Pedir tatuagem</button><button className={tela === "minhas" ? "ativo" : ""} onClick={() => definirTela("minhas")}>Minhas tatuagens</button></> : <button className="ativo" onClick={() => { definirFicha(null); definirTela("agenda"); }}>A agenda</button>}
         </nav>
@@ -295,8 +295,8 @@ export default function Aplicativo() {
           {tela === "ficha" && ficha && <TelaFicha tatuagem={ficha} aoVoltar={() => definirTela("agenda")} aoSalvar={salvarPasso} />}
         </div>
         <aside className="painel-arte" aria-label="Arte de referência do estúdio">
-          <img className="arte-imagem" src={perfil.tipo === "cliente" ? "/imagens/rosa-cranio.jfif" : "/imagens/ornamento.jfif"} alt="" />
-          <div className="arte-texto"><span>{perfil.tipo === "cliente" ? "SUA JORNADA NA PELE" : "ARTE VIVA,"}</span><strong>{perfil.tipo === "cliente" ? "Histórias que ficam." : "agenda em ordem."}</strong></div>
+          <img className="arte-imagem" src="/imagens/ornamento.jfif" alt="" />
+          <div className="arte-texto"><span>{perfil.tipo === "cliente" ? "SUA JORNADA NA PELE" : "GESTÃO DO ESTÚDIO"}</span><strong>{perfil.tipo === "cliente" ? "Histórias que ficam." : <>Arte viva,<br /><em>agenda em ordem.</em></>}</strong></div>
           <div className="arte-legenda"><span>DESENHO · PELE · TEMPO</span><span>01 / ESTÚDIO</span></div>
         </aside>
       </main>

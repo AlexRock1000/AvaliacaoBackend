@@ -1,4 +1,4 @@
-# Estúdio Tatuagem
+# Nervo Tattoo Studio
 
 Aplicação para acompanhar pedidos, etapas e histórico de tatuagens de um estúdio pequeno. O projeto segue as jornadas da Bruna, cliente que usa o celular, e do Vitor, tatuador que organiza o trabalho no computador.
 
@@ -17,11 +17,11 @@ cd backend
 python -m venv .venv
 .venv\Scripts\Activate.ps1
 pip install -r requirements.txt
-Copy-Item .env.exemplo .env
+if (-not (Test-Path .env)) { Copy-Item .env.exemplo .env }
 uvicorn main:aplicativo --reload
 ```
 
-A API fica em `http://localhost:8000`; a documentação interativa fica em `http://localhost:8000/docs`. O endereço permitido pelo CORS está em `backend/.env`.
+A API fica em `http://localhost:8000`; a documentação interativa fica em `http://localhost:8000/docs`. Confirme que `backend/.env` contém `ENDERECO_FRONTEND=http://localhost:5173`, pois o back libera o CORS somente para esse endereço.
 
 ## Rodar o front
 

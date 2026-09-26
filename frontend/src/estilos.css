@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=DM+Sans:wght@400;500;600;700&display=swap');
 
 /* Reúne as cores e tipografias da interface para manter as telas consistentes. */
 :root {
@@ -7,12 +7,12 @@
   background: #f1efe9;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
-  --tinta: #272521;
-  --papel: #f1efe9;
-  --papel-claro: #faf9f6;
-  --cinza: #77736c;
-  --linha: #d9d5cc;
-  --rosa: #a65349;
+  --tinta: #17130f;
+  --papel: #efe7d8;
+  --papel-claro: #f5eee1;
+  --cinza: #70685f;
+  --linha: #c9c0b2;
+  --rosa: #e9833e;
 }
 
 /* Faz os campos e cartões respeitarem o tamanho definido no layout. */
@@ -23,11 +23,10 @@ button, select { cursor: pointer; }
 button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible { outline: 2px solid var(--rosa); outline-offset: 3px; }
 
 /* Organiza o cabeçalho, a área de trabalho e o rodapé da aplicação. */
-.aplicativo { min-height: 100vh; display: flex; flex-direction: column; }
-.barra-superior { min-height: 84px; padding: 0 6.2vw; display: flex; align-items: center; justify-content: space-between; gap: 32px; border-bottom: 1px solid var(--linha); background: var(--papel-claro); }
-.marca { display: flex; align-items: center; gap: 11px; color: var(--tinta); text-decoration: none; font-size: 10px; line-height: 1.2; letter-spacing: .16em; }
-.marca b { font-weight: 700; }
-.marca-simbolo { color: var(--rosa); font-size: 32px; }
+.aplicativo { min-height: 100vh; display: flex; flex-direction: column; background: var(--papel); color: var(--tinta); }
+.barra-superior { position: sticky; top: 0; z-index: 30; min-height: 84px; padding: 0 6.2vw; display: flex; align-items: center; justify-content: space-between; gap: 32px; border-bottom: 1px solid var(--linha); background: var(--papel-claro); }
+.marca { display: inline-flex; align-items: center; flex: 0 0 auto; text-decoration: none; }
+.marca img { width: 177px; height: auto; display: block; }
 .navegacao { display: flex; align-self: stretch; gap: 28px; }
 .navegacao button { padding: 4px 0 0; position: relative; border: 0; background: none; color: var(--cinza); font-size: 13px; }
 .navegacao button.ativo { color: var(--tinta); }
@@ -39,7 +38,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
 .conteudo-principal { width: min(1240px, 88vw); margin: 52px auto 62px; display: grid; grid-template-columns: minmax(0, 1fr) minmax(290px, .72fr); gap: clamp(42px, 8vw, 120px); flex: 1; }
 .coluna-conteudo { min-width: 0; padding-top: 15px; }
 .titulo-secao { margin-bottom: 32px; }
-.titulo-secao h2 { margin: 12px 0 10px; font-family: 'Playfair Display', Georgia, serif; font-size: clamp(36px, 4vw, 54px); font-weight: 500; letter-spacing: -.04em; line-height: 1.06; }
+.titulo-secao h2 { margin: 12px 0 10px; font-family: 'Cormorant Garamond', Georgia, serif; font-size: clamp(39px, 4vw, 58px); font-weight: 600; letter-spacing: -.025em; line-height: 1.02; }
 .titulo-secao p { max-width: 480px; margin: 0; color: var(--cinza); font-size: 14px; line-height: 1.7; }
 .formulario { display: flex; flex-direction: column; gap: 11px; }
 .formulario label, .filtro-etapa { margin-top: 6px; color: var(--tinta); font-size: 12px; font-weight: 600; }
@@ -49,28 +48,32 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
 .linha-campos { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 .linha-campos > div { display: flex; flex-direction: column; gap: 11px; }
 .botao { min-height: 48px; padding: 0 16px; display: inline-flex; align-items: center; justify-content: space-between; gap: 18px; border: 1px solid var(--tinta); font-size: 12px; font-weight: 600; transition: background .18s ease, color .18s ease; }
-.botao-escuro { margin-top: 12px; background: var(--tinta); color: white; }
+.botao-escuro { margin-top: 12px; background: var(--rosa); border-color: var(--rosa); color: #17130f; }
 .botao-escuro:hover:not(:disabled) { background: var(--rosa); border-color: var(--rosa); }
 .botao:disabled { cursor: wait; opacity: .65; }
 .botao-claro { background: transparent; color: var(--tinta); }
 .botao-claro:hover { background: var(--tinta); color: white; }
-.painel-arte { position: relative; min-height: 570px; overflow: hidden; background: #e4dfd4 url('/imagens/rosa-cranio.jfif') center 34% / cover no-repeat; }
-.painel-arte::before { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgb(241 239 233 / 5%) 46%, rgb(30 29 26 / 66%) 100%); }
-.arte-texto { position: absolute; left: 20px; top: 21px; display: flex; flex-direction: column; color: var(--tinta); font-size: 9px; font-weight: 700; letter-spacing: .15em; }
-.arte-legenda { position: absolute; bottom: 19px; left: 20px; right: 20px; display: flex; justify-content: space-between; color: white; font-size: 9px; font-weight: 600; letter-spacing: .13em; }
+.painel-arte { position: relative; min-height: 570px; overflow: hidden; background: var(--papel-claro); }
+.painel-arte::before { content: ''; position: absolute; inset: 0; z-index: 1; background: linear-gradient(180deg, rgb(23 19 15 / 2%) 46%, rgb(23 19 15 / 62%) 100%); }
+.arte-imagem { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 34%; mix-blend-mode: multiply; opacity: .83; }
+.arte-texto { position: absolute; z-index: 2; left: 26px; top: 25px; right: 20px; display: flex; flex-direction: column; color: var(--tinta); }
+.arte-texto span { color: var(--rosa); font-size: 10px; font-weight: 700; letter-spacing: .2em; }
+.arte-texto strong { margin-top: 12px; font-family: 'Cormorant Garamond', Georgia, serif; font-size: clamp(36px, 4.4vw, 61px); font-weight: 700; line-height: .98; }
+.arte-texto em { color: var(--rosa); font-style: normal; }
+.arte-legenda { position: absolute; z-index: 2; bottom: 19px; left: 20px; right: 20px; display: flex; justify-content: space-between; color: white; font-size: 9px; font-weight: 600; letter-spacing: .13em; }
 .cabecalho-agenda { display: flex; align-items: end; justify-content: space-between; gap: 20px; }
 .filtro-etapa { width: 190px; display: flex; flex-direction: column; gap: 8px; font-size: 11px; }
 .grade-tatuagens { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
 .cartao-tatuagem { min-height: 168px; padding: 18px; display: flex; flex-direction: column; align-items: flex-start; gap: 10px; border: 1px solid var(--linha); background: var(--papel-claro); color: var(--tinta); text-align: left; }
 button.cartao-tatuagem { width: 100%; }
 .cartao-selecionado { border-color: var(--rosa); }
-.cartao-tatuagem strong { font-family: 'Playfair Display', Georgia, serif; font-size: 19px; font-weight: 500; }
+.cartao-tatuagem strong { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 22px; font-weight: 600; }
 .cartao-tatuagem > span:not(.numero-cartao):not(.selo-etapa) { color: var(--cinza); font-size: 12px; }
 .selo-etapa { margin-top: auto; display: inline-flex; align-items: center; gap: 7px; color: var(--rosa); font-size: 10px; font-weight: 600; }
 .selo-etapa i { width: 6px; height: 6px; display: inline-block; border-radius: 50%; background: currentColor; }
 .historico { margin-top: 28px; padding: 22px 0 0; border-top: 1px solid var(--linha); }
 .historico-cabecalho { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 20px; }
-.historico-cabecalho h3 { margin: 7px 0 0; font: 500 23px 'Playfair Display', Georgia, serif; }
+.historico-cabecalho h3 { margin: 7px 0 0; font: 600 26px 'Cormorant Garamond', Georgia, serif; }
 .item-historico { display: flex; gap: 13px; padding: 13px 0; border-top: 1px solid var(--linha); }
 .ponto-historico { width: 8px; height: 8px; flex: 0 0 8px; margin-top: 5px; border-radius: 50%; background: var(--rosa); }
 .item-historico strong { font-size: 12px; }
@@ -82,6 +85,49 @@ button.cartao-tatuagem { width: 100%; }
 .aviso-sucesso { border-left: 3px solid #5d8060; background: #e9efe6; color: #36543a; }
 .voltar { margin: 0 0 28px; padding: 0; border: 0; background: none; color: var(--cinza); font-size: 12px; }
 .rodape { min-height: 52px; padding: 0 6.2vw; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--linha); color: var(--cinza); font-size: 9px; letter-spacing: .13em; }
+
+/* Usa o fundo escuro, o cobre e a navegação lateral da área de gestão no Figma. */
+.modo-tatuador {
+  --tinta: #f1e8d8;
+  --papel: #100d0a;
+  --papel-claro: #211b15;
+  --cinza: #aaa296;
+  --linha: #49382a;
+  --rosa: #ed833d;
+}
+.modo-tatuador .barra-superior { position: fixed; inset: 0 auto 0 0; width: 250px; min-height: 100vh; padding: 28px 20px 24px; flex-direction: column; align-items: flex-start; justify-content: flex-start; gap: 40px; border: 0; border-right: 1px solid var(--linha); background: #18120d; }
+.modo-tatuador .marca img { width: 184px; }
+.modo-tatuador .navegacao { width: 100%; flex-direction: column; align-self: stretch; gap: 9px; }
+.modo-tatuador .navegacao button { min-height: 46px; padding: 0 14px; border-radius: 10px; text-align: left; }
+.modo-tatuador .navegacao button.ativo { background: rgb(245 238 225 / 8%); color: #f1e8d8; }
+.modo-tatuador .navegacao button.ativo::after { top: 8px; right: auto; bottom: 8px; left: 0; width: 2px; height: auto; }
+.modo-tatuador .seletor-perfil { margin-top: auto; width: 100%; padding: 16px 12px 0; border-top: 1px solid var(--linha); }
+.modo-tatuador .seletor-perfil select { max-width: 100%; color: var(--tinta); }
+.modo-tatuador .conteudo-principal { width: min(1440px, calc(100% - 306px)); margin: 34px 36px 46px 286px; grid-template-columns: minmax(0, 1fr); gap: 28px; }
+.modo-tatuador .coluna-conteudo { grid-row: 2; padding-top: 0; }
+.modo-tatuador .painel-arte { grid-row: 1; min-height: 300px; border: 1px solid var(--linha); border-radius: 26px; background-color: #21170f; background-image: repeating-linear-gradient(135deg, transparent, transparent 12px, rgb(245 238 225 / 2%) 12px, rgb(245 238 225 / 2%) 13px); }
+.modo-tatuador .painel-arte::before { background: linear-gradient(90deg, rgb(16 13 10 / 10%), rgb(16 13 10 / 15%)); }
+.modo-tatuador .arte-imagem { object-fit: contain; object-position: right center; padding: 12px 6%; filter: invert(1); mix-blend-mode: screen; opacity: .2; }
+.modo-tatuador .arte-texto { top: 48px; left: clamp(25px, 5vw, 72px); max-width: 700px; }
+.modo-tatuador .arte-texto span { color: var(--rosa); }
+.modo-tatuador .arte-texto strong { max-width: 660px; color: #f1e8d8; font-size: clamp(48px, 6vw, 76px); }
+.modo-tatuador .arte-texto em { color: var(--rosa); }
+.modo-tatuador .arte-legenda { color: var(--cinza); }
+.modo-tatuador .cartao-tatuagem { border-radius: 14px; border-color: var(--linha); background: #211b15; }
+.modo-tatuador .cartao-selecionado { border-color: var(--rosa); }
+.modo-tatuador .formulario input, .modo-tatuador .formulario textarea, .modo-tatuador .formulario select, .modo-tatuador .filtro-etapa select { border-radius: 10px; background: #211b15; color: var(--tinta); }
+.modo-tatuador .aviso-erro { border-color: #df765f; background: #351c16; color: #ffd6c9; }
+.modo-tatuador .aviso-sucesso { border-color: #91a16e; background: #22291b; color: #d5e2bd; }
+.modo-tatuador .rodape { display: none; }
+
+/* Mantém o painel e os formulários da cliente em papel claro com acentos de ferrugem. */
+.modo-cliente .painel-arte { border-radius: 26px; background-color: #813d2b; background-image: radial-gradient(circle at 72% 45%, rgb(23 19 15 / 22%), transparent 38%), repeating-radial-gradient(circle at 100% 0%, transparent 0, transparent 17px, rgb(239 231 216 / 7%) 18px, transparent 19px); }
+.modo-cliente .painel-arte::before { background: linear-gradient(90deg, rgb(78 31 22 / 24%), rgb(78 31 22 / 8%)); }
+.modo-cliente .arte-imagem { object-fit: contain; padding: 10px; filter: invert(1); mix-blend-mode: screen; opacity: .17; }
+.modo-cliente .arte-texto { top: auto; bottom: 42px; left: 34px; max-width: 440px; color: #f5eee1; }
+.modo-cliente .arte-texto span { color: #e6b879; }
+.modo-cliente .arte-texto strong { font-size: clamp(40px, 4vw, 58px); }
+.modo-cliente .arte-legenda { display: none; }
 
 /* Empilha os painéis e amplia os campos para o uso no celular. */
 @media (max-width: 760px) {
@@ -104,6 +150,30 @@ button.cartao-tatuagem { width: 100%; }
   .grade-tatuagens { grid-template-columns: 1fr; }
   .cartao-tatuagem { min-height: 150px; }
   .rodape { padding: 14px 20px; gap: 18px; font-size: 8px; }
+
+  /* Transforma a navegação da cliente na barra inferior do desenho mobile. */
+  .modo-cliente .barra-superior { min-height: 68px; }
+  .modo-cliente .marca img { width: 145px; }
+  .modo-cliente .navegacao { position: fixed; inset: auto 0 0; z-index: 35; min-height: 70px; padding: 10px 14px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; border-top: 1px solid var(--linha); background: rgb(245 238 225 / 96%); backdrop-filter: blur(16px); }
+  .modo-cliente .navegacao button { min-height: 46px; padding: 0 10px; border-radius: 999px; }
+  .modo-cliente .navegacao button.ativo { background: var(--rosa); color: var(--tinta); }
+  .modo-cliente .navegacao button.ativo::after { display: none; }
+  .modo-cliente .conteudo-principal { margin-bottom: 100px; }
+
+  /* Recolhe a barra lateral do tatuador em cabeçalho para telas estreitas. */
+  .modo-tatuador .barra-superior { position: sticky; inset: auto; width: 100%; min-height: 72px; padding: 0 18px; flex-direction: row; align-items: center; justify-content: space-between; gap: 10px; border-right: 0; border-bottom: 1px solid var(--linha); }
+  .modo-tatuador .marca img { width: 140px; }
+  .modo-tatuador .navegacao { width: auto; flex-direction: row; align-self: stretch; gap: 10px; }
+  .modo-tatuador .navegacao button { min-height: 0; padding: 0 5px; border-radius: 0; font-size: 11px; }
+  .modo-tatuador .navegacao button.ativo { background: transparent; }
+  .modo-tatuador .navegacao button.ativo::after { top: auto; right: 0; bottom: -1px; left: 0; width: auto; height: 2px; }
+  .modo-tatuador .seletor-perfil { width: auto; margin: 0; padding: 0; border: 0; }
+  .modo-tatuador .seletor-perfil select { width: 82px; font-size: 10px; }
+  .modo-tatuador .conteudo-principal { width: auto; margin: 22px 18px 34px; grid-template-columns: 1fr; gap: 22px; }
+  .modo-tatuador .coluna-conteudo { grid-row: 2; }
+  .modo-tatuador .painel-arte { grid-row: 1; min-height: 205px; border-radius: 20px; }
+  .modo-tatuador .arte-texto { top: 28px; left: 22px; }
+  .modo-tatuador .arte-texto strong { font-size: clamp(38px, 10vw, 55px); }
 }
 
 /* Ajusta o espaço vertical em computadores com janela baixa. */
