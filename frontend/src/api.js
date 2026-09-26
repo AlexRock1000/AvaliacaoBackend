@@ -4,13 +4,16 @@ const ENDERECO_API = "http://localhost:8000";
 
 // Confere o status HTTP antes de entregar os dados para a tela.
 export function pedirApi(caminho, opcoes = {}) {
-  return fetch(`${ENDERECO_API}${caminho}`, opcoes).then((resposta) =>
-    resposta.json().then((dados) => {
-      if (!resposta.ok) {
-        throw new Error(dados.detail || "Não foi possível concluir a solicitação.");
-      }
+  return fetch(`${ENDERECO_API}${caminho}`, opcoes).then((resposta) => {
+    if (resposta.ok) {
+      return resposta.json();
+    }
 
-      return dados;
-    }),
-  );
+    return resposta.json().then((dados) => {
+      const mensagem = typeof dados.detail === "string"
+        ? dados.detail
+        : "Não foi possível concluir a solicitação. Confira os dados e tente novamente.";
+      throw new Error(mensagem);
+    });
+  });
 }

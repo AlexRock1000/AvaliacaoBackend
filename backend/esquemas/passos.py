@@ -3,7 +3,7 @@ from datetime import date
 from pydantic import BaseModel, Field
 
 
-# Aceita somente os três tipos de passo descritos na cartilha.
+# Descreve os dados enviados para registrar um dos três tipos de passo da cartilha.
 class PassoEntrada(BaseModel):
     tipo: str = Field(min_length=1)
     data: date

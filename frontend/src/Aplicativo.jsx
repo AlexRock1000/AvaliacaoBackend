@@ -140,7 +140,7 @@ function TelaMinhasTatuagens({ perfil }) {
       {carregando && <p className="estado">Carregando suas tatuagens…</p>}
       {erro && <p className="aviso aviso-erro" role="alert">{erro}</p>}
       {!carregando && !erro && tatuagens.length === 0 && <p className="estado estado-vazio">Ainda não há tatuagens no seu histórico. Seu primeiro pedido começa pela tela “Pedir tatuagem”.</p>}
-      <div className="grade-tatuagens">
+      {!carregando && !erro && <div className="grade-tatuagens">
         {tatuagens.map((tatuagem) => (
           <button key={tatuagem.id} className={`cartao-tatuagem ${selecionada?.id === tatuagem.id ? "cartao-selecionado" : ""}`} onClick={() => abrirHistorico(tatuagem)}>
             <span className="numero-cartao">ESTÚDIO · {String(tatuagem.id).padStart(2, "0")}</span>
@@ -149,14 +149,14 @@ function TelaMinhasTatuagens({ perfil }) {
             <span className="selo-etapa"><i />{nomeDaEtapa(tatuagem.etapa)}</span>
           </button>
         ))}
-      </div>
+      </div>}
       {selecionada && (
         <div className="historico">
           <div className="historico-cabecalho"><div><span className="sobretitulo">HISTÓRICO</span><h3>{selecionada.ideia}</h3></div><span className="selo-etapa"><i />{nomeDaEtapa(selecionada.etapa)}</span></div>
           {carregandoPassos && <p className="estado">Carregando o histórico…</p>}
           {erroPassos && <p className="aviso aviso-erro" role="alert">{erroPassos}</p>}
           {!carregandoPassos && !erroPassos && passos.length === 0 && <p className="estado">Nenhum passo registrado ainda. O estúdio atualizará esta linha do tempo.</p>}
-          {!carregandoPassos && passos.map((passo) => <div className="item-historico" key={passo.id}><span className="ponto-historico" /><div><strong>{TIPOS_DE_PASSO.find((tipo) => tipo.valor === passo.tipo)?.nome || passo.tipo}</strong><p>{passo.data} · {passo.observacao}</p></div></div>)}
+          {!carregandoPassos && !erroPassos && passos.map((passo) => <div className="item-historico" key={passo.id}><span className="ponto-historico" /><div><strong>{TIPOS_DE_PASSO.find((tipo) => tipo.valor === passo.tipo)?.nome || passo.tipo}</strong><p>{passo.data} · {passo.observacao}</p></div></div>)}
         </div>
       )}
     </section>
@@ -197,7 +197,7 @@ function TelaAgenda({ aoAbrirFicha, atualizacao }) {
       {carregando && <p className="estado">Carregando agenda…</p>}
       {erro && <p className="aviso aviso-erro" role="alert">{erro}</p>}
       {!carregando && !erro && tatuagens.length === 0 && <p className="estado estado-vazio">Não há tatuagens nesta etapa.</p>}
-      <div className="grade-tatuagens grade-agenda">
+      {!carregando && !erro && <div className="grade-tatuagens grade-agenda">
         {tatuagens.map((tatuagem) => (
           <article key={tatuagem.id} className="cartao-tatuagem cartao-agenda">
             <span className="numero-cartao">FICHA · {String(tatuagem.id).padStart(2, "0")}</span>
@@ -207,7 +207,7 @@ function TelaAgenda({ aoAbrirFicha, atualizacao }) {
             <button className="botao botao-claro" onClick={() => aoAbrirFicha(tatuagem)}>Abrir ficha <span aria-hidden="true">↗</span></button>
           </article>
         ))}
-      </div>
+      </div>}
     </section>
   );
 }
@@ -281,7 +281,7 @@ export default function Aplicativo() {
   return (
     <div className={`aplicativo modo-${perfil.tipo}`}>
       <header className="barra-superior">
-        <a className="marca" href="#inicio" onClick={() => definirTela(perfil.tipo === "cliente" ? "pedir" : "agenda")}><img src={perfil.tipo === "cliente" ? "/imagens/logo-monocromatico.svg" : "/imagens/logo-colorido.svg"} alt="Nervo Tattoo Studio" /></a>
+        <a className="marca" href="#inicio" onClick={() => definirTela(perfil.tipo === "cliente" ? "pedir" : "agenda")}><img src={perfil.tipo === "cliente" ? "/imagens/logo-monocromatico.svg" : "/imagens/logo-colorido.svg"} alt="Tinta Negra Tattoo Studio" /></a>
         <nav className="navegacao" aria-label="Navegação principal">
           {perfil.tipo === "cliente" ? <><button className={tela === "pedir" ? "ativo" : ""} onClick={() => definirTela("pedir")}>Pedir tatuagem</button><button className={tela === "minhas" ? "ativo" : ""} onClick={() => definirTela("minhas")}>Minhas tatuagens</button></> : <button className="ativo" onClick={() => { definirFicha(null); definirTela("agenda"); }}>A agenda</button>}
         </nav>

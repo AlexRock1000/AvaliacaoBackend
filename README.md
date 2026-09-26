@@ -1,4 +1,4 @@
-# Nervo Tattoo Studio
+# Tinta Negra Tattoo Studio
 
 Aplicação para acompanhar pedidos, etapas e histórico de tatuagens de um estúdio pequeno. O projeto segue as jornadas da Bruna, cliente que usa o celular, e do Vitor, tatuador que organiza o trabalho no computador.
 

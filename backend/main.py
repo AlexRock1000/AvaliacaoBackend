@@ -6,7 +6,7 @@ from rotas.tatuagens import roteador as roteador_tatuagens
 
 
 # Cria o aplicativo e libera chamadas somente para o endereço configurado do front.
-aplicativo = FastAPI(title="Estúdio Tatuagem")
+aplicativo = FastAPI(title="Tinta Negra Tattoo Studio")
 configuracao = obter_configuracao()
 endereco_frontend = configuracao["endereco_frontend"]
 
