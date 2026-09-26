@@ -1,12 +1,11 @@
 from datetime import date
-from typing import Literal
 
 from pydantic import BaseModel, Field
 
 
 # Aceita somente os três tipos de passo descritos na cartilha.
 class PassoEntrada(BaseModel):
-    tipo: Literal["desenho_aprovado", "sessao", "retoque"]
+    tipo: str = Field(min_length=1)
     data: date
     observacao: str = Field(min_length=1)
 

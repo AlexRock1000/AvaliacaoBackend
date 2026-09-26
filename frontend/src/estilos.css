@@ -103,7 +103,7 @@ button.cartao-tatuagem { width: 100%; }
 .modo-tatuador .navegacao button.ativo::after { top: 8px; right: auto; bottom: 8px; left: 0; width: 2px; height: auto; }
 .modo-tatuador .seletor-perfil { margin-top: auto; width: 100%; padding: 16px 12px 0; border-top: 1px solid var(--linha); }
 .modo-tatuador .seletor-perfil select { max-width: 100%; color: var(--tinta); }
-.modo-tatuador .conteudo-principal { width: min(1440px, calc(100% - 306px)); margin: 34px 36px 46px 286px; grid-template-columns: minmax(0, 1fr); gap: 28px; }
+.modo-tatuador .conteudo-principal { width: min(1440px, calc(100% - 322px)); margin: 34px 36px 46px 286px; grid-template-columns: minmax(0, 1fr); gap: 28px; }
 .modo-tatuador .coluna-conteudo { grid-row: 2; padding-top: 0; }
 .modo-tatuador .painel-arte { grid-row: 1; min-height: 300px; border: 1px solid var(--linha); border-radius: 26px; background-color: #21170f; background-image: repeating-linear-gradient(135deg, transparent, transparent 12px, rgb(245 238 225 / 2%) 12px, rgb(245 238 225 / 2%) 13px); }
 .modo-tatuador .painel-arte::before { background: linear-gradient(90deg, rgb(16 13 10 / 10%), rgb(16 13 10 / 15%)); }

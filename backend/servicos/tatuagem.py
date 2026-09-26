@@ -3,7 +3,7 @@ from esquemas.tatuagens import TatuagemEntrada
 from repositorios import tatuagem as repositorio_tatuagem
 
 
-# Filtra a lista conforme os critérios opcionais pedidos pela tela.
+# Na camada de serviços, filtra os dados do repositório conforme os critérios da tela.
 def listar_tatuagens(etapa=None, cliente_id=None):
     tatuagens = repositorio_tatuagem.listar_tatuagens()
     if etapa is not None:
@@ -13,19 +13,19 @@ def listar_tatuagens(etapa=None, cliente_id=None):
     return tatuagens
 
 
-# Procura uma tatuagem pelo identificador sem expor a lista do repositório.
+# Na camada de serviços, encaminha a busca ao repositório para não acessar a lista diretamente.
 def buscar_tatuagem(tatuagem_id):
     return repositorio_tatuagem.buscar_tatuagem_por_id(tatuagem_id)
 
 
-# Monta os dados iniciais do pedido e define sua primeira etapa.
+# Na camada de serviços, monta o pedido e define a etapa inicial antes de guardá-lo.
 def criar_tatuagem(entrada: TatuagemEntrada):
     dados = entrada.model_dump()
     dados["etapa"] = "pedida"
     return repositorio_tatuagem.adicionar_tatuagem(dados)
 
 
-# Busca o histórico apenas quando a tatuagem existe.
+# Na camada de serviços, confere a tatuagem e então solicita seu histórico ao repositório.
 def listar_passos(tatuagem_id):
     tatuagem = repositorio_tatuagem.buscar_tatuagem_por_id(tatuagem_id)
     if tatuagem is None:
@@ -33,7 +33,7 @@ def listar_passos(tatuagem_id):
     return repositorio_tatuagem.listar_passos(tatuagem_id)
 
 
-# Aplica a ordem da cartilha e devolve o motivo em texto quando precisa recusar.
+# Na camada de serviços, aplica a regra da cartilha e devolve texto quando precisa recusar.
 def registrar_passo(tatuagem_id: int, entrada: PassoEntrada):
     tatuagem = repositorio_tatuagem.buscar_tatuagem_por_id(tatuagem_id)
     if tatuagem is None:
@@ -42,6 +42,8 @@ def registrar_passo(tatuagem_id: int, entrada: PassoEntrada):
     etapa = tatuagem["etapa"]
     tipo = entrada.tipo
 
+    if tipo not in ("desenho_aprovado", "sessao", "retoque"):
+        return "O passo deve ser desenho aprovado, sessão ou retoque."
     if tipo == "desenho_aprovado" and etapa != "pedida":
         return "O desenho só pode ser aprovado quando a tatuagem está pedida."
     if tipo == "sessao" and etapa not in ("desenho aprovado", "em sessões"):

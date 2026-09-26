@@ -1,15 +1,13 @@
 # Mantém os dados deste ciclo em listas na memória, sem depender de um banco.
 _tatuagens = []
-_proximo_id_tatuagem = 1
-_proximo_id_passo = 1
 
 
-# Devolve a lista para a camada de serviço aplicar filtros e decisões.
+# Na camada de repositórios, entrega os dados guardados para o serviço aplicar filtros.
 def listar_tatuagens():
     return _tatuagens
 
 
-# Encontra uma tatuagem pelo identificador ou devolve None se não existir.
+# Na camada de repositórios, localiza o registro em memória para o serviço consultá-lo.
 def buscar_tatuagem_por_id(tatuagem_id):
     for tatuagem in _tatuagens:
         if tatuagem["id"] == tatuagem_id:
@@ -17,16 +15,15 @@ def buscar_tatuagem_por_id(tatuagem_id):
     return None
 
 
-# Guarda o pedido com um identificador novo e uma lista de passos vazia.
+# Na camada de repositórios, guarda o pedido em memória com identificador e histórico vazio.
 def adicionar_tatuagem(dados):
-    global _proximo_id_tatuagem
-    tatuagem = {"id": _proximo_id_tatuagem, **dados, "passos": []}
+    identificador = len(_tatuagens) + 1
+    tatuagem = {"id": identificador, **dados, "passos": []}
     _tatuagens.append(tatuagem)
-    _proximo_id_tatuagem += 1
     return tatuagem
 
 
-# Devolve o histórico guardado para a tatuagem encontrada.
+# Na camada de repositórios, lê o histórico em memória da tatuagem encontrada.
 def listar_passos(tatuagem_id):
     tatuagem = buscar_tatuagem_por_id(tatuagem_id)
     if tatuagem is None:
@@ -34,17 +31,16 @@ def listar_passos(tatuagem_id):
     return tatuagem["passos"]
 
 
-# Guarda um passo com identificador e referência à tatuagem correspondente.
+# Na camada de repositórios, guarda o passo em memória junto à tatuagem correspondente.
 def adicionar_passo(tatuagem_id, dados):
-    global _proximo_id_passo
     tatuagem = buscar_tatuagem_por_id(tatuagem_id)
-    passo = {"id": _proximo_id_passo, "tatuagem_id": tatuagem_id, **dados}
+    identificador = sum(len(item["passos"]) for item in _tatuagens) + 1
+    passo = {"id": identificador, "tatuagem_id": tatuagem_id, **dados}
     tatuagem["passos"].append(passo)
-    _proximo_id_passo += 1
     return passo
 
 
-# Atualiza a etapa depois que o serviço aprovou a ordem do passo.
+# Na camada de repositórios, persiste a etapa que o serviço decidiu após validar o passo.
 def atualizar_etapa(tatuagem_id, etapa):
     tatuagem = buscar_tatuagem_por_id(tatuagem_id)
     if tatuagem is not None:
