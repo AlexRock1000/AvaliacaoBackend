@@ -1,0 +1,16 @@
+# Ambientes virtuais e dependências do Python ficam fora do Git.
+backend/.venv/
+backend/__pycache__/
+backend/**/__pycache__/
+
+# Dependências e arquivos gerados pelo Vite ficam fora do Git.
+frontend/node_modules/
+frontend/dist/
+
+# O endereço de cada máquina fica no arquivo local de ambiente.
+backend/.env
+
+# Arquivos temporários do sistema operacional e do editor.
+.DS_Store
+Thumbs.db
+.vscode/

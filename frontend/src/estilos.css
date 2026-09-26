@@ -1,0 +1,113 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap');
+
+/* Reúne as cores e tipografias da interface para manter as telas consistentes. */
+:root {
+  font-family: 'DM Sans', sans-serif;
+  color: #272521;
+  background: #f1efe9;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  --tinta: #272521;
+  --papel: #f1efe9;
+  --papel-claro: #faf9f6;
+  --cinza: #77736c;
+  --linha: #d9d5cc;
+  --rosa: #a65349;
+}
+
+/* Faz os campos e cartões respeitarem o tamanho definido no layout. */
+* { box-sizing: border-box; }
+body { margin: 0; min-width: 320px; min-height: 100vh; }
+button, input, textarea, select { font: inherit; }
+button, select { cursor: pointer; }
+button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible { outline: 2px solid var(--rosa); outline-offset: 3px; }
+
+/* Organiza o cabeçalho, a área de trabalho e o rodapé da aplicação. */
+.aplicativo { min-height: 100vh; display: flex; flex-direction: column; }
+.barra-superior { min-height: 84px; padding: 0 6.2vw; display: flex; align-items: center; justify-content: space-between; gap: 32px; border-bottom: 1px solid var(--linha); background: var(--papel-claro); }
+.marca { display: flex; align-items: center; gap: 11px; color: var(--tinta); text-decoration: none; font-size: 10px; line-height: 1.2; letter-spacing: .16em; }
+.marca b { font-weight: 700; }
+.marca-simbolo { color: var(--rosa); font-size: 32px; }
+.navegacao { display: flex; align-self: stretch; gap: 28px; }
+.navegacao button { padding: 4px 0 0; position: relative; border: 0; background: none; color: var(--cinza); font-size: 13px; }
+.navegacao button.ativo { color: var(--tinta); }
+.navegacao button.ativo::after { content: ''; position: absolute; left: 0; right: 0; bottom: -1px; height: 2px; background: var(--rosa); }
+.seletor-perfil { display: flex; flex-direction: column; gap: 4px; }
+.seletor-perfil span, .sobretitulo, .numero-cartao { color: var(--cinza); font-size: 9px; font-weight: 700; letter-spacing: .15em; }
+.seletor-perfil select { max-width: 176px; border: 0; background: transparent; color: var(--tinta); font-size: 12px; }
+/* Divide o conteúdo entre a tarefa atual e a arte de referência do estúdio. */
+.conteudo-principal { width: min(1240px, 88vw); margin: 52px auto 62px; display: grid; grid-template-columns: minmax(0, 1fr) minmax(290px, .72fr); gap: clamp(42px, 8vw, 120px); flex: 1; }
+.coluna-conteudo { min-width: 0; padding-top: 15px; }
+.titulo-secao { margin-bottom: 32px; }
+.titulo-secao h2 { margin: 12px 0 10px; font-family: 'Playfair Display', Georgia, serif; font-size: clamp(36px, 4vw, 54px); font-weight: 500; letter-spacing: -.04em; line-height: 1.06; }
+.titulo-secao p { max-width: 480px; margin: 0; color: var(--cinza); font-size: 14px; line-height: 1.7; }
+.formulario { display: flex; flex-direction: column; gap: 11px; }
+.formulario label, .filtro-etapa { margin-top: 6px; color: var(--tinta); font-size: 12px; font-weight: 600; }
+.formulario input, .formulario textarea, .formulario select, .filtro-etapa select { width: 100%; min-height: 47px; padding: 12px 14px; border: 1px solid var(--linha); border-radius: 2px; background: var(--papel-claro); color: var(--tinta); font-size: 13px; }
+.formulario textarea { min-height: 108px; resize: vertical; }
+.formulario input::placeholder, .formulario textarea::placeholder { color: #aaa59c; }
+.linha-campos { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.linha-campos > div { display: flex; flex-direction: column; gap: 11px; }
+.botao { min-height: 48px; padding: 0 16px; display: inline-flex; align-items: center; justify-content: space-between; gap: 18px; border: 1px solid var(--tinta); font-size: 12px; font-weight: 600; transition: background .18s ease, color .18s ease; }
+.botao-escuro { margin-top: 12px; background: var(--tinta); color: white; }
+.botao-escuro:hover:not(:disabled) { background: var(--rosa); border-color: var(--rosa); }
+.botao:disabled { cursor: wait; opacity: .65; }
+.botao-claro { background: transparent; color: var(--tinta); }
+.botao-claro:hover { background: var(--tinta); color: white; }
+.painel-arte { position: relative; min-height: 570px; overflow: hidden; background: #e4dfd4 url('/imagens/rosa-cranio.jfif') center 34% / cover no-repeat; }
+.painel-arte::before { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgb(241 239 233 / 5%) 46%, rgb(30 29 26 / 66%) 100%); }
+.arte-texto { position: absolute; left: 20px; top: 21px; display: flex; flex-direction: column; color: var(--tinta); font-size: 9px; font-weight: 700; letter-spacing: .15em; }
+.arte-legenda { position: absolute; bottom: 19px; left: 20px; right: 20px; display: flex; justify-content: space-between; color: white; font-size: 9px; font-weight: 600; letter-spacing: .13em; }
+.cabecalho-agenda { display: flex; align-items: end; justify-content: space-between; gap: 20px; }
+.filtro-etapa { width: 190px; display: flex; flex-direction: column; gap: 8px; font-size: 11px; }
+.grade-tatuagens { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.cartao-tatuagem { min-height: 168px; padding: 18px; display: flex; flex-direction: column; align-items: flex-start; gap: 10px; border: 1px solid var(--linha); background: var(--papel-claro); color: var(--tinta); text-align: left; }
+button.cartao-tatuagem { width: 100%; }
+.cartao-selecionado { border-color: var(--rosa); }
+.cartao-tatuagem strong { font-family: 'Playfair Display', Georgia, serif; font-size: 19px; font-weight: 500; }
+.cartao-tatuagem > span:not(.numero-cartao):not(.selo-etapa) { color: var(--cinza); font-size: 12px; }
+.selo-etapa { margin-top: auto; display: inline-flex; align-items: center; gap: 7px; color: var(--rosa); font-size: 10px; font-weight: 600; }
+.selo-etapa i { width: 6px; height: 6px; display: inline-block; border-radius: 50%; background: currentColor; }
+.historico { margin-top: 28px; padding: 22px 0 0; border-top: 1px solid var(--linha); }
+.historico-cabecalho { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 20px; }
+.historico-cabecalho h3 { margin: 7px 0 0; font: 500 23px 'Playfair Display', Georgia, serif; }
+.item-historico { display: flex; gap: 13px; padding: 13px 0; border-top: 1px solid var(--linha); }
+.ponto-historico { width: 8px; height: 8px; flex: 0 0 8px; margin-top: 5px; border-radius: 50%; background: var(--rosa); }
+.item-historico strong { font-size: 12px; }
+.item-historico p { margin: 5px 0 0; color: var(--cinza); font-size: 12px; }
+.estado { padding: 15px 0; color: var(--cinza); font-size: 13px; line-height: 1.6; }
+.estado-vazio { padding: 20px; border: 1px dashed var(--linha); }
+.aviso { margin: 5px 0; padding: 12px 14px; font-size: 12px; line-height: 1.55; }
+.aviso-erro { border-left: 3px solid #a33d32; background: #f5e6e3; color: #762d25; }
+.aviso-sucesso { border-left: 3px solid #5d8060; background: #e9efe6; color: #36543a; }
+.voltar { margin: 0 0 28px; padding: 0; border: 0; background: none; color: var(--cinza); font-size: 12px; }
+.rodape { min-height: 52px; padding: 0 6.2vw; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--linha); color: var(--cinza); font-size: 9px; letter-spacing: .13em; }
+
+/* Empilha os painéis e amplia os campos para o uso no celular. */
+@media (max-width: 760px) {
+  .barra-superior { min-height: 72px; padding: 0 20px; gap: 13px; }
+  .marca { gap: 7px; font-size: 8px; }
+  .marca-simbolo { font-size: 25px; }
+  .navegacao { gap: 13px; }
+  .navegacao button { font-size: 10px; }
+  .seletor-perfil span { display: none; }
+  .seletor-perfil select { width: 92px; font-size: 10px; }
+  .conteudo-principal { width: auto; margin: 30px 20px 38px; grid-template-columns: 1fr; gap: 30px; }
+  .coluna-conteudo { padding-top: 0; }
+  .titulo-secao { margin-bottom: 24px; }
+  .titulo-secao h2 { font-size: 39px; }
+  .titulo-secao p { font-size: 13px; }
+  .painel-arte { min-height: 290px; max-height: 390px; grid-row: 1; background-position: center 35%; }
+  .linha-campos { grid-template-columns: 1fr; gap: 11px; }
+  .cabecalho-agenda { align-items: flex-start; flex-direction: column; }
+  .filtro-etapa { width: 100%; }
+  .grade-tatuagens { grid-template-columns: 1fr; }
+  .cartao-tatuagem { min-height: 150px; }
+  .rodape { padding: 14px 20px; gap: 18px; font-size: 8px; }
+}
+
+/* Ajusta o espaço vertical em computadores com janela baixa. */
+@media (min-width: 761px) and (max-height: 760px) {
+  .conteudo-principal { margin-top: 30px; }
+  .painel-arte { min-height: 470px; }
+}
