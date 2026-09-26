@@ -15,10 +15,9 @@ No PowerShell, em um terminal:
 ```powershell
 cd backend
 python -m venv .venv
-.venv\Scripts\Activate.ps1
-pip install -r requirements.txt
+.venv\Scripts\python.exe -m pip install -r requirements.txt
 if (-not (Test-Path .env)) { Copy-Item .env.exemplo .env }
-uvicorn main:aplicativo --reload
+.venv\Scripts\python.exe -m uvicorn main:aplicativo --reload
 ```
 
 A API fica em `http://localhost:8000`; a documentação interativa fica em `http://localhost:8000/docs`. Confirme que `backend/.env` contém `ENDERECO_FRONTEND=http://localhost:5173`, pois o back libera o CORS somente para esse endereço.
@@ -29,8 +28,8 @@ Em outro terminal, na raiz do projeto:
 
 ```powershell
 cd frontend
-npm install
-npm run dev
+npm.cmd install
+npm.cmd run dev
 ```
 
 Abra o endereço que o Vite mostrar no terminal (normalmente `http://localhost:5173`). A tela permite escolher o perfil Bruna ou Vitor.

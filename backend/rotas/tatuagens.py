@@ -53,5 +53,5 @@ def registrar_passo(tatuagem_id: int, entrada: PassoEntrada):
     if resultado is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Tatuagem não encontrada.")
     if isinstance(resultado, str):
-        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=resultado)
+        raise HTTPException(status_code=422, detail=resultado)
     return resultado
