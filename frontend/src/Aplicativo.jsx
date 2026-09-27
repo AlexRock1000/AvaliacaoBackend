@@ -16,6 +16,8 @@ const TIPOS_DE_PASSO = [
   { valor: "retoque", nome: "Retoque realizado" },
 ];
 
+const ETAPAS_PREPARACAO = ["aguardando aprovação", "ajustes no desenho"];
+
 // Mostra a etapa com uma escrita legível para as duas pessoas do estúdio.
 function nomeDaEtapa(etapa) {
   const nomes = {
@@ -367,12 +369,11 @@ function TelaAgenda({ aoAbrirFicha, atualizacao, aoAtualizar, titulo = "Projetos
   const tipoAgendamento = etapa === "em sessões" ? "sessao" : "retoque_combinado";
   const filtros = [
     { valor: "", nome: "Todas" },
-    { valor: "pedida", nome: "Pedida" },
-    { valor: "aguardando aprovação", nome: "Aguardando cliente" },
-    { valor: "ajustes no desenho", nome: "Ajustes no desenho" },
-    { valor: "desenho aprovado", nome: "Desenho aprovado" },
+    { valor: "pedida", nome: "Pedidos" },
+    { valor: "preparacao", nome: "Preparação" },
+    { valor: "desenho aprovado", nome: "Desenhos aprovados" },
     { valor: "em sessões", nome: "Sessões" },
-    { valor: "aguardando retoque", nome: "Aguardando retoque" },
+    { valor: "aguardando retoque", nome: "Retoques" },
     { valor: "finalizada", nome: "Finalizada" },
   ];
   // Busca a agenda sempre que o filtro ou um registro de passo muda.
@@ -380,9 +381,9 @@ function TelaAgenda({ aoAbrirFicha, atualizacao, aoAtualizar, titulo = "Projetos
     function carregarAgenda() {
       definirCarregando(true);
       definirErro("");
-      const filtro = etapa ? `?etapa=${encodeURIComponent(etapa)}` : "";
-      pedirApi(`/tatuagens${filtro}`)
-        .then((dados) => definirTatuagens(dados))
+      const etapasFiltradas = etapa === "preparacao" ? ETAPAS_PREPARACAO : etapa ? [etapa] : [null];
+      Promise.all(etapasFiltradas.map((etapaFiltrada) => pedirApi(`/tatuagens${etapaFiltrada ? `?etapa=${encodeURIComponent(etapaFiltrada)}` : ""}`)))
+        .then((listas) => definirTatuagens(listas.flat().sort((primeiro, segundo) => segundo.id - primeiro.id)))
         .catch((erroApi) => definirErro(erroApi.message))
         .finally(() => definirCarregando(false));
     }
@@ -459,7 +460,7 @@ function TelaAgenda({ aoAbrirFicha, atualizacao, aoAtualizar, titulo = "Projetos
           </div>
         </section>)}
       </> : <>
-      {!carregando && !erro && tatuagens.length === 0 && <p className="estado estado-vazio">Não há tatuagens nesta etapa.</p>}
+      {!carregando && !erro && tatuagens.length === 0 && <p className="estado estado-vazio">{etapa === "preparacao" ? "Não há projetos em preparação." : "Não há tatuagens nesta etapa."}</p>}
       {!carregando && !erro && <div className="grade-tatuagens grade-agenda">
         {tatuagens.map((tatuagem) => (
           <article key={tatuagem.id} className="cartao-tatuagem cartao-agenda">
