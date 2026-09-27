@@ -1,183 +1,384 @@
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=DM+Sans:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=DM+Sans:wght@500;600;700&display=swap');
 
-/* Reúne as cores e tipografias da interface para manter as telas consistentes. */
+/* Repete a paleta e as fontes do arquivo de referência do Figma. */
 :root {
   font-family: 'DM Sans', sans-serif;
-  color: #272521;
-  background: #f1efe9;
+  color: oklch(0.16 0.014 58);
+  background: oklch(0.93 0.018 78);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
-  --tinta: #17130f;
-  --papel: #efe7d8;
-  --papel-claro: #f5eee1;
-  --cinza: #70685f;
-  --linha: #c9c0b2;
-  --rosa: #e9833e;
+  --tinta: oklch(0.16 0.014 58);
+  --carvao: oklch(0.2 0.014 58);
+  --papel: oklch(0.96 0.014 78);
+  --creme: oklch(0.93 0.018 78);
+  --fumaca: oklch(0.7 0.015 65);
+  --pedra: oklch(0.48 0.02 60);
+  --linha: oklch(0.36 0.015 58 / 0.55);
+  --brasa: oklch(0.71 0.15 51);
+  --brasa-clara: oklch(0.76 0.16 54);
+  --ferrugem: oklch(0.54 0.13 42);
+  --areia: oklch(0.8 0.07 79);
+  --oliva: oklch(0.42 0.06 122);
 }
 
-/* Faz os campos e cartões respeitarem o tamanho definido no layout. */
 * { box-sizing: border-box; }
-body { margin: 0; min-width: 320px; min-height: 100vh; }
+body { min-width: 320px; min-height: 100vh; margin: 0; }
 button, input, textarea, select { font: inherit; }
 button, select { cursor: pointer; }
-button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible { outline: 2px solid var(--rosa); outline-offset: 3px; }
+button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible { outline: 2px solid var(--brasa); outline-offset: 3px; }
 
-/* Organiza o cabeçalho, a área de trabalho e o rodapé da aplicação. */
-.aplicativo { min-height: 100vh; display: flex; flex-direction: column; background: var(--papel); color: var(--tinta); }
-.barra-superior { position: sticky; top: 0; z-index: 30; min-height: 84px; padding: 0 6.2vw; display: flex; align-items: center; justify-content: space-between; gap: 32px; border-bottom: 1px solid var(--linha); background: var(--papel-claro); }
-.marca { display: inline-flex; align-items: center; flex: 0 0 auto; text-decoration: none; }
-.marca img { width: 177px; height: auto; display: block; }
-.navegacao { display: flex; align-self: stretch; gap: 28px; }
-.navegacao button { padding: 4px 0 0; position: relative; border: 0; background: none; color: var(--cinza); font-size: 13px; }
-.navegacao button.ativo { color: var(--tinta); }
-.navegacao button.ativo::after { content: ''; position: absolute; left: 0; right: 0; bottom: -1px; height: 2px; background: var(--rosa); }
-.seletor-perfil { display: flex; flex-direction: column; gap: 4px; }
-.seletor-perfil span, .sobretitulo, .numero-cartao { color: var(--cinza); font-size: 9px; font-weight: 700; letter-spacing: .15em; }
-.seletor-perfil select { max-width: 176px; border: 0; background: transparent; color: var(--tinta); font-size: 12px; }
-/* Divide o conteúdo entre a tarefa atual e a arte de referência do estúdio. */
-.conteudo-principal { width: min(1240px, 88vw); margin: 52px auto 62px; display: grid; grid-template-columns: minmax(0, 1fr) minmax(290px, .72fr); gap: clamp(42px, 8vw, 120px); flex: 1; }
-.coluna-conteudo { min-width: 0; padding-top: 15px; }
-.titulo-secao { margin-bottom: 32px; }
-.titulo-secao h2 { margin: 12px 0 10px; font-family: 'Cormorant Garamond', Georgia, serif; font-size: clamp(39px, 4vw, 58px); font-weight: 600; letter-spacing: -.025em; line-height: 1.02; }
-.titulo-secao p { max-width: 480px; margin: 0; color: var(--cinza); font-size: 14px; line-height: 1.7; }
-.formulario { display: flex; flex-direction: column; gap: 11px; }
-.formulario label, .filtro-etapa { margin-top: 6px; color: var(--tinta); font-size: 12px; font-weight: 600; }
-.formulario input, .formulario textarea, .formulario select, .filtro-etapa select { width: 100%; min-height: 47px; padding: 12px 14px; border: 1px solid var(--linha); border-radius: 2px; background: var(--papel-claro); color: var(--tinta); font-size: 13px; }
-.formulario textarea { min-height: 108px; resize: vertical; }
-.formulario input::placeholder, .formulario textarea::placeholder { color: #aaa59c; }
-.linha-campos { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-.linha-campos > div { display: flex; flex-direction: column; gap: 11px; }
-.botao { min-height: 48px; padding: 0 16px; display: inline-flex; align-items: center; justify-content: space-between; gap: 18px; border: 1px solid var(--tinta); font-size: 12px; font-weight: 600; transition: background .18s ease, color .18s ease; }
-.botao-escuro { margin-top: 12px; background: var(--rosa); border-color: var(--rosa); color: #17130f; }
-.botao-escuro:hover:not(:disabled) { background: var(--rosa); border-color: var(--rosa); }
+/* O perfil define a superfície da área: carvão no ateliê e creme para a cliente. */
+.aplicativo { min-height: 100vh; overflow-x: hidden; background: var(--creme); color: var(--tinta); }
+.modo-tatuador { background: var(--tinta); color: var(--creme); }
+.barra-superior { position: sticky; top: 0; z-index: 30; min-height: 80px; padding: 0 max(24px, calc((100vw - 1152px) / 2)); display: flex; align-items: center; justify-content: space-between; gap: 24px; border-bottom: 1px solid rgb(22 18 15 / 10%); background: rgb(237 232 219 / 92%); backdrop-filter: blur(18px); }
+.marca { position: relative; display: inline-flex; align-items: center; gap: 12px; padding: 6px 8px; color: var(--tinta); text-decoration: none; }
+.marca-simbolo { width: 40px; height: 40px; display: grid; place-items: center; border: 1px solid rgb(217 137 70 / 55%); border-radius: 50%; color: var(--brasa); }
+.marca-simbolo svg { width: 21px; height: 21px; }
+.marca-texto { display: flex; flex-direction: column; }
+.marca-texto strong { font: 700 25px/1 'Cormorant Garamond', Georgia, serif; letter-spacing: .03em; }
+.marca-texto small { margin-top: 5px; color: var(--pedra); font-size: 9px; font-weight: 700; letter-spacing: .29em; text-transform: uppercase; }
+.navegacao { display: flex; align-self: stretch; align-items: center; gap: 8px; }
+.navegacao button { min-height: 44px; padding: 0 15px; display: flex; align-items: center; gap: 10px; border: 0; border-radius: 12px; background: transparent; color: var(--fumaca); font-size: 13px; }
+.navegacao button.ativo { background: rgb(245 238 225 / 8%); color: var(--creme); }
+.icone-grade { font-size: 20px; line-height: 1; }
+.seletor-perfil { display: flex; align-items: center; gap: 11px; }
+.avatar-perfil { width: 40px; height: 40px; flex: 0 0 40px; display: grid; place-items: center; border-radius: 50%; background: #704168; color: var(--creme); font-size: 12px; font-weight: 700; }
+.modo-tatuador .avatar-perfil { border: 1px solid var(--brasa-clara); background: var(--brasa); color: var(--tinta); }
+.dados-perfil { display: flex; flex-direction: column; gap: 3px; color: var(--tinta); font-size: 12px; font-weight: 600; }
+.dados-perfil select { max-width: 170px; padding: 0; border: 0; background: transparent; color: var(--pedra); font-size: 11px; }
+.modo-tatuador .dados-perfil { color: var(--creme); }
+.modo-tatuador .dados-perfil select { color: var(--fumaca); }
+
+/* No computador, a navegação do tatuador vira a barra lateral do Figma. */
+.modo-tatuador .barra-superior { position: fixed; inset: 0 auto 0 0; width: 256px; min-height: 100vh; padding: 28px 20px 22px; flex-direction: column; align-items: stretch; justify-content: flex-start; gap: 46px; border-right: 1px solid var(--linha); border-bottom: 0; background: var(--carvao); }
+.modo-tatuador .marca { flex: 0 0 auto; }
+.modo-tatuador .marca-texto strong { color: var(--creme); }
+.modo-tatuador .marca-texto small { color: var(--fumaca); }
+.modo-tatuador .navegacao { width: 100%; min-height: 46px; flex: 0 0 auto; align-self: stretch; align-items: stretch; }
+.modo-tatuador .navegacao { flex-direction: column; gap: 7px; }
+.modo-tatuador .navegacao button { width: 100%; justify-content: flex-start; }
+.modo-tatuador .navegacao button.nav-inicio,
+.modo-tatuador .navegacao button.nav-projetos { color: var(--fumaca); }
+.nav-contagem { min-width: 24px; height: 24px; margin-left: auto; display: grid; place-items: center; border-radius: 50%; background: var(--brasa); color: var(--tinta); font-size: 11px; font-weight: 700; }
+.selo-estudio { min-height: 160px; margin-top: 10px; padding: 16px; display: flex; align-items: end; border: 1px solid rgb(217 137 70 / 20%); border-radius: 22px; background: linear-gradient(0deg, rgb(23 18 15 / 78%), rgb(23 18 15 / 5%)), url('/imagens/ornamento.jfif') center / cover; }
+.selo-estudio span { color: var(--areia); font-size: 12px; font-weight: 700; letter-spacing: .2em; }
+.modo-tatuador .seletor-perfil { margin-top: auto; padding: 18px 8px 0; border-top: 1px solid var(--linha); }
+
+/* A área central e os dois banners seguem as composições do export. */
+.conteudo-principal { width: min(1152px, calc(100% - 48px)); margin: 0 auto; padding: 42px 0 60px; display: flex; flex-direction: column; gap: 32px; }
+.modo-tatuador .conteudo-principal { width: min(1472px, calc(100% - 320px)); margin: 0 32px 0 288px; padding: 38px 0 48px; }
+.coluna-conteudo { min-width: 0; width: 100%; }
+.banner-estudio, .banner-cliente { position: relative; isolation: isolate; min-height: 258px; overflow: hidden; display: flex; align-items: center; border-radius: 26px; }
+.banner-estudio { justify-content: space-between; padding: 34px 42px; border: 1px solid rgb(217 137 70 / 20%); background: radial-gradient(circle at 74% 20%, rgb(217 137 70 / 14%), transparent 30%), repeating-linear-gradient(135deg, transparent, transparent 12px, rgb(245 238 225 / 2%) 12px, rgb(245 238 225 / 2%) 13px), var(--carvao); }
+.banner-cliente { min-height: 302px; padding: 38px 46px; background: radial-gradient(circle at 72% 45%, rgb(22 18 15 / 22%), transparent 35%), repeating-radial-gradient(circle at 100% 0%, transparent 0, transparent 17px, rgb(237 232 219 / 7%) 18px, transparent 19px), var(--ferrugem); color: var(--creme); }
+.banner-ornamento { position: absolute; z-index: -1; inset: 0; width: 100%; height: 100%; object-fit: contain; object-position: center; opacity: .18; filter: invert(1); mix-blend-mode: screen; pointer-events: none; }
+.banner-conteudo { position: relative; z-index: 1; max-width: 730px; }
+.banner-conteudo .sobretitulo { color: var(--brasa); }
+.banner-cliente .banner-conteudo .sobretitulo { color: var(--areia); }
+.banner-conteudo h1 { margin: 9px 0 0; font: 700 clamp(48px, 6vw, 76px)/.96 'Cormorant Garamond', Georgia, serif; letter-spacing: -.02em; }
+.banner-conteudo h1 em { color: var(--brasa); font-weight: 600; }
+.banner-cliente .banner-conteudo h1 { max-width: 620px; color: var(--creme); }
+.banner-conteudo p { max-width: 560px; margin: 18px 0 0; color: var(--fumaca); font-size: 14px; line-height: 1.7; }
+.banner-cliente .banner-conteudo p { color: rgb(245 238 225 / 76%); }
+.banner-selo { width: 74px; height: 74px; flex: 0 0 74px; display: grid; place-content: center; border: 1px solid rgb(217 137 70 / 45%); border-radius: 50%; color: var(--brasa); font: 600 16px/1.15 'Cormorant Garamond', Georgia, serif; text-align: center; transform: rotate(9deg); }
+.banner-cliente .banner-ornamento { opacity: .16; }
+
+/* Tipografia, formulário e estados da tela. */
+.sobretitulo, .numero-cartao { display: inline-block; color: var(--pedra); font-size: 10px; font-weight: 700; letter-spacing: .18em; text-transform: uppercase; }
+.titulo-secao { margin-bottom: 28px; }
+.titulo-secao h2, .cabecalho-projetos h2, .cabecalho-agenda h2 { margin: 8px 0 0; font: 700 clamp(38px, 4.5vw, 54px)/1 'Cormorant Garamond', Georgia, serif; letter-spacing: -.02em; }
+.titulo-secao p, .cabecalho-agenda p { max-width: 580px; margin: 12px 0 0; color: var(--pedra); font-size: 14px; line-height: 1.7; }
+.painel-formulario { width: min(760px, 100%); margin: 4px auto; }
+.voltar { margin: 0 0 24px; padding: 8px 0; border: 0; background: transparent; color: var(--pedra); font-size: 13px; }
+.voltar:hover { color: var(--ferrugem); }
+.formulario { padding: 26px; display: grid; gap: 17px; border: 1px solid rgb(22 18 15 / 10%); border-radius: 24px; background: var(--papel); }
+.formulario label, .filtro-etapa { color: var(--tinta); font-size: 12px; font-weight: 700; }
+.formulario input, .formulario textarea, .formulario select { width: 100%; min-height: 50px; padding: 13px 15px; border: 1px solid rgb(22 18 15 / 14%); border-radius: 14px; background: var(--creme); color: var(--tinta); font-size: 13px; outline: none; transition: border-color 180ms ease, background 180ms ease; }
+.formulario textarea { min-height: 140px; resize: vertical; }
+.formulario input:focus, .formulario textarea:focus, .formulario select:focus { border-color: var(--ferrugem); background: white; }
+.formulario input::placeholder, .formulario textarea::placeholder { color: var(--pedra); opacity: .75; }
+.linha-campos { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+.linha-campos > div { display: flex; flex-direction: column; gap: 9px; }
+.modo-tatuador .formulario { border-color: var(--linha); background: var(--carvao); }
+.modo-tatuador .formulario label { color: var(--creme); }
+.modo-tatuador .formulario input, .modo-tatuador .formulario textarea, .modo-tatuador .formulario select { border-color: var(--linha); background: #211b15; color: var(--creme); }
+.modo-tatuador .formulario input::placeholder, .modo-tatuador .formulario textarea::placeholder { color: var(--fumaca); }
+
+/* Botões arredondados, estados e mensagens mantêm as cores de destaque do protótipo. */
+.botao { min-height: 46px; padding: 0 18px; display: inline-flex; align-items: center; justify-content: center; gap: 10px; border: 1px solid transparent; border-radius: 999px; font-size: 12px; font-weight: 700; transition: transform 180ms ease, background 180ms ease, border-color 180ms ease; }
+.botao:hover:not(:disabled) { transform: translateY(-1px); }
 .botao:disabled { cursor: wait; opacity: .65; }
-.botao-claro { background: transparent; color: var(--tinta); }
-.botao-claro:hover { background: var(--tinta); color: white; }
-.painel-arte { position: relative; min-height: 570px; overflow: hidden; background: var(--papel-claro); }
-.painel-arte::before { content: ''; position: absolute; inset: 0; z-index: 1; background: linear-gradient(180deg, rgb(23 19 15 / 2%) 46%, rgb(23 19 15 / 62%) 100%); }
-.arte-imagem { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 34%; mix-blend-mode: multiply; opacity: .83; }
-.arte-texto { position: absolute; z-index: 2; left: 26px; top: 25px; right: 20px; display: flex; flex-direction: column; color: var(--tinta); }
-.arte-texto span { color: var(--rosa); font-size: 10px; font-weight: 700; letter-spacing: .2em; }
-.arte-texto strong { margin-top: 12px; font-family: 'Cormorant Garamond', Georgia, serif; font-size: clamp(36px, 4.4vw, 61px); font-weight: 700; line-height: .98; }
-.arte-texto em { color: var(--rosa); font-style: normal; }
-.arte-legenda { position: absolute; z-index: 2; bottom: 19px; left: 20px; right: 20px; display: flex; justify-content: space-between; color: white; font-size: 9px; font-weight: 600; letter-spacing: .13em; }
-.cabecalho-agenda { display: flex; align-items: end; justify-content: space-between; gap: 20px; }
-.filtro-etapa { width: 190px; display: flex; flex-direction: column; gap: 8px; font-size: 11px; }
-.grade-tatuagens { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
-.cartao-tatuagem { min-height: 168px; padding: 18px; display: flex; flex-direction: column; align-items: flex-start; gap: 10px; border: 1px solid var(--linha); background: var(--papel-claro); color: var(--tinta); text-align: left; }
-button.cartao-tatuagem { width: 100%; }
-.cartao-selecionado { border-color: var(--rosa); }
-.cartao-tatuagem strong { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 22px; font-weight: 600; }
-.cartao-tatuagem > span:not(.numero-cartao):not(.selo-etapa) { color: var(--cinza); font-size: 12px; }
-.selo-etapa { margin-top: auto; display: inline-flex; align-items: center; gap: 7px; color: var(--rosa); font-size: 10px; font-weight: 600; }
-.selo-etapa i { width: 6px; height: 6px; display: inline-block; border-radius: 50%; background: currentColor; }
-.historico { margin-top: 28px; padding: 22px 0 0; border-top: 1px solid var(--linha); }
-.historico-cabecalho { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 20px; }
-.historico-cabecalho h3 { margin: 7px 0 0; font: 600 26px 'Cormorant Garamond', Georgia, serif; }
-.item-historico { display: flex; gap: 13px; padding: 13px 0; border-top: 1px solid var(--linha); }
-.ponto-historico { width: 8px; height: 8px; flex: 0 0 8px; margin-top: 5px; border-radius: 50%; background: var(--rosa); }
+.botao-escuro, .botao-ember { background: var(--brasa); color: var(--tinta); }
+.botao-escuro:hover:not(:disabled), .botao-ember:hover { background: var(--brasa-clara); }
+.botao-claro { border-color: var(--linha); background: transparent; color: var(--creme); }
+.botao-claro:hover { border-color: var(--brasa); background: rgb(245 238 225 / 6%); }
+.aviso { margin: 4px 0; padding: 13px 15px; border-radius: 12px; font-size: 12px; line-height: 1.55; }
+.aviso-erro { border: 1px solid rgb(223 118 95 / 35%); background: #351c16; color: #ffd6c9; }
+.aviso-sucesso { border: 1px solid rgb(145 161 110 / 35%); background: #22291b; color: #d5e2bd; }
+.modo-cliente .aviso-erro { border-color: rgb(163 61 50 / 30%); background: #f5e6e3; color: #762d25; }
+.modo-cliente .aviso-sucesso { border-color: rgb(93 128 96 / 30%); background: #e9efe6; color: #36543a; }
+.estado { margin: 0; padding: 18px 0; color: var(--fumaca); font-size: 13px; line-height: 1.65; }
+.modo-cliente .estado { color: var(--pedra); }
+.estado-vazio { padding: 25px; border: 1px dashed var(--linha); border-radius: 18px; }
+
+/* Cartões e histórico da cliente usam a divisão creme e carvão do Figma. */
+.cabecalho-projetos { margin: 8px 0 22px; display: flex; align-items: end; justify-content: space-between; gap: 20px; }
+.cabecalho-projetos p { margin: 0 0 5px; color: var(--pedra); font-size: 13px; }
+.grade-cliente { display: grid; grid-template-columns: minmax(0, 1fr); align-items: start; gap: 22px; }
+.lista-projetos { min-width: 0; padding: 24px; overflow: hidden; border: 1px solid var(--linha); border-radius: 24px; background: rgb(22 18 15 / 78%); color: var(--creme); backdrop-filter: blur(8px); }
+.lista-projetos h3 { margin: 0 0 18px; font: 700 30px/1 'Cormorant Garamond', Georgia, serif; }
+.lista-projetos .estado { color: var(--fumaca); }
+.lista-projetos .estado-vazio { border-color: rgb(245 238 225 / 18%); }
+.grade-tatuagens { display: grid; grid-template-columns: 1fr; gap: 12px; }
+.cartao-tatuagem { min-width: 0; min-height: 84px; padding: 16px; display: grid; grid-template-columns: 50px minmax(0, 1fr) auto 18px; grid-template-rows: auto auto; align-items: center; column-gap: 14px; row-gap: 3px; border: 1px solid var(--linha); border-radius: 18px; background: rgb(22 18 15 / 82%); color: var(--creme); text-align: left; }
+button.cartao-tatuagem { width: 100%; cursor: pointer; }
+.cartao-selecionado { border-color: var(--brasa); box-shadow: 0 0 0 1px var(--brasa); }
+.cartao-tatuagem strong { grid-column: 2; grid-row: 1; font: 700 16px/1.2 'DM Sans', sans-serif; }
+.cartao-tatuagem .numero-cartao { grid-column: 2; grid-row: 1; margin-left: 138px; color: var(--fumaca); letter-spacing: 0; text-transform: none; }
+.cartao-tatuagem > span:not(.numero-cartao):not(.selo-etapa) { grid-column: 2; grid-row: 2; color: var(--fumaca); font-size: 14px; }
+.cartao-tatuagem::before { content: attr(data-initials); grid-column: 1; grid-row: 1 / span 2; width: 48px; height: 48px; display: grid; place-items: center; border-radius: 12px; background: var(--ferrugem); color: var(--creme); font: 700 18px 'Cormorant Garamond', Georgia, serif; }
+.selo-etapa { width: fit-content; display: inline-flex; align-items: center; gap: 7px; color: var(--ferrugem); font-size: 11px; font-weight: 700; }
+.selo-etapa i { width: 7px; height: 7px; display: inline-block; border-radius: 50%; background: currentColor; }
+.painel-linha-tempo { position: relative; isolation: isolate; min-height: 430px; padding: 26px; overflow: hidden; border: 0; border-radius: 24px; background: var(--creme); color: var(--tinta); }
+.painel-linha-tempo::before { content: ''; position: absolute; z-index: -1; inset: 0; background: url('/imagens/rosa-cranio.jfif') center 45% / contain no-repeat; opacity: .2; mix-blend-mode: multiply; pointer-events: none; }
+.historico-cabecalho { min-height: 60px; margin: -26px -26px 20px; padding: 10px 26px; display: flex; justify-content: space-between; align-items: center; gap: 16px; background: linear-gradient(90deg, rgb(22 18 15 / 76%), rgb(22 18 15 / 15%)), url('/imagens/rosa-cranio.jfif') center 38% / cover; color: var(--creme); }
+.historico-cabecalho h3 { margin: 8px 0 0; font: 700 30px/1.05 'Cormorant Garamond', Georgia, serif; }
+.historico-cabecalho p { margin: 5px 0 0; color: rgb(245 238 225 / 78%); font-size: 14px; }
+.icone-historico { color: var(--ferrugem); font-size: 24px; }
+.etapa-historico { margin: 0 0 12px; }
+.historico-cabecalho .etapa-historico { margin: 0; padding: 6px 11px; border: 1px solid rgb(83 102 55 / 28%); border-radius: 999px; color: var(--oliva); background: rgb(83 102 55 / 12%); }
+.divisor-historico { margin: 0 0 13px; padding-bottom: 12px; border-bottom: 1px solid rgb(22 18 15 / 12%); color: var(--pedra); }
+.item-historico { display: flex; gap: 13px; padding: 11px 0; border-top: 0; }
+.ponto-historico { width: 9px; height: 9px; flex: 0 0 9px; margin-top: 5px; border-radius: 50%; background: var(--oliva); }
 .item-historico strong { font-size: 12px; }
-.item-historico p { margin: 5px 0 0; color: var(--cinza); font-size: 12px; }
-.estado { padding: 15px 0; color: var(--cinza); font-size: 13px; line-height: 1.6; }
-.estado-vazio { padding: 20px; border: 1px dashed var(--linha); }
-.aviso { margin: 5px 0; padding: 12px 14px; font-size: 12px; line-height: 1.55; }
-.aviso-erro { border-left: 3px solid #a33d32; background: #f5e6e3; color: #762d25; }
-.aviso-sucesso { border-left: 3px solid #5d8060; background: #e9efe6; color: #36543a; }
-.voltar { margin: 0 0 28px; padding: 0; border: 0; background: none; color: var(--cinza); font-size: 12px; }
-.rodape { min-height: 52px; padding: 0 6.2vw; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--linha); color: var(--cinza); font-size: 9px; letter-spacing: .13em; }
+.item-historico p { margin: 5px 0 0; color: var(--pedra); font-size: 12px; line-height: 1.5; }
 
-/* Usa o fundo escuro, o cobre e a navegação lateral da área de gestão no Figma. */
-.modo-tatuador {
-  --tinta: #f1e8d8;
-  --papel: #100d0a;
-  --papel-claro: #211b15;
-  --cinza: #aaa296;
-  --linha: #49382a;
-  --rosa: #ed833d;
-}
-.modo-tatuador .barra-superior { position: fixed; inset: 0 auto 0 0; width: 250px; min-height: 100vh; padding: 28px 20px 24px; flex-direction: column; align-items: flex-start; justify-content: flex-start; gap: 40px; border: 0; border-right: 1px solid var(--linha); background: #18120d; }
-.modo-tatuador .marca img { width: 184px; }
-.modo-tatuador .navegacao { width: 100%; flex-direction: column; align-self: stretch; gap: 9px; }
-.modo-tatuador .navegacao button { min-height: 46px; padding: 0 14px; border-radius: 10px; text-align: left; }
-.modo-tatuador .navegacao button.ativo { background: rgb(245 238 225 / 8%); color: #f1e8d8; }
-.modo-tatuador .navegacao button.ativo::after { top: 8px; right: auto; bottom: 8px; left: 0; width: 2px; height: auto; }
-.modo-tatuador .seletor-perfil { margin-top: auto; width: 100%; padding: 16px 12px 0; border-top: 1px solid var(--linha); }
-.modo-tatuador .seletor-perfil select { max-width: 100%; color: var(--tinta); }
-.modo-tatuador .conteudo-principal { width: min(1440px, calc(100% - 322px)); margin: 34px 36px 46px 286px; grid-template-columns: minmax(0, 1fr); gap: 28px; }
-.modo-tatuador .coluna-conteudo { grid-row: 2; padding-top: 0; }
-.modo-tatuador .painel-arte { grid-row: 1; min-height: 300px; border: 1px solid var(--linha); border-radius: 26px; background-color: #21170f; background-image: repeating-linear-gradient(135deg, transparent, transparent 12px, rgb(245 238 225 / 2%) 12px, rgb(245 238 225 / 2%) 13px); }
-.modo-tatuador .painel-arte::before { background: linear-gradient(90deg, rgb(16 13 10 / 10%), rgb(16 13 10 / 15%)); }
-.modo-tatuador .arte-imagem { object-fit: contain; object-position: right center; padding: 12px 6%; filter: invert(1); mix-blend-mode: screen; opacity: .2; }
-.modo-tatuador .arte-texto { top: 48px; left: clamp(25px, 5vw, 72px); max-width: 700px; }
-.modo-tatuador .arte-texto span { color: var(--rosa); }
-.modo-tatuador .arte-texto strong { max-width: 660px; color: #f1e8d8; font-size: clamp(48px, 6vw, 76px); }
-.modo-tatuador .arte-texto em { color: var(--rosa); }
-.modo-tatuador .arte-legenda { color: var(--cinza); }
-.modo-tatuador .cartao-tatuagem { border-radius: 14px; border-color: var(--linha); background: #211b15; }
-.modo-tatuador .cartao-selecionado { border-color: var(--rosa); }
-.modo-tatuador .formulario input, .modo-tatuador .formulario textarea, .modo-tatuador .formulario select, .modo-tatuador .filtro-etapa select { border-radius: 10px; background: #211b15; color: var(--tinta); }
-.modo-tatuador .aviso-erro { border-color: #df765f; background: #351c16; color: #ffd6c9; }
-.modo-tatuador .aviso-sucesso { border-color: #91a16e; background: #22291b; color: #d5e2bd; }
-.modo-tatuador .rodape { display: none; }
+/* A agenda do Vitor apresenta filtros em pílulas e cartões escuros de projeto. */
+.cabecalho-agenda { margin: 8px 0 22px; display: flex; flex-direction: column; gap: 20px; }
+.cabecalho-agenda .sobretitulo { color: var(--brasa); }
+.cabecalho-agenda p { color: var(--fumaca); }
+.filtros-etapa { display: flex; align-items: center; gap: 7px; overflow-x: auto; padding: 2px 0 7px; }
+.filtros-etapa button { min-height: 36px; flex: 0 0 auto; padding: 0 14px; border: 1px solid transparent; border-radius: 999px; background: transparent; color: var(--fumaca); font-size: 11px; font-weight: 600; white-space: nowrap; }
+.filtros-etapa button:hover { background: rgb(245 238 225 / 6%); color: var(--creme); }
+.filtros-etapa button.filtro-ativo { border-color: rgb(217 137 70 / 35%); background: var(--brasa); color: var(--tinta); }
+.modo-cliente .filtros-etapa button { color: var(--pedra); }
+.grade-agenda { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.cartao-agenda { min-height: 210px; border-color: var(--linha); background: var(--carvao); color: var(--creme); }
+.cartao-agenda strong { font-size: 26px; }
+.cartao-agenda > span:not(.numero-cartao):not(.selo-etapa) { color: var(--fumaca); }
+.cartao-agenda .selo-etapa { color: var(--brasa); }
+.cartao-agenda-topo { width: 100%; display: flex; align-items: center; gap: 12px; }
+.cartao-inicial { width: 46px; height: 46px; flex: 0 0 46px; display: grid; place-items: center; border-radius: 13px; background: rgb(217 137 70 / 17%); color: var(--brasa); font: 700 18px 'Cormorant Garamond', Georgia, serif; }
+.cartao-agenda .botao { margin-top: auto; align-self: flex-start; }
+.modo-tatuador .estado-vazio { border-color: var(--linha); }
 
-/* Mantém o painel e os formulários da cliente em papel claro com acentos de ferrugem. */
-.modo-cliente .painel-arte { border-radius: 26px; background-color: #813d2b; background-image: radial-gradient(circle at 72% 45%, rgb(23 19 15 / 22%), transparent 38%), repeating-radial-gradient(circle at 100% 0%, transparent 0, transparent 17px, rgb(239 231 216 / 7%) 18px, transparent 19px); }
-.modo-cliente .painel-arte::before { background: linear-gradient(90deg, rgb(78 31 22 / 24%), rgb(78 31 22 / 8%)); }
-.modo-cliente .arte-imagem { object-fit: contain; padding: 10px; filter: invert(1); mix-blend-mode: screen; opacity: .17; }
-.modo-cliente .arte-texto { top: auto; bottom: 42px; left: 34px; max-width: 440px; color: #f5eee1; }
-.modo-cliente .arte-texto span { color: #e6b879; }
-.modo-cliente .arte-texto strong { font-size: clamp(40px, 4vw, 58px); }
-.modo-cliente .arte-legenda { display: none; }
+/* Em telas pequenas, a navegação da cliente fica fixa no rodapé como no protótipo. */
+.navegacao-mobile { display: none; }
+.rodape { display: none; }
 
-/* Empilha os painéis e amplia os campos para o uso no celular. */
-@media (max-width: 760px) {
-  .barra-superior { min-height: 72px; padding: 0 20px; gap: 13px; }
-  .marca { gap: 7px; font-size: 8px; }
-  .marca-simbolo { font-size: 25px; }
-  .navegacao { gap: 13px; }
-  .navegacao button { font-size: 10px; }
-  .seletor-perfil span { display: none; }
-  .seletor-perfil select { width: 92px; font-size: 10px; }
-  .conteudo-principal { width: auto; margin: 30px 20px 38px; grid-template-columns: 1fr; gap: 30px; }
-  .coluna-conteudo { padding-top: 0; }
-  .titulo-secao { margin-bottom: 24px; }
-  .titulo-secao h2 { font-size: 39px; }
-  .titulo-secao p { font-size: 13px; }
-  .painel-arte { min-height: 290px; max-height: 390px; grid-row: 1; background-position: center 35%; }
-  .linha-campos { grid-template-columns: 1fr; gap: 11px; }
-  .cabecalho-agenda { align-items: flex-start; flex-direction: column; }
-  .filtro-etapa { width: 100%; }
-  .grade-tatuagens { grid-template-columns: 1fr; }
-  .cartao-tatuagem { min-height: 150px; }
-  .rodape { padding: 14px 20px; gap: 18px; font-size: 8px; }
-
-  /* Transforma a navegação da cliente na barra inferior do desenho mobile. */
-  .modo-cliente .barra-superior { min-height: 68px; }
-  .modo-cliente .marca img { width: 145px; }
-  .modo-cliente .navegacao { position: fixed; inset: auto 0 0; z-index: 35; min-height: 70px; padding: 10px 14px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; border-top: 1px solid var(--linha); background: rgb(245 238 225 / 96%); backdrop-filter: blur(16px); }
-  .modo-cliente .navegacao button { min-height: 46px; padding: 0 10px; border-radius: 999px; }
-  .modo-cliente .navegacao button.ativo { background: var(--rosa); color: var(--tinta); }
-  .modo-cliente .navegacao button.ativo::after { display: none; }
-  .modo-cliente .conteudo-principal { margin-bottom: 100px; }
-
-  /* Recolhe a barra lateral do tatuador em cabeçalho para telas estreitas. */
-  .modo-tatuador .barra-superior { position: sticky; inset: auto; width: 100%; min-height: 72px; padding: 0 18px; flex-direction: row; align-items: center; justify-content: space-between; gap: 10px; border-right: 0; border-bottom: 1px solid var(--linha); }
-  .modo-tatuador .marca img { width: 140px; }
-  .modo-tatuador .navegacao { width: auto; flex-direction: row; align-self: stretch; gap: 10px; }
-  .modo-tatuador .navegacao button { min-height: 0; padding: 0 5px; border-radius: 0; font-size: 11px; }
-  .modo-tatuador .navegacao button.ativo { background: transparent; }
-  .modo-tatuador .navegacao button.ativo::after { top: auto; right: 0; bottom: -1px; left: 0; width: auto; height: 2px; }
+@media (max-width: 960px) {
+  .modo-tatuador .barra-superior { position: sticky; inset: auto; width: 100%; min-height: 76px; padding: 0 20px; flex-direction: row; align-items: center; justify-content: space-between; gap: 12px; border-right: 0; border-bottom: 1px solid var(--linha); }
+  .modo-tatuador .navegacao { width: auto; min-height: 0; margin-left: auto; }
+  .modo-tatuador .navegacao button { width: auto; }
   .modo-tatuador .seletor-perfil { width: auto; margin: 0; padding: 0; border: 0; }
-  .modo-tatuador .seletor-perfil select { width: 82px; font-size: 10px; }
-  .modo-tatuador .conteudo-principal { width: auto; margin: 22px 18px 34px; grid-template-columns: 1fr; gap: 22px; }
-  .modo-tatuador .coluna-conteudo { grid-row: 2; }
-  .modo-tatuador .painel-arte { grid-row: 1; min-height: 205px; border-radius: 20px; }
-  .modo-tatuador .arte-texto { top: 28px; left: 22px; }
-  .modo-tatuador .arte-texto strong { font-size: clamp(38px, 10vw, 55px); }
+  .modo-tatuador .conteudo-principal { width: min(900px, calc(100% - 40px)); margin: 0 auto; padding: 28px 0 44px; }
 }
 
-/* Ajusta o espaço vertical em computadores com janela baixa. */
-@media (min-width: 761px) and (max-height: 760px) {
-  .conteudo-principal { margin-top: 30px; }
-  .painel-arte { min-height: 470px; }
+@media (max-width: 680px) {
+  .barra-superior { min-height: 70px; padding: 0 15px; gap: 10px; }
+  .marca { gap: 8px; padding: 4px; }
+  .marca-simbolo { width: 34px; height: 34px; }
+  .marca-texto strong { font-size: 21px; }
+  .marca-texto small { margin-top: 3px; font-size: 8px; }
+  .modo-cliente .seletor-perfil { gap: 7px; }
+  .avatar-perfil { width: 34px; height: 34px; flex-basis: 34px; font-size: 10px; }
+  .dados-perfil { font-size: 10px; }
+  .dados-perfil select { max-width: 108px; font-size: 10px; }
+  .modo-cliente .dados-perfil > span { display: none; }
+  .modo-cliente .navegacao { display: none; }
+  .modo-tatuador .barra-superior { min-height: 70px; padding: 0 12px; }
+  .modo-tatuador .navegacao { display: none; }
+  .modo-tatuador .dados-perfil > span { display: none; }
+  .modo-tatuador .dados-perfil select { max-width: 90px; }
+  .conteudo-principal, .modo-tatuador .conteudo-principal { width: calc(100% - 32px); margin: 0 auto; padding: 24px 0 104px; gap: 23px; }
+  .banner-estudio, .banner-cliente { min-height: 248px; padding: 25px 23px; border-radius: 22px; }
+  .banner-cliente { min-height: 278px; }
+  .banner-conteudo h1 { font-size: clamp(43px, 12vw, 58px); }
+  .banner-conteudo p { max-width: 400px; font-size: 12px; }
+  .banner-selo { width: 50px; height: 50px; flex-basis: 50px; margin-left: 8px; font-size: 12px; }
+  .cabecalho-projetos { align-items: flex-start; flex-direction: column; gap: 7px; }
+  .cabecalho-projetos p { font-size: 12px; }
+  .grade-cliente { grid-template-columns: 1fr; gap: 15px; }
+  .cartao-tatuagem { grid-template-columns: 42px minmax(0, 1fr) auto; min-height: 76px; padding: 12px; column-gap: 10px; }
+  .cartao-tatuagem::before { width: 42px; height: 42px; }
+  .cartao-tatuagem .numero-cartao { margin-left: 0; grid-column: 2; grid-row: 2; font-size: 10px; }
+  .cartao-tatuagem > span:not(.numero-cartao):not(.selo-etapa) { display: none; }
+  .cartao-tatuagem .selo-etapa { grid-column: 3; grid-row: 1 / span 2; font-size: 10px; }
+  .historico-cabecalho { margin: -20px -20px 18px; padding: 10px 20px; }
+  .lista-projetos, .painel-linha-tempo { padding: 20px; border-radius: 20px; }
+  .grade-agenda { grid-template-columns: 1fr; }
+  .linha-campos { grid-template-columns: 1fr; gap: 15px; }
+  .painel-formulario { margin: 0; }
+  .formulario { padding: 20px; gap: 14px; border-radius: 20px; }
+  .titulo-secao h2, .cabecalho-projetos h2, .cabecalho-agenda h2 { font-size: 42px; }
+  .filtros-etapa { margin-right: -16px; padding-right: 16px; }
+  .navegacao-mobile { position: fixed; inset: auto 0 0; z-index: 35; padding: 10px 12px calc(10px + env(safe-area-inset-bottom)); display: grid; grid-template-columns: 1fr 1fr; gap: 8px; border-top: 1px solid rgb(22 18 15 / 10%); background: rgb(237 232 219 / 96%); backdrop-filter: blur(16px); }
+  .navegacao-mobile button { min-height: 46px; padding: 0 10px; display: flex; align-items: center; justify-content: center; gap: 7px; border: 0; border-radius: 999px; background: transparent; color: var(--pedra); font-size: 12px; font-weight: 700; }
+  .navegacao-mobile button.ativo { background: var(--brasa); color: var(--tinta); }
+}
+
+/* Ajustes de composição a partir das telas de referência do Figma. */
+.modo-cliente .barra-superior {
+  min-height: 82px;
+  border-bottom-color: rgb(75 49 35 / 12%);
+  background: rgb(237 232 219 / 94%);
+}
+
+.modo-cliente .marca-simbolo {
+  width: 46px;
+  height: 46px;
+  border-color: transparent;
+  background: url('/imagens/logo-colorido.svg') center / contain no-repeat;
+}
+
+.modo-cliente .marca-simbolo svg { display: none; }
+.modo-cliente .conteudo-principal { padding-top: 40px; }
+.modo-cliente .aplicativo { background-image: url('/imagens/ornamento.jfif'); }
+
+.modo-cliente .banner-cliente {
+  min-height: 360px;
+  padding: 48px 60px;
+  border-radius: 28px;
+  background-color: var(--ferrugem);
+  background-image: linear-gradient(90deg, rgb(151 65 36 / 96%), rgb(151 65 36 / 76%)), url('/imagens/ornamento.jfif');
+  background-position: center, 70% 45%;
+  background-size: cover, 560px;
+}
+
+.modo-cliente .banner-cliente .banner-ornamento { opacity: .12; }
+.modo-cliente .banner-cliente .banner-conteudo h1 { font-size: clamp(56px, 6vw, 82px); }
+.modo-cliente .banner-cliente .botao-ember { margin-top: 26px; min-height: 50px; padding-inline: 24px; }
+
+.modo-cliente .grade-cliente {
+  grid-template-columns: minmax(0, 1.08fr) minmax(360px, .92fr);
+  gap: 24px;
+}
+
+.modo-cliente .lista-projetos {
+  min-height: 390px;
+  padding: 0;
+  overflow: hidden;
+  border: 0;
+  border-radius: 25px;
+  background: #17120f;
+}
+
+.modo-cliente .lista-projetos h3 { display: none; }
+.modo-cliente .lista-projetos > .estado { padding: 24px; }
+.modo-cliente .lista-projetos .estado-vazio { margin: 24px; border-color: rgb(245 238 225 / 22%); }
+.modo-cliente .grade-tatuagens { gap: 0; }
+
+.modo-cliente .cartao-tatuagem {
+  min-height: 390px;
+  padding: 220px 28px 26px;
+  grid-template-columns: 1fr auto;
+  grid-template-rows: auto auto auto;
+  align-content: end;
+  gap: 10px 16px;
+  border: 0;
+  border-radius: 25px;
+  background: linear-gradient(0deg, #17120f 0%, rgb(23 18 15 / 95%) 27%, transparent 72%), url('/imagens/rosa-cranio.jfif') center 28% / cover no-repeat;
+}
+
+.modo-cliente .cartao-tatuagem::before { display: none; }
+.modo-cliente .cartao-tatuagem strong { grid-column: 1; grid-row: 1; font: 700 36px/1.05 'Cormorant Garamond', Georgia, serif; }
+.modo-cliente .cartao-tatuagem .numero-cartao { grid-column: 1; grid-row: 2; margin: 0; color: var(--areia); }
+.modo-cliente .cartao-tatuagem > span:not(.numero-cartao):not(.selo-etapa) { display: block; grid-column: 1; grid-row: 3; }
+.modo-cliente .cartao-tatuagem .selo-etapa { grid-column: 2; grid-row: 1; color: var(--brasa); }
+.modo-cliente .painel-linha-tempo { min-height: 390px; padding: 30px; border: 1px solid rgb(107 77 50 / 12%); background-color: #f5eee3; }
+.modo-cliente .painel-linha-tempo::before { opacity: .27; background-position: center; background-size: 88% auto; }
+.modo-cliente .historico-cabecalho { min-height: auto; margin: 0 0 20px; padding: 0 0 18px; display: block; border-bottom: 1px solid rgb(22 18 15 / 13%); background: transparent; color: var(--tinta); }
+.modo-cliente .historico-cabecalho h3 { margin-top: 7px; font-size: 32px; }
+.modo-cliente .historico-cabecalho p { color: var(--pedra); }
+.modo-cliente .historico-cabecalho .etapa-historico { margin-top: 12px; }
+.modo-cliente .divisor-historico { margin-top: 0; border: 0; }
+.modo-cliente .item-historico { position: relative; padding: 15px 0 15px 22px; border-left: 1px solid rgb(83 102 55 / 32%); }
+.modo-cliente .ponto-historico { position: absolute; left: -5px; top: 18px; box-shadow: 0 0 0 4px #f5eee3; }
+
+.modo-tatuador .banner-estudio {
+  min-height: 350px;
+  padding: 48px 54px;
+  border-radius: 26px;
+  background-image: linear-gradient(90deg, rgb(23 18 15 / 96%), rgb(23 18 15 / 58%)), url('/imagens/ornamento.jfif');
+  background-position: center, 72% 45%;
+  background-size: cover, 560px;
+}
+
+.modo-tatuador .banner-ornamento { opacity: .12; }
+.modo-tatuador .banner-conteudo h1 { font-size: clamp(60px, 6vw, 86px); }
+.modo-tatuador .banner-conteudo p { font-size: 15px; }
+.modo-tatuador .cabecalho-agenda { margin-bottom: 18px; flex-direction: row; align-items: end; justify-content: space-between; gap: 24px; }
+.modo-tatuador .filtros-etapa { max-width: 60%; }
+.modo-tatuador .grade-agenda { grid-template-columns: 1fr; gap: 10px; }
+.modo-tatuador .cartao-agenda { min-height: 92px; padding: 17px 20px; grid-template-columns: 48px minmax(0, 1fr) auto; grid-template-rows: auto auto; }
+.modo-tatuador .cartao-agenda-topo { grid-row: 1 / span 2; grid-column: 1; }
+.modo-tatuador .cartao-inicial { width: 44px; height: 44px; }
+.modo-tatuador .cartao-agenda .numero-cartao { display: none; }
+.modo-tatuador .cartao-agenda strong { grid-row: 1; grid-column: 2; font: 700 18px/1.2 'DM Sans', sans-serif; }
+.modo-tatuador .cartao-agenda > span:not(.numero-cartao):not(.selo-etapa) { grid-row: 2; grid-column: 2; font-size: 12px; }
+.modo-tatuador .cartao-agenda .selo-etapa { grid-row: 1 / span 2; grid-column: 3; }
+.modo-tatuador .cartao-agenda .botao { grid-row: 1 / span 2; grid-column: 4; margin: 0; }
+
+@media (max-width: 960px) {
+  .modo-cliente .grade-cliente { grid-template-columns: minmax(0, 1fr) minmax(300px, .9fr); }
+  .modo-tatuador .banner-estudio { min-height: 300px; }
+}
+
+@media (max-width: 680px) {
+  .modo-tatuador .navegacao,
+  .modo-tatuador .selo-estudio { display: none; }
+  .modo-cliente .barra-superior { min-height: 70px; }
+  .modo-cliente .conteudo-principal { padding-top: 24px; }
+  .modo-cliente .banner-cliente { min-height: 300px; padding: 28px 24px; }
+  .modo-cliente .banner-cliente .banner-conteudo h1 { font-size: clamp(46px, 12vw, 62px); }
+  .modo-cliente .grade-cliente { grid-template-columns: 1fr; }
+  .modo-cliente .cartao-tatuagem { min-height: 340px; padding: 190px 22px 22px; }
+  .modo-cliente .painel-linha-tempo { min-height: 340px; }
+  .modo-tatuador .banner-estudio { min-height: 285px; padding: 27px 23px; }
+  .modo-tatuador .banner-conteudo h1 { font-size: clamp(46px, 12vw, 62px); }
+  .modo-tatuador .cabecalho-agenda { align-items: flex-start; flex-direction: column; }
+  .modo-tatuador .filtros-etapa { max-width: calc(100vw - 32px); }
+  .modo-tatuador .cartao-agenda { grid-template-columns: 42px minmax(0, 1fr) auto; padding: 13px; column-gap: 10px; }
+  .modo-tatuador .cartao-agenda .botao { grid-column: 2 / span 2; grid-row: 3; margin-top: 10px; }
+  .modo-tatuador .cartao-agenda .selo-etapa { grid-column: 3; font-size: 10px; }
+}
+
+/* Em prévias estreitas, a barra lateral vira cabeçalho e a página não fica cortada. */
+@media (max-width: 680px) {
+  .aplicativo.modo-tatuador > .barra-superior {
+    position: sticky;
+    inset: auto;
+    width: 100%;
+    min-height: 68px;
+    padding: 0 14px;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    border-right: 0;
+    border-bottom: 1px solid var(--linha);
+  }
+
+  .aplicativo.modo-tatuador > .barra-superior .marca { padding: 3px 0; gap: 8px; }
+  .aplicativo.modo-tatuador > .barra-superior .marca-simbolo { width: 34px; height: 34px; }
+  .aplicativo.modo-tatuador > .barra-superior .marca-texto strong { font-size: 20px; }
+  .aplicativo.modo-tatuador > .barra-superior .marca-texto small { font-size: 7px; letter-spacing: .22em; }
+  .aplicativo.modo-tatuador > .barra-superior .seletor-perfil { width: auto; margin: 0; padding: 0; border: 0; gap: 7px; }
+  .aplicativo.modo-tatuador > .barra-superior .dados-perfil select { max-width: 92px; }
+  .aplicativo.modo-tatuador > .conteudo-principal {
+    width: calc(100% - 32px);
+    max-width: 100%;
+    margin: 0 auto;
+    padding: 22px 0 40px;
+  }
 }
