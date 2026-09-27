@@ -8,7 +8,9 @@ const PERFIS = [
 ];
 
 const TIPOS_DE_PASSO = [
+  { valor: "desenho_enviado", nome: "Desenho enviado para aprovação" },
   { valor: "desenho_aprovado", nome: "Desenho aprovado" },
+  { valor: "desenho_reprovado", nome: "Ajustes solicitados no desenho" },
   { valor: "sessao", nome: "Sessão" },
   { valor: "retoque_combinado", nome: "Retoque combinado" },
   { valor: "retoque", nome: "Retoque realizado" },
@@ -18,6 +20,8 @@ const TIPOS_DE_PASSO = [
 function nomeDaEtapa(etapa) {
   const nomes = {
     pedida: "Pedido recebido",
+    "aguardando aprovação": "Aguardando aprovação da cliente",
+    "ajustes no desenho": "Ajustes no desenho",
     "desenho aprovado": "Desenho aprovado",
     "em sessões": "Em sessões",
     "aguardando retoque": "Aguardando retoque",
@@ -30,6 +34,8 @@ function nomeDaEtapa(etapa) {
 function proximoPassoDaCliente(etapa) {
   const orientacoes = {
     pedida: "Agora, o estúdio vai preparar e aprovar o desenho. Você acompanha a atualização por aqui.",
+    "aguardando aprovação": "O tatuador enviou o desenho. Confira a imagem abaixo e diga se concorda ou se precisa de ajustes.",
+    "ajustes no desenho": "O estúdio vai revisar o desenho com base na sua observação e enviar uma nova versão.",
     "desenho aprovado": "O próximo passo é combinar a primeira sessão com o estúdio.",
     "em sessões": "Podem acontecer outras sessões. Depois da última, aguarde a cicatrização e combine o retoque com o estúdio.",
     "aguardando retoque": "O retoque já foi combinado. Depois da cicatrização, realize o retoque com o estúdio para concluir o projeto.",
@@ -117,6 +123,9 @@ function TelaMinhasTatuagens({ perfil }) {
   const [carregandoPassos, definirCarregandoPassos] = useState(false);
   const [erro, definirErro] = useState("");
   const [erroPassos, definirErroPassos] = useState("");
+  const [observacaoResposta, definirObservacaoResposta] = useState("");
+  const [erroResposta, definirErroResposta] = useState("");
+  const [salvandoResposta, definirSalvandoResposta] = useState(false);
 
   // Atualiza a lista quando o perfil da pessoa muda.
   useEffect(() => {
@@ -144,6 +153,34 @@ function TelaMinhasTatuagens({ perfil }) {
         definirCarregandoPassos(false);
       });
   }
+
+  // Envia a decisão da cliente e atualiza a etapa e o histórico exibidos na tela.
+  function responderDesenho(tipo) {
+    if (tipo === "desenho_reprovado" && !observacaoResposta.trim()) {
+      definirErroResposta("Escreva o que você gostaria que o tatuador ajustasse.");
+      return;
+    }
+    definirErroResposta("");
+    definirSalvandoResposta(true);
+    const observacao = observacaoResposta.trim() || "Desenho aprovado pela cliente.";
+    pedirApi(`/tatuagens/${selecionada.id}/passos`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ tipo, data: new Date().toISOString().slice(0, 10), observacao }),
+    })
+      .then((passo) => {
+        const etapa = tipo === "desenho_aprovado" ? "desenho aprovado" : "ajustes no desenho";
+        const tatuagemAtualizada = { ...selecionada, etapa };
+        definirSelecionada(tatuagemAtualizada);
+        definirTatuagens((atuais) => atuais.map((item) => item.id === tatuagemAtualizada.id ? tatuagemAtualizada : item));
+        definirPassos((atuais) => [...atuais, passo]);
+        definirObservacaoResposta("");
+      })
+      .catch((erroApi) => definirErroResposta(erroApi.message))
+      .finally(() => definirSalvandoResposta(false));
+  }
+
+  const desenhoEnviado = [...passos].reverse().find((passo) => passo.tipo === "desenho_enviado");
 
   return (
     <section className="painel-cliente">
@@ -180,7 +217,18 @@ function TelaMinhasTatuagens({ perfil }) {
             {carregandoPassos && <p className="estado">Carregando o histórico…</p>}
             {erroPassos && <p className="aviso aviso-erro" role="alert">{erroPassos}</p>}
             {!carregandoPassos && !erroPassos && passos.length === 0 && <p className="estado">Nenhum passo registrado ainda. O estúdio atualizará esta linha do tempo.</p>}
-            {!carregandoPassos && !erroPassos && passos.map((passo) => <div className="item-historico" key={passo.id}><span className="ponto-historico" /><div><strong>{TIPOS_DE_PASSO.find((tipo) => tipo.valor === passo.tipo)?.nome || passo.tipo}</strong><p>{passo.data} · {passo.observacao}</p></div></div>)}
+            {!carregandoPassos && !erroPassos && passos.map((passo) => <div className="item-historico" key={passo.id}><span className="ponto-historico" /><div><strong>{TIPOS_DE_PASSO.find((tipo) => tipo.valor === passo.tipo)?.nome || passo.tipo}</strong><p>{passo.data} · {passo.observacao}</p>{passo.imagem && <img className="imagem-desenho-historico" src={passo.imagem} alt="Desenho enviado pelo tatuador" />}</div></div>)}
+            {!carregandoPassos && !erroPassos && selecionada.etapa === "aguardando aprovação" && desenhoEnviado?.imagem && <section className="resposta-desenho">
+              <h4>O que achou do desenho?</h4>
+              <img src={desenhoEnviado.imagem} alt="Desenho enviado pelo tatuador para aprovação" />
+              <label htmlFor="observacao-resposta-desenho">Sua observação</label>
+              <textarea id="observacao-resposta-desenho" value={observacaoResposta} onChange={(evento) => definirObservacaoResposta(evento.target.value)} placeholder="Se precisar de ajustes, conte ao tatuador o que gostaria de mudar." />
+              {erroResposta && <p className="aviso aviso-erro" role="alert">{erroResposta}</p>}
+              <div className="acoes-resposta-desenho">
+                <button className="botao botao-escuro" type="button" disabled={salvandoResposta} onClick={() => responderDesenho("desenho_aprovado")}>Concordo com o desenho</button>
+                <button className="botao botao-claro" type="button" disabled={salvandoResposta} onClick={() => responderDesenho("desenho_reprovado")}>Quero pedir ajustes</button>
+              </div>
+            </section>}
           </>}
         </section>
       </div>
@@ -197,6 +245,8 @@ function TelaAgenda({ aoAbrirFicha, atualizacao, titulo = "Projetos." }) {
   const filtros = [
     { valor: "", nome: "Todas" },
     { valor: "pedida", nome: "Pedida" },
+    { valor: "aguardando aprovação", nome: "Aguardando cliente" },
+    { valor: "ajustes no desenho", nome: "Ajustes no desenho" },
     { valor: "desenho aprovado", nome: "Desenho aprovado" },
     { valor: "em sessões", nome: "Em sessões" },
     { valor: "aguardando retoque", nome: "Aguardando retoque" },
@@ -204,10 +254,12 @@ function TelaAgenda({ aoAbrirFicha, atualizacao, titulo = "Projetos." }) {
   ];
   const prioridadeEtapa = {
     pedida: 0,
-    "desenho aprovado": 1,
-    "em sessões": 2,
-    "aguardando retoque": 3,
-    finalizada: 4,
+    "aguardando aprovação": 1,
+    "ajustes no desenho": 2,
+    "desenho aprovado": 3,
+    "em sessões": 4,
+    "aguardando retoque": 5,
+    finalizada: 6,
   };
 
   // Busca a agenda sempre que o filtro ou um registro de passo muda.
@@ -262,6 +314,8 @@ function TelaProjetos({ atualizacao, aoAbrirFicha }) {
   const [erro, definirErro] = useState("");
   const etapas = [
     { valor: "pedida", titulo: "Pedidos recebidos" },
+    { valor: "aguardando aprovação", titulo: "Aguardando cliente" },
+    { valor: "ajustes no desenho", titulo: "Ajustes no desenho" },
     { valor: "desenho aprovado", titulo: "Desenho aprovado" },
     { valor: "em sessões", titulo: "Em sessões" },
     { valor: "aguardando retoque", titulo: "Aguardando retoque" },
@@ -363,6 +417,8 @@ function TelaPedidoFinalizado({ tatuagem, aoVoltar, nomeRetorno }) {
       .finally(() => definirCarregando(false));
   }, [tatuagem.id]);
 
+  const desenhoEnviado = [...passos].reverse().find((passo) => passo.tipo === "desenho_enviado" && passo.imagem);
+
   return (
     <section className="ficha-finalizada">
       <button className="voltar" type="button" onClick={aoVoltar}>← Voltar para {nomeRetorno}</button>
@@ -374,8 +430,8 @@ function TelaPedidoFinalizado({ tatuagem, aoVoltar, nomeRetorno }) {
       </header>
       <div className="ficha-finalizada-conteudo">
         <figure className="ficha-finalizada-imagem">
-          <img src="/imagens/mao-rosa.png" alt="Desenho de tatuagem de uma mão esquelética segurando uma rosa" />
-          <figcaption>Referência de tatuagem</figcaption>
+          <img src={desenhoEnviado?.imagem || "/imagens/mao-rosa.png"} alt={desenhoEnviado ? "Desenho enviado pelo tatuador" : "Desenho de referência de uma mão esquelética segurando uma rosa"} />
+          <figcaption>{desenhoEnviado ? "Desenho do projeto" : "Referência de tatuagem"}</figcaption>
         </figure>
         <section className="ficha-finalizada-historico" aria-labelledby="titulo-historico-finalizado">
           <span className="sobretitulo">HISTÓRICO DO PROJETO</span>
@@ -398,8 +454,9 @@ function TelaPedidoFinalizado({ tatuagem, aoVoltar, nomeRetorno }) {
 
 // Registra a aprovação do desenho, uma sessão ou um retoque na ficha escolhida.
 function TelaFicha({ tatuagem, aoVoltar, aoSalvar, nomeRetorno = "agenda" }) {
-  const tiposPermitidos = tatuagem.etapa === "pedida"
-    ? TIPOS_DE_PASSO.filter((opcao) => opcao.valor === "desenho_aprovado")
+  const enviarDesenho = tatuagem.etapa === "pedida" || tatuagem.etapa === "ajustes no desenho";
+  const tiposPermitidos = enviarDesenho
+    ? TIPOS_DE_PASSO.filter((opcao) => opcao.valor === "desenho_enviado")
     : tatuagem.etapa === "desenho aprovado"
       ? TIPOS_DE_PASSO.filter((opcao) => opcao.valor === "sessao")
       : tatuagem.etapa === "em sessões"
@@ -408,20 +465,49 @@ function TelaFicha({ tatuagem, aoVoltar, aoSalvar, nomeRetorno = "agenda" }) {
           ? TIPOS_DE_PASSO.filter((opcao) => opcao.valor === "retoque")
           : [];
   const [tipo, definirTipo] = useState(tiposPermitidos[0]?.valor || "");
+  const [imagem, definirImagem] = useState("");
   const [data, definirData] = useState(new Date().toISOString().slice(0, 10));
   const [observacao, definirObservacao] = useState("");
   const [erro, definirErro] = useState("");
   const [salvando, definirSalvando] = useState(false);
+  const [observacaoAjuste, definirObservacaoAjuste] = useState("");
+
+  // Consulta a justificativa da cliente quando o tatuador precisa revisar o desenho.
+  useEffect(() => {
+    if (tatuagem.etapa === "ajustes no desenho") {
+      pedirApi(`/tatuagens/${tatuagem.id}/passos`)
+        .then((passos) => {
+          const recusa = [...passos].reverse().find((passo) => passo.tipo === "desenho_reprovado");
+          definirObservacaoAjuste(recusa?.observacao || "A cliente pediu ajustes no desenho.");
+        })
+        .catch((erroApi) => definirObservacaoAjuste(erroApi.message));
+    }
+  }, [tatuagem.id, tatuagem.etapa]);
+
+  // Lê o arquivo escolhido como imagem codificada para enviá-lo junto com o passo.
+  function selecionarDesenho(evento) {
+    const arquivo = evento.target.files?.[0];
+    if (!arquivo) return;
+    definirErro("");
+    const leitor = new FileReader();
+    leitor.onload = () => definirImagem(leitor.result);
+    leitor.onerror = () => definirErro("Não foi possível ler essa imagem. Escolha o arquivo novamente.");
+    leitor.readAsDataURL(arquivo);
+  }
 
   // Envia o novo passo e deixa a mensagem de recusa visível sem perder os dados.
   function enviarPasso(evento) {
     evento.preventDefault();
     definirErro("");
+    if (enviarDesenho && !imagem) {
+      definirErro("Selecione a imagem do desenho antes de enviar para a cliente.");
+      return;
+    }
     definirSalvando(true);
     pedirApi(`/tatuagens/${tatuagem.id}/passos`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tipo, data, observacao }),
+        body: JSON.stringify({ tipo, data, observacao, imagem: enviarDesenho ? imagem : null }),
       })
       .then(() => aoSalvar())
       .catch((erroApi) => definirErro(erroApi.message))
@@ -433,16 +519,31 @@ function TelaFicha({ tatuagem, aoVoltar, aoSalvar, nomeRetorno = "agenda" }) {
   return (
     <section className="painel-formulario">
       <button className="voltar" onClick={aoVoltar}>← Voltar para {nomeRetorno}</button>
-      <div className="titulo-secao"><span className="sobretitulo">FICHA · {String(tatuagem.id).padStart(2, "0")}</span><h2>Registrar um passo.</h2><p>{tatuagem.ideia} · {nomeDaEtapa(tatuagem.etapa)}</p></div>
+      <div className="titulo-secao"><span className="sobretitulo">FICHA · {String(tatuagem.id).padStart(2, "0")}</span><h2>{tatuagem.etapa === "pedida" ? "Pedido recebido." : enviarDesenho ? "Revisar desenho." : "Registrar um passo."}</h2><p>{nomeDaEtapa(tatuagem.etapa)}</p></div>
+      {enviarDesenho && <section className="detalhes-pedido" aria-label="Pedido enviado pela cliente">
+        <span className="sobretitulo">PEDIDO DA CLIENTE</span>
+        <h3>{tatuagem.ideia}</h3>
+        <dl>
+          <div><dt>Local do corpo</dt><dd>{tatuagem.local_corpo}</dd></div>
+          <div><dt>Tamanho aproximado</dt><dd>{tatuagem.tamanho}</dd></div>
+        </dl>
+        {tatuagem.etapa === "ajustes no desenho" && <p className="observacao-ajuste"><strong>O que a cliente pediu:</strong> {observacaoAjuste || "Carregando observação…"}</p>}
+      </section>}
       <form onSubmit={enviarPasso} className="formulario">
-        <label htmlFor="tipo-passo">O que foi feito?</label>
-        <select id="tipo-passo" value={tipo} onChange={(evento) => definirTipo(evento.target.value)}>{tiposPermitidos.map((opcao) => <option key={opcao.valor} value={opcao.valor}>{opcao.nome}</option>)}</select>
+        {enviarDesenho ? <>
+          <label htmlFor="imagem-desenho">Desenho feito para a cliente</label>
+          <input id="imagem-desenho" type="file" accept="image/*" required onChange={selecionarDesenho} />
+          {imagem && <img className="previa-desenho" src={imagem} alt="Prévia do desenho selecionado" />}
+        </> : <>
+          <label htmlFor="tipo-passo">O que foi feito?</label>
+          <select id="tipo-passo" value={tipo} onChange={(evento) => definirTipo(evento.target.value)}>{tiposPermitidos.map((opcao) => <option key={opcao.valor} value={opcao.valor}>{opcao.nome}</option>)}</select>
+        </>}
         <label htmlFor="data-passo">Data</label>
         <input id="data-passo" type="date" value={data} onChange={(evento) => definirData(evento.target.value)} required />
         <label htmlFor="observacao">Observação</label>
         <textarea id="observacao" value={observacao} onChange={(evento) => definirObservacao(evento.target.value)} required placeholder="Uma nota para o histórico da tatuagem" />
         {erro && <p className="aviso aviso-erro" role="alert">{erro}</p>}
-        <button className="botao botao-escuro" disabled={salvando}>{salvando ? "Salvando…" : "Salvar passo"}<span aria-hidden="true">↗</span></button>
+        <button className="botao botao-escuro" disabled={salvando}>{salvando ? "Enviando…" : enviarDesenho ? "Enviar desenho para a cliente" : "Salvar passo"}<span aria-hidden="true">↗</span></button>
       </form>
     </section>
   );

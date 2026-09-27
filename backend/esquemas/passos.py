@@ -8,6 +8,8 @@ class PassoEntrada(BaseModel):
     tipo: str = Field(min_length=1)
     data: date
     observacao: str = Field(min_length=1)
+    # Guarda o desenho enviado como imagem codificada, sem criar arquivos neste ciclo.
+    imagem: str | None = None
 
 
 # Define os campos de cada passo devolvido pela API.
@@ -17,3 +19,5 @@ class PassoSaida(BaseModel):
     tipo: str
     data: date
     observacao: str
+    # Devolve a imagem do desenho no histórico para a cliente e o tatuador consultarem.
+    imagem: str | None = None

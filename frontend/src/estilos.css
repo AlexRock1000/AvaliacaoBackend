@@ -497,6 +497,24 @@ button.cartao-tatuagem { width: 100%; cursor: pointer; }
 .passo-finalizado strong { display: block; font-size: 14px; }
 .passo-finalizado span { display: block; margin-top: 4px; color: var(--brasa); font-size: 11px; }
 .passo-finalizado p { margin: 8px 0 0; color: var(--fumaca); font-size: 13px; line-height: 1.5; }
+.detalhes-pedido { margin: 20px 0 26px; padding: 20px; border: 1px solid var(--linha); border-radius: 16px; background: rgb(23 18 15 / 72%); color: var(--creme); }
+.detalhes-pedido > .sobretitulo { color: var(--brasa); }
+.detalhes-pedido h3 { margin: 9px 0 18px; font: 700 25px/1.15 'Cormorant Garamond', Georgia, serif; }
+.detalhes-pedido dl { margin: 0; display: flex; flex-wrap: wrap; gap: 22px 40px; }
+.detalhes-pedido dl div { min-width: 120px; }
+.detalhes-pedido dt { color: var(--fumaca); font-size: 11px; }
+.detalhes-pedido dd { margin: 4px 0 0; font-size: 14px; }
+.observacao-ajuste { margin: 18px 0 0; padding-top: 14px; border-top: 1px solid var(--linha); color: var(--fumaca); font-size: 13px; line-height: 1.5; }
+.observacao-ajuste strong { color: var(--brasa); }
+.previa-desenho { width: min(100%, 480px); max-height: 420px; display: block; object-fit: contain; border: 1px solid var(--linha); border-radius: 12px; background: #f5eee3; }
+.imagem-desenho-historico { width: min(100%, 360px); max-height: 300px; margin-top: 10px; display: block; object-fit: contain; border-radius: 12px; background: #f5eee3; }
+.resposta-desenho { margin-top: 18px; padding: 18px; border: 1px solid rgb(22 18 15 / 14%); border-radius: 14px; background: rgb(245 238 225 / 88%); }
+.resposta-desenho h4 { margin: 0 0 12px; font: 700 22px/1.1 'Cormorant Garamond', Georgia, serif; }
+.resposta-desenho > img { width: 100%; max-height: 380px; margin-bottom: 14px; display: block; object-fit: contain; border-radius: 10px; background: white; }
+.resposta-desenho label { display: block; margin-bottom: 6px; font-size: 12px; font-weight: 700; }
+.resposta-desenho textarea { width: 100%; min-height: 80px; padding: 10px; border: 1px solid rgb(22 18 15 / 22%); border-radius: 9px; background: white; color: var(--tinta); font: inherit; resize: vertical; }
+.acoes-resposta-desenho { margin-top: 12px; display: flex; flex-wrap: wrap; gap: 9px; }
+.acoes-resposta-desenho .botao { min-height: 40px; padding: 0 14px; font-size: 11px; }
 
 @media (max-width: 680px) {
   .ficha-finalizada-conteudo { grid-template-columns: 1fr; }
