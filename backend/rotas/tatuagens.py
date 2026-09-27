@@ -3,7 +3,7 @@ from datetime import date
 from fastapi import APIRouter, HTTPException, Query, status
 
 from esquemas.passos import PassoEntrada, PassoSaida, SituacaoSessaoEntrada
-from esquemas.tatuagens import TatuagemDetalheSaida, TatuagemEntrada, TatuagemSaida
+from esquemas.tatuagens import TatuagemAtualizacaoEntrada, TatuagemDetalheSaida, TatuagemEntrada, TatuagemSaida
 from servicos import tatuagem as servico_tatuagem
 
 
@@ -39,6 +39,18 @@ def mostrar_tatuagem(tatuagem_id: int):
 @roteador.post("", response_model=TatuagemSaida, status_code=status.HTTP_201_CREATED)
 def pedir_tatuagem(entrada: TatuagemEntrada):
     return servico_tatuagem.criar_tatuagem(entrada)
+
+
+@roteador.put("/{tatuagem_id}", response_model=TatuagemSaida)
+def atualizar_pedido(tatuagem_id: int, entrada: TatuagemAtualizacaoEntrada):
+    try:
+        return servico_tatuagem.atualizar_pedido(tatuagem_id, entrada)
+    except LookupError as erro:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(erro)) from erro
+    except PermissionError as erro:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(erro)) from erro
+    except ValueError as erro:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(erro)) from erro
 
 
 # Na camada de rotas, devolve o histórico e escolhe HTTP 404 se a tatuagem não existe.

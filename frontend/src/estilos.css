@@ -595,3 +595,57 @@ button.cartao-tatuagem { width: 100%; cursor: pointer; }
 @media (max-width: 860px) {
   .modo-cliente .grade-cliente { grid-template-columns: minmax(0, 1fr); }
 }
+
+/* Reforça a leitura em toda a experiência da cliente sem alterar os títulos principais. */
+.modo-cliente .marca-texto small,
+.modo-cliente .sobretitulo,
+.modo-cliente .numero-cartao { font-size: 14px; }
+.modo-cliente .dados-perfil,
+.modo-cliente .dados-perfil select { font-size: 15px; }
+.modo-cliente .banner-conteudo p,
+.modo-cliente .cabecalho-projetos p,
+.modo-cliente .titulo-secao p,
+.modo-cliente .estado,
+.modo-cliente .orientacao-proximo-passo,
+.modo-cliente .item-historico p,
+.modo-cliente .historico-cabecalho p,
+.modo-cliente .horario-proximo-passo,
+.modo-cliente .detalhes-pedido dt,
+.modo-cliente .detalhes-pedido dd,
+.modo-cliente .observacao-ajuste,
+.modo-cliente .ficha-finalizada-imagem figcaption,
+.modo-cliente .passo-finalizado strong,
+.modo-cliente .passo-finalizado span,
+.modo-cliente .passo-finalizado p,
+.modo-cliente .referencia-cliente figcaption,
+.modo-cliente .sem-referencia,
+.modo-cliente .formulario label,
+.modo-cliente .formulario input,
+.modo-cliente .formulario textarea,
+.modo-cliente .formulario select,
+.modo-cliente .aviso { font-size: 16px; }
+.modo-cliente .orientacao-proximo-passo strong,
+.modo-cliente .item-historico strong,
+.modo-cliente .horario-proximo-passo strong,
+.modo-cliente .cartao-agenda-cliente .agendamento-resumo-cliente,
+.modo-cliente .cartao-tatuagem .agendamento-resumo-cliente,
+.modo-cliente .selo-etapa,
+.modo-cliente .detalhes-pedido > .sobretitulo,
+.modo-cliente .referencia-cliente figcaption { font-size: 15px; }
+.modo-cliente .cartao-agenda-cliente > span:not(.numero-cartao):not(.selo-etapa):not(.agendamento-resumo-cliente),
+.modo-cliente .cartao-tatuagem > span:not(.numero-cartao):not(.selo-etapa):not(.agendamento-resumo-cliente) { font-size: 16px; }
+.modo-cliente .botao,
+.modo-cliente .navegacao-mobile button { font-size: 16px; }
+.botao-editar-pedido { margin: 0 0 18px; }
+.ajuda-campo,
+.erro-campo { display: block; font-size: 14px; line-height: 1.4; }
+.ajuda-campo { color: var(--pedra); }
+.erro-campo { color: #9b3028; font-weight: 700; }
+
+@media (max-width: 680px) {
+  .modo-cliente .dados-perfil,
+  .modo-cliente .dados-perfil select { font-size: 14px; }
+  .modo-cliente .cartao-agenda-cliente .selo-etapa { max-width: 128px; font-size: 14px; }
+  .modo-cliente .cartao-tatuagem .selo-etapa { font-size: 14px; }
+  .modo-cliente .navegacao-mobile button { font-size: 15px; }
+}

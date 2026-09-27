@@ -10,10 +10,17 @@ export function pedirApi(caminho, opcoes = {}) {
     }
 
     return resposta.json().then((dados) => {
+      const erroTamanho = Array.isArray(dados.detail)
+        ? dados.detail.find((erro) => erro.loc?.includes("tamanho"))
+        : null;
       const mensagem = typeof dados.detail === "string"
         ? dados.detail
-        : "Não foi possível concluir a solicitação. Confira os dados e tente novamente.";
-      throw new Error(mensagem);
+        : erroTamanho
+          ? "Informe o tamanho usando apenas números positivos, em centímetros."
+          : "Não foi possível concluir a solicitação. Confira os dados e tente novamente.";
+      const erro = new Error(mensagem);
+      if (erroTamanho) erro.campo = "tamanho";
+      throw erro;
     });
   });
 }

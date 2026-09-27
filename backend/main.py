@@ -16,8 +16,8 @@ if endereco_frontend:
         CORSMiddleware,
         allow_origins=[endereco_frontend],
         allow_credentials=False,
-        # PATCH atualiza a sessão e gera o agendamento automático do retoque.
-        allow_methods=["GET", "POST", "PATCH"],
+        # PUT edita pedidos; PATCH atualiza sessões e agenda o retoque automático.
+        allow_methods=["GET", "POST", "PUT", "PATCH"],
         allow_headers=["Content-Type"],
     )
 

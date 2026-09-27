@@ -50,6 +50,15 @@ function formatarDataAgendamento(data) {
   return data?.split("-").reverse().join("/") || "";
 }
 
+function extrairTamanhoNumerico(tamanho) {
+  return String(tamanho || "").replace(/\s*cm$/i, "").trim().replace(",", ".");
+}
+
+function tamanhoValido(tamanho) {
+  const numero = extrairTamanhoNumerico(tamanho);
+  return /^[0-9]+(?:\.[0-9]+)?$/.test(numero) && Number(numero) > 0;
+}
+
 function hojeComoDataISO() {
   const hoje = new Date();
   return `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, "0")}-${String(hoje.getDate()).padStart(2, "0")}`;
@@ -83,16 +92,18 @@ function registrarRetoqueRealizado(tatuagemId) {
 }
 
 // Exibe a tela de pedido para a cliente e mostra recusas da API no próprio formulário.
-function TelaPedir({ perfil, aoCriar, aoVoltar }) {
-  const [ideia, definirIdeia] = useState("");
-  const [localCorpo, definirLocalCorpo] = useState("");
-  const [tamanho, definirTamanho] = useState("");
+function TelaPedir({ perfil, aoCriar, aoAtualizar, tatuagem = null, aoVoltar }) {
+  const editando = Boolean(tatuagem);
+  const [ideia, definirIdeia] = useState(tatuagem?.ideia || "");
+  const [localCorpo, definirLocalCorpo] = useState(tatuagem?.local_corpo || "");
+  const [tamanho, definirTamanho] = useState(extrairTamanhoNumerico(tatuagem?.tamanho));
   const [imagemReferencia, definirImagemReferencia] = useState("");
   const [nomeImagemReferencia, definirNomeImagemReferencia] = useState("");
   const [arrastandoReferencia, definirArrastandoReferencia] = useState(false);
   const [lendoReferencia, definirLendoReferencia] = useState(false);
   const [enviando, definirEnviando] = useState(false);
   const [erro, definirErro] = useState("");
+  const [erroTamanho, definirErroTamanho] = useState("");
   const [mensagem, definirMensagem] = useState("");
 
   // Lê a imagem de referência escolhida para enviá-la junto com o pedido.
@@ -133,21 +144,33 @@ function TelaPedir({ perfil, aoCriar, aoVoltar }) {
   function enviarPedido(evento) {
     evento.preventDefault();
     definirErro("");
+    definirErroTamanho("");
     definirMensagem("");
+    if (!tamanhoValido(tamanho)) {
+      definirErroTamanho("Informe um número maior que zero, em centímetros. Ex.: 20.");
+      document.getElementById("tamanho")?.focus();
+      return;
+    }
     definirEnviando(true);
 
-    pedirApi("/tatuagens", {
-        method: "POST",
+    pedirApi(editando ? `/tatuagens/${tatuagem.id}` : "/tatuagens", {
+        method: editando ? "PUT" : "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ideia,
           local_corpo: localCorpo,
           tamanho,
           cliente_id: perfil.clienteId,
-          imagem_referencia: imagemReferencia || null,
+          ...(editando
+            ? (imagemReferencia ? { imagem_referencia: imagemReferencia } : {})
+            : { imagem_referencia: imagemReferencia || null }),
         }),
       })
       .then((tatuagem) => {
+        if (editando) {
+          aoAtualizar(tatuagem);
+          return;
+        }
         definirIdeia("");
         definirLocalCorpo("");
         definirTamanho("");
@@ -156,7 +179,10 @@ function TelaPedir({ perfil, aoCriar, aoVoltar }) {
         definirMensagem("Seu pedido foi recebido pelo estúdio.");
         aoCriar(tatuagem);
       })
-      .catch((erroApi) => definirErro(erroApi.message))
+      .catch((erroApi) => {
+        if (erroApi.campo === "tamanho") definirErroTamanho(erroApi.message);
+        else definirErro(erroApi.message);
+      })
       .finally(() => {
         definirEnviando(false);
       });
@@ -164,11 +190,11 @@ function TelaPedir({ perfil, aoCriar, aoVoltar }) {
 
   return (
     <section className="painel-formulario">
-      <button className="voltar" type="button" onClick={aoVoltar}>← Voltar para minhas tatuagens</button>
+      <button className="voltar" type="button" onClick={aoVoltar}>{editando ? "← Voltar ao pedido" : "← Voltar para minhas tatuagens"}</button>
       <div className="titulo-secao">
-        <span className="sobretitulo">UM NOVO PROJETO</span>
-        <h2>Conte sua ideia.</h2>
-        <p>Não precisa saber explicar tudo. Dê os primeiros detalhes e a equipe constrói o desenho com você.</p>
+        <span className="sobretitulo">{editando ? "PEDIDO RECEBIDO" : "UM NOVO PROJETO"}</span>
+        <h2>{editando ? "Editar pedido." : "Conte sua ideia."}</h2>
+        <p>{editando ? "Atualize os detalhes enquanto o estúdio ainda não iniciou a preparação do desenho." : "Não precisa saber explicar tudo. Dê os primeiros detalhes e a equipe constrói o desenho com você."}</p>
       </div>
       <form onSubmit={enviarPedido} className="formulario">
         <label htmlFor="ideia">O que você imagina?</label>
@@ -179,23 +205,25 @@ function TelaPedir({ perfil, aoCriar, aoVoltar }) {
             <input id="local" value={localCorpo} onChange={(evento) => definirLocalCorpo(evento.target.value)} minLength="2" required placeholder="Ex.: costela esquerda" />
           </div>
           <div>
-            <label htmlFor="tamanho">Tamanho aproximado</label>
-            <input id="tamanho" value={tamanho} onChange={(evento) => definirTamanho(evento.target.value)} required placeholder="Ex.: 20 cm" />
+            <label htmlFor="tamanho">Tamanho aproximado (cm)</label>
+            <input id="tamanho" type="number" inputMode="decimal" min="0.01" step="any" value={tamanho} onChange={(evento) => { definirTamanho(evento.target.value); definirErroTamanho(""); }} onInvalid={(evento) => { if (evento.currentTarget.validity.badInput || evento.currentTarget.validity.valueMissing) definirErroTamanho("Informe o tamanho usando apenas números, em centímetros."); }} aria-describedby={erroTamanho ? "tamanho-ajuda tamanho-erro" : "tamanho-ajuda"} required placeholder="Ex.: 20" />
+            <small id="tamanho-ajuda" className="ajuda-campo">Use apenas números. Medida em centímetros.</small>
+            {erroTamanho && <small id="tamanho-erro" className="erro-campo" role="alert">{erroTamanho}</small>}
           </div>
         </div>
-        <label htmlFor="imagem-referencia">Imagem de referência (opcional)</label>
+        <label htmlFor="imagem-referencia">{editando ? "Nova imagem de referência (opcional)" : "Imagem de referência (opcional)"}</label>
         <div className={`area-upload ${arrastandoReferencia ? "area-upload-ativa" : ""}`} onDragOver={(evento) => { evento.preventDefault(); definirArrastandoReferencia(true); }} onDragLeave={() => definirArrastandoReferencia(false)} onDrop={soltarImagemReferencia}>
           <input id="imagem-referencia" className="entrada-imagem-oculta" type="file" accept="image/*" onChange={selecionarImagemReferencia} />
           <label className="conteudo-upload" htmlFor="imagem-referencia">
             {imagemReferencia ? <img className="previa-desenho" src={imagemReferencia} alt="Prévia da imagem de referência" /> : <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 16V4m0 0L8 8m4-4 4 4" /><path d="M5 14v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4" /></svg>}
-            <strong>{imagemReferencia ? nomeImagemReferencia : "Arraste e solte uma imagem de referência."}</strong>
-            <span>{imagemReferencia ? "Imagem carregada · clique ou solte outra para substituir" : <>Ou <u>escolha uma imagem</u>. Formatos aceitos: PNG, JPG e outros formatos de imagem.</>}</span>
+            <strong>{imagemReferencia ? nomeImagemReferencia : editando ? "Arraste uma nova imagem de referência." : "Arraste e solte uma imagem de referência."}</strong>
+            <span>{imagemReferencia ? "Imagem carregada · clique ou solte outra para substituir" : editando ? "A imagem atual será mantida se você não enviar outra." : <>Ou <u>escolha uma imagem</u>. Formatos aceitos: PNG, JPG e outros formatos de imagem.</>}</span>
           </label>
         </div>
         {erro && <p className="aviso aviso-erro" role="alert">{erro}</p>}
         {mensagem && <p className="aviso aviso-sucesso" role="status">{mensagem}</p>}
         <button className="botao botao-escuro" disabled={enviando || lendoReferencia}>
-          {lendoReferencia ? "Lendo imagem…" : enviando ? "Enviando pedido…" : "Enviar pedido"}<span aria-hidden="true">↗</span>
+          {lendoReferencia ? "Lendo imagem…" : enviando ? (editando ? "Salvando alterações…" : "Enviando pedido…") : editando ? "Salvar alterações" : "Enviar pedido"}<span aria-hidden="true">↗</span>
         </button>
       </form>
     </section>
@@ -215,6 +243,8 @@ function TelaMinhasTatuagens({ perfil }) {
   const [observacaoResposta, definirObservacaoResposta] = useState("");
   const [erroResposta, definirErroResposta] = useState("");
   const [salvandoResposta, definirSalvandoResposta] = useState(false);
+  const [editandoPedido, definirEditandoPedido] = useState(false);
+  const [mensagemEdicao, definirMensagemEdicao] = useState("");
 
   // Atualiza a lista quando o perfil da pessoa muda.
   useEffect(() => {
@@ -251,6 +281,8 @@ function TelaMinhasTatuagens({ perfil }) {
 
   // Abre o histórico da tatuagem escolhida, mostrando erros da API no painel.
   function abrirHistorico(tatuagem) {
+    definirEditandoPedido(false);
+    definirMensagemEdicao("");
     definirSelecionada(tatuagem);
     definirPassos([]);
     definirErroPassos("");
@@ -261,6 +293,13 @@ function TelaMinhasTatuagens({ perfil }) {
       .finally(() => {
         definirCarregandoPassos(false);
       });
+  }
+
+  function salvarEdicaoPedido(tatuagemAtualizada) {
+    definirSelecionada(tatuagemAtualizada);
+    definirTatuagens((atuais) => atuais.map((item) => item.id === tatuagemAtualizada.id ? tatuagemAtualizada : item));
+    definirEditandoPedido(false);
+    definirMensagemEdicao("Pedido atualizado com sucesso.");
   }
 
   // Envia a decisão da cliente e atualiza a etapa e o histórico exibidos na tela.
@@ -296,12 +335,23 @@ function TelaMinhasTatuagens({ perfil }) {
   const sessaoAgendada = sessoesAgendadas[0];
   const retoqueAgendado = [...passos].reverse().find((passo) => passo.tipo === "retoque_combinado" && (passo.situacao || "agendada") === "agendada");
 
+  if (editandoPedido && selecionada) {
+    return <TelaPedir
+      key={`editar-pedido-${selecionada.id}`}
+      perfil={perfil}
+      tatuagem={selecionada}
+      aoAtualizar={salvarEdicaoPedido}
+      aoVoltar={() => definirEditandoPedido(false)}
+    />;
+  }
+
   return (
     <section className="painel-cliente">
       <div className="cabecalho-projetos">
         <div><span className="sobretitulo">ACOMPANHE CADA HISTÓRIA</span><h2>Minhas tatuagens.</h2></div>
         <p>Do primeiro traço até o último retoque.</p>
       </div>
+      {mensagemEdicao && <p className="aviso aviso-sucesso" role="status">{mensagemEdicao}</p>}
       <div className="grade-cliente">
         <div className="lista-projetos">
           <h3>Seus projetos</h3>
@@ -331,6 +381,7 @@ function TelaMinhasTatuagens({ perfil }) {
             {selecionada.etapa === "em sessões" && sessaoAgendada && <span className="horario-proximo-passo">Sua sessão está marcada para <strong>{formatarDataAgendamento(sessaoAgendada.data)} às {sessaoAgendada.horario?.slice(0, 5)}</strong>.</span>}
             {selecionada.etapa === "aguardando retoque" && retoqueAgendado && <span className="horario-proximo-passo">O retoque está marcado para <strong>{formatarDataAgendamento(retoqueAgendado.data)} às {retoqueAgendado.horario?.slice(0, 5)}</strong>.</span>}
           </p>}
+          {selecionada?.etapa === "pedida" && <button className="botao botao-ember botao-editar-pedido" type="button" onClick={() => { definirMensagemEdicao(""); definirEditandoPedido(true); }}>Editar pedido</button>}
           {!selecionada && <p className="estado">Selecione uma tatuagem para acompanhar as etapas registradas pelo estúdio.</p>}
           {selecionada && <>
             <div className="divisor-historico"><span className="sobretitulo">LINHA DO TEMPO</span></div>
@@ -374,7 +425,7 @@ function TelaAgenda({ aoAbrirFicha, atualizacao, aoAtualizar, titulo = "Projetos
     { valor: "desenho aprovado", nome: "Desenhos aprovados" },
     { valor: "em sessões", nome: "Sessões" },
     { valor: "aguardando retoque", nome: "Retoques" },
-    { valor: "finalizada", nome: "Finalizada" },
+    { valor: "finalizada", nome: "Finalizados" },
   ];
   // Busca a agenda sempre que o filtro ou um registro de passo muda.
   useEffect(() => {

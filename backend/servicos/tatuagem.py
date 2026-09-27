@@ -27,6 +27,26 @@ def criar_tatuagem(entrada: TatuagemEntrada):
     return repositorio_tatuagem.adicionar_tatuagem(dados)
 
 
+# Permite corrigir o pedido apenas enquanto ele ainda aguarda o início da preparação.
+def atualizar_pedido(tatuagem_id: int, entrada: TatuagemEntrada):
+    tatuagem = repositorio_tatuagem.buscar_tatuagem_por_id(tatuagem_id)
+    if tatuagem is None:
+        raise LookupError("Tatuagem não encontrada.")
+    if tatuagem["cliente_id"] != entrada.cliente_id:
+        raise PermissionError("Este pedido não pertence a este perfil de cliente.")
+    if tatuagem["etapa"] != "pedida":
+        raise ValueError("O pedido não pode mais ser alterado depois que o estúdio inicia a preparação.")
+
+    dados = {
+        "ideia": entrada.ideia,
+        "local_corpo": entrada.local_corpo,
+        "tamanho": entrada.tamanho,
+    }
+    if "imagem_referencia" in entrada.model_fields_set:
+        dados["imagem_referencia"] = entrada.imagem_referencia
+    return repositorio_tatuagem.atualizar_pedido(tatuagem_id, dados)
+
+
 # Na camada de serviços, confere a tatuagem e então solicita seu histórico ao repositório.
 def listar_passos(tatuagem_id):
     tatuagem = repositorio_tatuagem.buscar_tatuagem_por_id(tatuagem_id)

@@ -23,6 +23,15 @@ def adicionar_tatuagem(dados):
     return tatuagem
 
 
+# Atualiza os detalhes do pedido antes de o estúdio começar a preparar o desenho.
+def atualizar_pedido(tatuagem_id, dados):
+    tatuagem = buscar_tatuagem_por_id(tatuagem_id)
+    if tatuagem is None:
+        return None
+    tatuagem.update(dados)
+    return tatuagem
+
+
 # Na camada de repositórios, lê o histórico em memória da tatuagem encontrada.
 def listar_passos(tatuagem_id):
     tatuagem = buscar_tatuagem_por_id(tatuagem_id)
