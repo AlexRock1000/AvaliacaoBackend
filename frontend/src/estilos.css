@@ -144,6 +144,8 @@ button.cartao-tatuagem { width: 100%; cursor: pointer; }
 .historico-cabecalho { min-height: 60px; margin: -26px -26px 20px; padding: 10px 26px; display: flex; justify-content: space-between; align-items: center; gap: 16px; background: linear-gradient(90deg, rgb(22 18 15 / 76%), rgb(22 18 15 / 15%)), url('/imagens/rosa-cranio.jfif') center 38% / cover; color: var(--creme); }
 .historico-cabecalho h3 { margin: 8px 0 0; font: 700 30px/1.05 'Cormorant Garamond', Georgia, serif; }
 .historico-cabecalho p { margin: 5px 0 0; color: rgb(245 238 225 / 78%); font-size: 14px; }
+.orientacao-proximo-passo { margin: 0 0 16px; padding: 13px 15px; border-left: 3px solid var(--oliva); border-radius: 0 8px 8px 0; background: rgb(83 102 55 / 9%); color: var(--pedra); font-size: 13px; line-height: 1.5; }
+.orientacao-proximo-passo strong { display: block; margin-bottom: 3px; color: var(--tinta); font-size: 12px; }
 .icone-historico { color: var(--ferrugem); font-size: 24px; }
 .etapa-historico { margin: 0 0 12px; }
 .historico-cabecalho .etapa-historico { margin: 0; padding: 6px 11px; border: 1px solid rgb(83 102 55 / 28%); border-radius: 999px; color: var(--oliva); background: rgb(83 102 55 / 12%); }
@@ -461,4 +463,51 @@ button.cartao-tatuagem { width: 100%; cursor: pointer; }
 @media (max-width: 680px) {
   .aplicativo.modo-cliente::before,
   .aplicativo.modo-tatuador::before { background-position: center 140px; background-size: min(440px, 92vw) auto; opacity: .11; }
+}
+
+.cabecalho-projetos-estudio { margin: 8px 0 24px; }
+.cabecalho-projetos-estudio .sobretitulo { color: var(--brasa); }
+.cabecalho-projetos-estudio h2 { margin: 8px 0 0; font: 700 clamp(38px, 4.5vw, 54px)/1 'Cormorant Garamond', Georgia, serif; }
+.cabecalho-projetos-estudio p { margin: 12px 0 0; color: var(--fumaca); font-size: 14px; }
+.quadro-projetos { display: grid; grid-template-columns: repeat(5, minmax(180px, 1fr)); gap: 12px; align-items: start; }
+.coluna-projetos { min-height: 260px; padding: 14px; border: 1px solid var(--linha); border-radius: 18px; background: rgb(23 18 15 / 68%); }
+.coluna-projetos > header { margin-bottom: 14px; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.coluna-projetos > header h3 { margin: 0; color: var(--creme); font-size: 13px; }
+.coluna-projetos > header span { color: var(--brasa); font-size: 11px; font-weight: 700; }
+.estado-coluna { margin: 0; padding: 13px 8px; border: 1px dashed rgb(245 238 225 / 17%); border-radius: 12px; color: var(--fumaca); font-size: 11px; text-align: center; }
+.cartao-projeto { margin-top: 10px; padding: 14px; border: 1px solid var(--linha); border-radius: 14px; background: var(--carvao); }
+.cartao-projeto .numero-cartao { color: var(--brasa); font-size: 9px; }
+.cartao-projeto h4 { margin: 8px 0 0; color: var(--creme); font-size: 14px; }
+.cartao-projeto p { margin: 6px 0 12px; color: var(--fumaca); font-size: 11px; }
+.cartao-projeto .botao { min-height: 36px; padding: 0 12px; font-size: 10px; }
+
+.ficha-finalizada { max-width: 1050px; margin: 8px auto 40px; }
+.ficha-finalizada-cabecalho { margin: 28px 0 22px; padding-bottom: 22px; border-bottom: 1px solid var(--linha); }
+.ficha-finalizada-cabecalho .sobretitulo,
+.ficha-finalizada-historico > .sobretitulo { color: var(--brasa); }
+.ficha-finalizada-cabecalho h2 { margin: 9px 0 5px; color: var(--creme); font: 700 clamp(34px, 5vw, 52px)/1 'Cormorant Garamond', Georgia, serif; }
+.ficha-finalizada-cabecalho p { margin: 0 0 14px; color: var(--fumaca); }
+.ficha-finalizada-conteudo { display: grid; grid-template-columns: minmax(0, 1fr) minmax(280px, 1fr); gap: 24px; align-items: start; }
+.ficha-finalizada-imagem { margin: 0; overflow: hidden; border: 1px solid var(--linha); border-radius: 18px; background: #f5eee3; }
+.ficha-finalizada-imagem img { width: 100%; max-height: 540px; display: block; object-fit: contain; }
+.ficha-finalizada-imagem figcaption { padding: 10px 14px; color: var(--pedra); font-size: 12px; }
+.ficha-finalizada-historico { padding: 22px; border: 1px solid var(--linha); border-radius: 18px; background: rgb(23 18 15 / 76%); }
+.ficha-finalizada-historico h3 { margin: 8px 0 18px; color: var(--creme); font: 700 30px/1 'Cormorant Garamond', Georgia, serif; }
+.passo-finalizado { padding: 14px 0; border-top: 1px solid var(--linha); color: var(--creme); }
+.passo-finalizado strong { display: block; font-size: 14px; }
+.passo-finalizado span { display: block; margin-top: 4px; color: var(--brasa); font-size: 11px; }
+.passo-finalizado p { margin: 8px 0 0; color: var(--fumaca); font-size: 13px; line-height: 1.5; }
+
+@media (max-width: 680px) {
+  .ficha-finalizada-conteudo { grid-template-columns: 1fr; }
+  .ficha-finalizada-imagem img { max-height: 360px; }
+  .ficha-finalizada-historico { padding: 18px; }
+}
+
+@media (max-width: 960px) {
+  .quadro-projetos { grid-template-columns: repeat(2, minmax(210px, 1fr)); }
+}
+
+@media (max-width: 680px) {
+  .quadro-projetos { grid-template-columns: repeat(5, minmax(220px, 1fr)); overflow-x: auto; padding-bottom: 8px; }
 }

@@ -1,0 +1,15 @@
+
+> estudio-tatuagem-front@1.0.0 dev
+> vite --host 127.0.0.1
+
+
+  VITE v6.4.3  ready in 1054 ms
+
+  ➜  Local:   http://127.0.0.1:5173/
+11:17:35 [vite] (client) page reload src/Aplicativo.jsx
+11:17:35 [vite] (client) page reload src/Aplicativo.jsx
+11:17:57 [vite] (client) hmr update /src/estilos.css
+11:25:39 [vite] (client) page reload src/Aplicativo.jsx
+11:25:43 [vite] (client) hmr update /src/estilos.css
+11:29:36 [vite] (client) page reload src/Aplicativo.jsx
+11:32:33 [vite] (client) page reload src/Aplicativo.jsx

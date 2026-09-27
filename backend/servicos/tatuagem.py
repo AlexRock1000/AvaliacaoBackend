@@ -42,19 +42,22 @@ def registrar_passo(tatuagem_id: int, entrada: PassoEntrada):
     etapa = tatuagem["etapa"]
     tipo = entrada.tipo
 
-    if tipo not in ("desenho_aprovado", "sessao", "retoque"):
-        return "O passo deve ser desenho aprovado, sessão ou retoque."
+    if tipo not in ("desenho_aprovado", "sessao", "retoque_combinado", "retoque"):
+        return "O passo deve ser desenho aprovado, sessão, retoque combinado ou retoque realizado."
     if tipo == "desenho_aprovado" and etapa != "pedida":
         return "O desenho só pode ser aprovado quando a tatuagem está pedida."
     if tipo == "sessao" and etapa not in ("desenho aprovado", "em sessões"):
         return "A sessão só pode ser registrada depois da aprovação do desenho."
-    if tipo == "retoque" and etapa != "em sessões":
-        return "O retoque só pode ser registrado depois de pelo menos uma sessão."
+    if tipo == "retoque_combinado" and etapa != "em sessões":
+        return "O retoque só pode ser combinado depois de pelo menos uma sessão."
+    if tipo == "retoque" and etapa != "aguardando retoque":
+        return "O retoque só pode ser registrado como realizado depois de combinado."
 
     # Traduz o passo aceito para a próxima etapa que será guardada.
     etapas_por_tipo = {
         "desenho_aprovado": "desenho aprovado",
         "sessao": "em sessões",
+        "retoque_combinado": "aguardando retoque",
         "retoque": "finalizada",
     }
     dados_passo = entrada.model_dump()
