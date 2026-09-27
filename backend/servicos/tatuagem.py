@@ -1,4 +1,4 @@
-from datetime import datetime, time, timedelta
+from datetime import date, datetime, time, timedelta
 
 from esquemas.passos import PassoEntrada
 from esquemas.tatuagens import TatuagemEntrada
@@ -59,7 +59,7 @@ def listar_horarios_disponiveis(data):
         for tatuagem in repositorio_tatuagem.listar_tatuagens():
             for passo in tatuagem["passos"]:
                 horario_marcado = passo.get("horario")
-                if passo["tipo"] == "sessao" and passo.get("situacao", "agendada") == "agendada" and passo["data"] == data and horario_marcado is not None:
+                if passo["tipo"] in ("sessao", "retoque_combinado") and passo.get("situacao", "agendada") == "agendada" and passo["data"] == data and horario_marcado is not None:
                     inicio_marcado = datetime.combine(data, horario_marcado)
                     fim_marcado = inicio_marcado + duracao
                     if inicio < fim_marcado and inicio_marcado < fim:
@@ -126,9 +126,33 @@ def atualizar_situacao_sessao(tatuagem_id: int, passo_id: int, situacao: str):
         return "A sessão não foi encontrada."
     if passo.get("situacao", "agendada") != "agendada":
         return "Somente sessões agendadas podem ser atualizadas."
-    passo["situacao"] = situacao
     if situacao == "realizada":
+        data_retoque = date.today() + timedelta(days=15)
+        horarios = []
+        for _ in range(370):
+            if data_retoque.weekday() != 0:
+                horarios = listar_horarios_disponiveis(data_retoque)
+                if horarios:
+                    break
+            data_retoque += timedelta(days=1)
+        if not horarios:
+            return "Não foi possível encontrar um horário para agendar o retoque."
+
+        passo["situacao"] = situacao
         passo["observacao"] = "Sessão realizada."
+        repositorio_tatuagem.adicionar_passo(
+            tatuagem_id,
+            {
+                "tipo": "retoque_combinado",
+                "data": data_retoque,
+                "horario": datetime.strptime(horarios[0], "%H:%M").time(),
+                "observacao": "Retoque agendado automaticamente para 15 dias após a sessão.",
+                "imagem": None,
+                "situacao": "agendada",
+            },
+        )
+        repositorio_tatuagem.atualizar_etapa(tatuagem_id, "aguardando retoque")
     elif situacao == "cancelada":
+        passo["situacao"] = situacao
         passo["observacao"] = "Sessão cancelada."
     return passo

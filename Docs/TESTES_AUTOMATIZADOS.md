@@ -12,6 +12,8 @@ Os cenários cobertos são:
 - verificar que o agendamento reserva o horário;
 - cancelar a sessão e verificar que o horário volta a ficar disponível;
 - confirmar uma sessão como realizada;
+- gerar automaticamente um horário de retoque a partir de 15 dias depois, sem marcar segundas-feiras;
+- reservar o horário do retoque para impedir colisão com outra sessão;
 - rejeitar uma segunda alteração de uma sessão já encerrada;
 - rejeitar situações não permitidas.
 

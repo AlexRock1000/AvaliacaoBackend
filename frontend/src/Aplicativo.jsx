@@ -296,6 +296,7 @@ function TelaAgenda({ aoAbrirFicha, atualizacao, aoAtualizar, titulo = "Projetos
   const [carregandoSessoes, definirCarregandoSessoes] = useState(false);
   const [erroSessoes, definirErroSessoes] = useState("");
   const [sessaoEmAtualizacao, definirSessaoEmAtualizacao] = useState(null);
+  const tipoAgendamento = etapa === "em sessões" ? "sessao" : "retoque_combinado";
   const filtros = [
     { valor: "", nome: "Todas" },
     { valor: "pedida", nome: "Pedida" },
@@ -331,13 +332,14 @@ function TelaAgenda({ aoAbrirFicha, atualizacao, aoAtualizar, titulo = "Projetos
   }, [etapa, atualizacao]);
 
   useEffect(() => {
-    if (etapa !== "em sessões") return;
+    if (etapa !== "em sessões" && etapa !== "aguardando retoque") return;
     let consultaAtiva = true;
     definirCarregandoSessoes(true);
+    definirSessoes([]);
     definirErroSessoes("");
     pedirApi(`/tatuagens?etapa=${encodeURIComponent(etapa)}`)
       .then((projetos) => Promise.all(projetos.map((projeto) => pedirApi(`/tatuagens/${projeto.id}/passos`).then((passos) => passos
-        .filter((passo) => passo.tipo === "sessao" && (passo.situacao || "agendada") === "agendada")
+        .filter((passo) => passo.tipo === tipoAgendamento && (passo.situacao || "agendada") === "agendada")
         .map((passo) => ({ ...passo, tatuagem: projeto }))))))
       .then((listas) => { if (consultaAtiva) definirSessoes(listas.flat().sort((a, b) => `${a.data} ${a.horario}`.localeCompare(`${b.data} ${b.horario}`))); })
       .catch((erroApi) => { if (consultaAtiva) definirErroSessoes(erroApi.message); })
@@ -351,7 +353,10 @@ function TelaAgenda({ aoAbrirFicha, atualizacao, aoAtualizar, titulo = "Projetos
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ situacao }),
-    }).then(aoAtualizar)
+    }).then(() => {
+      aoAtualizar();
+      if (situacao === "realizada") definirEtapa("aguardando retoque");
+    })
       .catch((erroApi) => definirErroSessoes(erroApi.message))
       .finally(() => definirSessaoEmAtualizacao(null));
   }
@@ -371,19 +376,21 @@ function TelaAgenda({ aoAbrirFicha, atualizacao, aoAtualizar, titulo = "Projetos
       </div>
       {carregando && <p className="estado">Carregando agenda…</p>}
       {erro && <p className="aviso aviso-erro" role="alert">{erro}</p>}
-      {etapa === "em sessões" ? <>
-        {carregandoSessoes && <p className="estado">Carregando sessões agendadas…</p>}
+      {etapa === "em sessões" || etapa === "aguardando retoque" ? <>
+        {carregandoSessoes && <p className="estado">Carregando agendamentos…</p>}
         {erroSessoes && <p className="aviso aviso-erro" role="alert">{erroSessoes}</p>}
-        {!carregandoSessoes && !erroSessoes && sessoes.length === 0 && <p className="estado estado-vazio">Não há sessões agendadas.</p>}
+        {!carregandoSessoes && !erroSessoes && sessoes.length === 0 && <p className="estado estado-vazio">{etapa === "em sessões" ? "Não há sessões agendadas." : "Não há retoques agendados."}</p>}
         {!carregandoSessoes && !erroSessoes && sessoes.length > 0 && <div className="grade-tatuagens grade-agenda">
           {sessoes.map((sessao) => <article key={sessao.id} className="cartao-tatuagem cartao-agenda cartao-sessao">
-            <div className="cartao-agenda-topo"><span className="cartao-inicial">{sessao.tatuagem.ideia.slice(0, 2).toUpperCase()}</span><span className="numero-cartao">SESSÃO · {String(sessao.id).padStart(3, "0")}</span></div>
+            <div className="cartao-agenda-topo"><span className="cartao-inicial">{sessao.tatuagem.ideia.slice(0, 2).toUpperCase()}</span><span className="numero-cartao">{tipoAgendamento === "sessao" ? "SESSÃO" : "RETOQUE"} · {String(sessao.id).padStart(3, "0")}</span></div>
             <strong>{sessao.tatuagem.ideia}</strong>
             <span>{sessao.tatuagem.local_corpo} · {sessao.tatuagem.tamanho}</span>
             <p className="detalhe-sessao-agendada">{sessao.data.split("-").reverse().join("/")} · {sessao.horario?.slice(0, 5)} · 2 horas</p>
             <div className="acoes-sessao">
-              <button className="botao botao-ember" disabled={sessaoEmAtualizacao !== null} onClick={() => atualizarSessao(sessao, "realizada")}>{sessaoEmAtualizacao === sessao.id ? "Salvando…" : "Confirmar realizada"}</button>
-              <button className="botao botao-claro" disabled={sessaoEmAtualizacao !== null} onClick={() => atualizarSessao(sessao, "cancelada")}>Cancelar sessão</button>
+              {tipoAgendamento === "sessao" ? <>
+                <button className="botao botao-ember" disabled={sessaoEmAtualizacao !== null} onClick={() => atualizarSessao(sessao, "realizada")}>{sessaoEmAtualizacao === sessao.id ? "Salvando…" : "Confirmar realizada"}</button>
+                <button className="botao botao-claro" disabled={sessaoEmAtualizacao !== null} onClick={() => atualizarSessao(sessao, "cancelada")}>Cancelar sessão</button>
+              </> : <button className="botao botao-ember" onClick={() => aoAbrirFicha(sessao.tatuagem)}>Registrar retoque realizado</button>}
             </div>
           </article>)}
         </div>}
@@ -558,7 +565,7 @@ function TelaFicha({ tatuagem, aoVoltar, aoSalvar, nomeRetorno = "agenda" }) {
     : tatuagem.etapa === "desenho aprovado"
       ? TIPOS_DE_PASSO.filter((opcao) => opcao.valor === "sessao")
       : tatuagem.etapa === "em sessões"
-        ? TIPOS_DE_PASSO.filter((opcao) => opcao.valor === "sessao" || opcao.valor === "retoque_combinado")
+        ? TIPOS_DE_PASSO.filter((opcao) => opcao.valor === "sessao")
         : tatuagem.etapa === "aguardando retoque"
           ? TIPOS_DE_PASSO.filter((opcao) => opcao.valor === "retoque")
           : [];

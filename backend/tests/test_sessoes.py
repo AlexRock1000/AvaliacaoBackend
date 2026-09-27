@@ -90,6 +90,43 @@ class TestSessoes(unittest.TestCase):
         self.assertEqual(realizada["observacao"], "Sessão realizada.")
         self.assertEqual(PassoSaida.model_validate(realizada).situacao, "realizada")
 
+    def test_confirmacao_agenda_retoque_15_dias_depois_sem_segunda_ou_colisao(self):
+        tatuagem_id = self.criar_projeto_com_desenho_aprovado()
+        data_sessao, horario = self.obter_data_e_horario_disponiveis()
+        sessao = self.agendar_sessao(tatuagem_id, data_sessao, horario)
+        data_esperada = date.today() + timedelta(days=15)
+        while data_esperada.weekday() == 0 or not servico_tatuagem.listar_horarios_disponiveis(data_esperada):
+            data_esperada += timedelta(days=1)
+
+        servico_tatuagem.atualizar_situacao_sessao(tatuagem_id, sessao["id"], "realizada")
+
+        tatuagem = servico_tatuagem.buscar_tatuagem(tatuagem_id)
+        retoque = next(passo for passo in tatuagem["passos"] if passo["tipo"] == "retoque_combinado")
+        self.assertEqual(tatuagem["etapa"], "aguardando retoque")
+        self.assertEqual(retoque["data"], data_esperada)
+        self.assertNotEqual(retoque["data"].weekday(), 0)
+        self.assertEqual(retoque["situacao"], "agendada")
+        self.assertNotIn(retoque["horario"].strftime("%H:%M"), servico_tatuagem.listar_horarios_disponiveis(retoque["data"]))
+
+    def test_horario_de_retoque_nao_colide_com_outra_sessao(self):
+        tatuagem_id = self.criar_projeto_com_desenho_aprovado()
+        data_sessao, horario = self.obter_data_e_horario_disponiveis()
+        sessao = self.agendar_sessao(tatuagem_id, data_sessao, horario)
+        data_retoque = date.today() + timedelta(days=15)
+        while data_retoque.weekday() == 0 or not servico_tatuagem.listar_horarios_disponiveis(data_retoque):
+            data_retoque += timedelta(days=1)
+        servico_tatuagem.atualizar_situacao_sessao(tatuagem_id, sessao["id"], "realizada")
+        retoque = next(
+            passo for passo in servico_tatuagem.buscar_tatuagem(tatuagem_id)["passos"]
+            if passo["tipo"] == "retoque_combinado"
+        )
+
+        outro_id = self.criar_projeto_com_desenho_aprovado()
+        horario_agendado = self.agendar_sessao(outro_id, data_retoque, retoque["horario"])
+
+        self.assertIsInstance(horario_agendado, str)
+        self.assertIn("não está mais disponível", horario_agendado)
+
     def test_sessao_encerrada_nao_pode_ser_atualizada_novamente(self):
         tatuagem_id = self.criar_projeto_com_desenho_aprovado()
         data_sessao, horario = self.obter_data_e_horario_disponiveis()
