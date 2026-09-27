@@ -506,7 +506,18 @@ button.cartao-tatuagem { width: 100%; cursor: pointer; }
 .detalhes-pedido dd { margin: 4px 0 0; font-size: 14px; }
 .observacao-ajuste { margin: 18px 0 0; padding-top: 14px; border-top: 1px solid var(--linha); color: var(--fumaca); font-size: 13px; line-height: 1.5; }
 .observacao-ajuste strong { color: var(--brasa); }
-.previa-desenho { width: min(100%, 480px); max-height: 420px; display: block; object-fit: contain; border: 1px solid var(--linha); border-radius: 12px; background: #f5eee3; }
+.area-upload { position: relative; min-height: 145px; overflow: hidden; border: 1px dashed rgb(245 238 225 / 22%); border-radius: 16px; background: #201f1f; transition: border-color .18s, background .18s; }
+.area-upload-ativa { border-color: var(--brasa); background: #292522; }
+.entrada-imagem-oculta { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; clip-path: inset(50%); }
+.formulario input.entrada-imagem-oculta { min-height: 0; padding: 0; border: 0; }
+.area-upload:focus-within { outline: 2px solid var(--brasa); outline-offset: 3px; }
+.conteudo-upload { min-height: 145px; padding: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; color: #aaa; text-align: center; cursor: pointer; }
+.formulario .conteudo-upload { color: #aaa; font-size: 12px; font-weight: 400; }
+.conteudo-upload svg { width: 25px; height: 25px; margin-bottom: 2px; color: #aaa; }
+.conteudo-upload strong { font-size: 13px; font-weight: 600; }
+.conteudo-upload span { font-size: 12px; line-height: 1.5; }
+.conteudo-upload u { color: #ddd; text-underline-offset: 2px; }
+.previa-desenho { width: min(100%, 480px); max-height: 300px; display: block; object-fit: contain; border: 1px solid rgb(245 238 225 / 14%); border-radius: 10px; background: #f5eee3; }
 .imagem-desenho-historico { width: min(100%, 360px); max-height: 300px; margin-top: 10px; display: block; object-fit: contain; border-radius: 12px; background: #f5eee3; }
 .resposta-desenho { margin-top: 18px; padding: 18px; border: 1px solid rgb(22 18 15 / 14%); border-radius: 14px; background: rgb(245 238 225 / 88%); }
 .resposta-desenho h4 { margin: 0 0 12px; font: 700 22px/1.1 'Cormorant Garamond', Georgia, serif; }

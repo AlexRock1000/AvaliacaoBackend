@@ -466,6 +466,8 @@ function TelaFicha({ tatuagem, aoVoltar, aoSalvar, nomeRetorno = "agenda" }) {
           : [];
   const [tipo, definirTipo] = useState(tiposPermitidos[0]?.valor || "");
   const [imagem, definirImagem] = useState("");
+  const [nomeImagem, definirNomeImagem] = useState("");
+  const [arrastandoImagem, definirArrastandoImagem] = useState(false);
   const [data, definirData] = useState(new Date().toISOString().slice(0, 10));
   const [observacao, definirObservacao] = useState("");
   const [erro, definirErro] = useState("");
@@ -484,15 +486,33 @@ function TelaFicha({ tatuagem, aoVoltar, aoSalvar, nomeRetorno = "agenda" }) {
     }
   }, [tatuagem.id, tatuagem.etapa]);
 
-  // Lê o arquivo escolhido como imagem codificada para enviá-lo junto com o passo.
-  function selecionarDesenho(evento) {
-    const arquivo = evento.target.files?.[0];
+  // Lê a imagem selecionada ou solta na área para anexá-la ao passo do desenho.
+  function carregarDesenho(arquivo) {
     if (!arquivo) return;
+    if (!arquivo.type.startsWith("image/")) {
+      definirErro("Escolha um arquivo de imagem para enviar o desenho.");
+      return;
+    }
     definirErro("");
     const leitor = new FileReader();
-    leitor.onload = () => definirImagem(leitor.result);
+    leitor.onload = () => {
+      definirImagem(leitor.result);
+      definirNomeImagem(arquivo.name);
+    };
     leitor.onerror = () => definirErro("Não foi possível ler essa imagem. Escolha o arquivo novamente.");
     leitor.readAsDataURL(arquivo);
+  }
+
+  // Recebe a imagem escolhida no seletor de arquivos.
+  function selecionarDesenho(evento) {
+    carregarDesenho(evento.target.files?.[0]);
+  }
+
+  // Permite soltar uma imagem diretamente na área de upload.
+  function soltarDesenho(evento) {
+    evento.preventDefault();
+    definirArrastandoImagem(false);
+    carregarDesenho(evento.dataTransfer.files?.[0]);
   }
 
   // Envia o novo passo e deixa a mensagem de recusa visível sem perder os dados.
@@ -507,7 +527,12 @@ function TelaFicha({ tatuagem, aoVoltar, aoSalvar, nomeRetorno = "agenda" }) {
     pedirApi(`/tatuagens/${tatuagem.id}/passos`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tipo, data, observacao, imagem: enviarDesenho ? imagem : null }),
+        body: JSON.stringify({
+          tipo,
+          data: tipo === "sessao" ? data : new Date().toISOString().slice(0, 10),
+          observacao,
+          imagem: enviarDesenho ? imagem : null,
+        }),
       })
       .then(() => aoSalvar())
       .catch((erroApi) => definirErro(erroApi.message))
@@ -532,14 +557,22 @@ function TelaFicha({ tatuagem, aoVoltar, aoSalvar, nomeRetorno = "agenda" }) {
       <form onSubmit={enviarPasso} className="formulario">
         {enviarDesenho ? <>
           <label htmlFor="imagem-desenho">Desenho feito para a cliente</label>
-          <input id="imagem-desenho" type="file" accept="image/*" required onChange={selecionarDesenho} />
-          {imagem && <img className="previa-desenho" src={imagem} alt="Prévia do desenho selecionado" />}
+          <div className={`area-upload ${arrastandoImagem ? "area-upload-ativa" : ""} ${imagem ? "area-upload-com-imagem" : ""}`} onDragOver={(evento) => { evento.preventDefault(); definirArrastandoImagem(true); }} onDragLeave={() => definirArrastandoImagem(false)} onDrop={soltarDesenho}>
+            <input id="imagem-desenho" className="entrada-imagem-oculta" type="file" accept="image/*" onChange={selecionarDesenho} />
+            <label className="conteudo-upload" htmlFor="imagem-desenho">
+              {imagem ? <img className="previa-desenho" src={imagem} alt="Prévia do desenho selecionado" /> : <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 16V4m0 0L8 8m4-4 4 4" /><path d="M5 14v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4" /></svg>}
+              <strong>{imagem ? nomeImagem : "Arraste e solte o desenho para enviá-lo."}</strong>
+              <span>{imagem ? "Imagem carregada · clique ou solte outra para substituir" : <>Ou <u>escolha uma imagem</u>. Formatos aceitos: PNG, JPG e outros formatos de imagem.</>}</span>
+            </label>
+          </div>
         </> : <>
           <label htmlFor="tipo-passo">O que foi feito?</label>
           <select id="tipo-passo" value={tipo} onChange={(evento) => definirTipo(evento.target.value)}>{tiposPermitidos.map((opcao) => <option key={opcao.valor} value={opcao.valor}>{opcao.nome}</option>)}</select>
         </>}
-        <label htmlFor="data-passo">Data</label>
-        <input id="data-passo" type="date" value={data} onChange={(evento) => definirData(evento.target.value)} required />
+        {tipo === "sessao" && <>
+          <label htmlFor="data-passo">Data da sessão</label>
+          <input id="data-passo" type="date" value={data} onChange={(evento) => definirData(evento.target.value)} required />
+        </>}
         <label htmlFor="observacao">Observação</label>
         <textarea id="observacao" value={observacao} onChange={(evento) => definirObservacao(evento.target.value)} required placeholder="Uma nota para o histórico da tatuagem" />
         {erro && <p className="aviso aviso-erro" role="alert">{erro}</p>}
