@@ -161,9 +161,10 @@ button.cartao-tatuagem { width: 100%; cursor: pointer; }
 .cabecalho-agenda { margin: 8px 0 22px; display: flex; flex-direction: column; gap: 20px; }
 .cabecalho-agenda .sobretitulo { color: var(--brasa); }
 .cabecalho-agenda p { color: var(--fumaca); }
-.filtros-etapa { display: flex; align-items: center; gap: 7px; overflow-x: auto; padding: 2px 0 7px; }
-.filtros-etapa button { min-height: 36px; flex: 0 0 auto; padding: 0 14px; border: 1px solid transparent; border-radius: 999px; background: transparent; color: var(--fumaca); font-size: 11px; font-weight: 600; white-space: nowrap; }
+.filtros-etapa { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; overflow: visible; padding: 2px 0 0; }
+.filtros-etapa button { min-height: 40px; flex: 0 0 auto; padding: 0 14px; border: 1px solid transparent; border-radius: 999px; background: transparent; color: var(--fumaca); font-size: 11px; font-weight: 600; white-space: nowrap; }
 .filtros-etapa button:hover { background: rgb(245 238 225 / 6%); color: var(--creme); }
+.filtros-etapa button:focus-visible { outline: 2px solid var(--brasa-clara); outline-offset: 2px; }
 .filtros-etapa button.filtro-ativo { border-color: rgb(217 137 70 / 35%); background: var(--brasa); color: var(--tinta); }
 .modo-cliente .filtros-etapa button { color: var(--pedra); }
 .grade-agenda { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -366,7 +367,7 @@ button.cartao-tatuagem { width: 100%; cursor: pointer; }
   .resumo-estudio article { min-height: 105px; }
   .modo-tatuador .banner-conteudo h1 { font-size: clamp(46px, 12vw, 62px); }
   .modo-tatuador .cabecalho-agenda { align-items: flex-start; flex-direction: column; }
-  .modo-tatuador .filtros-etapa { max-width: calc(100vw - 32px); }
+  .modo-tatuador .filtros-etapa { max-width: 100%; margin-right: 0; padding-right: 0; }
   .modo-tatuador .cartao-agenda { grid-template-columns: 42px minmax(0, 1fr) auto; padding: 13px; column-gap: 10px; }
   .modo-tatuador .cartao-agenda .botao { grid-column: 2 / span 2; grid-row: 3; margin-top: 10px; }
   .modo-tatuador .cartao-agenda .selo-etapa { grid-column: 3; font-size: 10px; }
@@ -555,4 +556,41 @@ button.cartao-tatuagem { width: 100%; cursor: pointer; }
 
 @media (max-width: 680px) {
   .quadro-projetos { grid-template-columns: repeat(5, minmax(220px, 1fr)); overflow-x: auto; padding-bottom: 8px; }
+}
+
+/* A agenda da cliente usa os mesmos cartÃµes compactos da lista do estÃºdio. */
+.modo-cliente .grade-cliente { grid-template-columns: minmax(0, 1.08fr) minmax(340px, .92fr); align-items: start; }
+.modo-cliente .lista-projetos { min-height: 0; background: transparent; }
+.modo-cliente .grade-tatuagens { gap: 10px; }
+.modo-cliente .cartao-agenda-cliente {
+  min-height: 92px;
+  padding: 15px 18px;
+  grid-template-columns: 48px minmax(0, 1fr) auto;
+  grid-template-rows: auto auto auto;
+  align-content: center;
+  column-gap: 14px;
+  row-gap: 4px;
+  border: 1px solid var(--linha);
+  border-radius: 18px;
+  background: var(--carvao);
+  color: var(--creme);
+}
+.modo-cliente .cartao-agenda-cliente::before { display: none; }
+.modo-cliente .cartao-agenda-cliente .cartao-agenda-topo { grid-column: 1; grid-row: 1 / span 3; align-self: center; }
+.modo-cliente .cartao-agenda-cliente .cartao-inicial { background: var(--ferrugem); color: var(--creme); }
+.modo-cliente .cartao-agenda-cliente .numero-cartao { display: none; }
+.modo-cliente .cartao-agenda-cliente strong { grid-column: 2; grid-row: 1; font: 700 18px/1.2 'DM Sans', sans-serif; }
+.modo-cliente .cartao-agenda-cliente > span:not(.numero-cartao):not(.selo-etapa):not(.agendamento-resumo-cliente) { grid-column: 2; grid-row: 2; color: var(--fumaca); font-size: 12px; }
+.modo-cliente .cartao-agenda-cliente .agendamento-resumo-cliente { grid-column: 2; grid-row: 3; color: var(--brasa); font-size: 12px; font-weight: 700; }
+.modo-cliente .cartao-agenda-cliente .selo-etapa { grid-column: 3; grid-row: 1 / span 3; color: var(--brasa); white-space: nowrap; }
+.modo-cliente .cartao-agenda-cliente.cartao-selecionado { border-color: var(--brasa); box-shadow: 0 0 0 1px var(--brasa); }
+
+@media (max-width: 680px) {
+  .modo-cliente .cartao-agenda-cliente { min-height: 84px; padding: 13px; grid-template-columns: 42px minmax(0, 1fr) auto; column-gap: 10px; }
+  .modo-cliente .cartao-agenda-cliente .cartao-inicial { width: 42px; height: 42px; flex-basis: 42px; }
+  .modo-cliente .cartao-agenda-cliente .selo-etapa { font-size: 10px; }
+}
+
+@media (max-width: 860px) {
+  .modo-cliente .grade-cliente { grid-template-columns: minmax(0, 1fr); }
 }

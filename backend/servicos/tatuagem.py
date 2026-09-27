@@ -12,7 +12,7 @@ def listar_tatuagens(etapa=None, cliente_id=None):
         tatuagens = [tatuagem for tatuagem in tatuagens if tatuagem["etapa"] == etapa]
     if cliente_id is not None:
         tatuagens = [tatuagem for tatuagem in tatuagens if tatuagem["cliente_id"] == cliente_id]
-    return tatuagens
+    return sorted(tatuagens, key=lambda tatuagem: tatuagem["id"], reverse=True)
 
 
 # Na camada de serviços, encaminha a busca ao repositório para não acessar a lista diretamente.

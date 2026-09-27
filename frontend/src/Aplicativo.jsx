@@ -308,8 +308,8 @@ function TelaMinhasTatuagens({ perfil }) {
           {!carregando && !erro && tatuagens.length === 0 && <p className="estado estado-vazio">Ainda não há tatuagens no seu histórico. Seu primeiro pedido começa em “Pedir tatuagem”.</p>}
           {!carregando && !erro && tatuagens.length > 0 && <div className="grade-tatuagens">
             {tatuagens.map((tatuagem) => (
-              <button key={tatuagem.id} data-initials={tatuagem.ideia.slice(0, 2).toUpperCase()} className={`cartao-tatuagem ${selecionada?.id === tatuagem.id ? "cartao-selecionado" : ""}`} onClick={() => abrirHistorico(tatuagem)}>
-                <span className="numero-cartao">PROJETO · {String(tatuagem.id).padStart(3, "0")}</span>
+              <button key={tatuagem.id} className={`cartao-tatuagem cartao-agenda cartao-agenda-cliente ${selecionada?.id === tatuagem.id ? "cartao-selecionado" : ""}`} onClick={() => abrirHistorico(tatuagem)}>
+                <div className="cartao-agenda-topo"><span className="cartao-inicial">{tatuagem.ideia.slice(0, 2).toUpperCase()}</span><span className="numero-cartao">PROJETO · {String(tatuagem.id).padStart(3, "0")}</span></div>
                 <strong>{tatuagem.ideia}</strong>
                 <span>{tatuagem.local_corpo} · {tatuagem.tamanho}</span>
                 {agendamentosPorTatuagem[tatuagem.id] && <span className="agendamento-resumo-cliente">{tatuagem.etapa === "aguardando retoque" ? "Retoque" : "Sessão"}: {formatarDataAgendamento(agendamentosPorTatuagem[tatuagem.id].data)}{agendamentosPorTatuagem[tatuagem.id].horario ? ` · ${agendamentosPorTatuagem[tatuagem.id].horario.slice(0, 5)}` : ""}</span>}
@@ -375,16 +375,6 @@ function TelaAgenda({ aoAbrirFicha, atualizacao, aoAtualizar, titulo = "Projetos
     { valor: "aguardando retoque", nome: "Aguardando retoque" },
     { valor: "finalizada", nome: "Finalizada" },
   ];
-  const prioridadeEtapa = {
-    pedida: 0,
-    "aguardando aprovação": 1,
-    "ajustes no desenho": 2,
-    "desenho aprovado": 3,
-    "em sessões": 4,
-    "aguardando retoque": 5,
-    finalizada: 6,
-  };
-
   // Busca a agenda sempre que o filtro ou um registro de passo muda.
   useEffect(() => {
     function carregarAgenda() {
@@ -437,11 +427,6 @@ function TelaAgenda({ aoAbrirFicha, atualizacao, aoAtualizar, titulo = "Projetos
       .finally(() => definirSessaoEmAtualizacao(null));
   }
 
-  // Prioriza pedidos novos e deixa os projetos finalizados no fim da agenda.
-  const tatuagensOrdenadas = [...tatuagens].sort(
-    (primeira, segunda) => (prioridadeEtapa[primeira.etapa] ?? 5) - (prioridadeEtapa[segunda.etapa] ?? 5),
-  );
-
   return (
     <section id="projetos" className="painel-agenda">
       <div className="cabecalho-agenda">
@@ -476,7 +461,7 @@ function TelaAgenda({ aoAbrirFicha, atualizacao, aoAtualizar, titulo = "Projetos
       </> : <>
       {!carregando && !erro && tatuagens.length === 0 && <p className="estado estado-vazio">Não há tatuagens nesta etapa.</p>}
       {!carregando && !erro && <div className="grade-tatuagens grade-agenda">
-        {tatuagensOrdenadas.map((tatuagem) => (
+        {tatuagens.map((tatuagem) => (
           <article key={tatuagem.id} className="cartao-tatuagem cartao-agenda">
             <div className="cartao-agenda-topo"><span className="cartao-inicial">{tatuagem.ideia.slice(0, 2).toUpperCase()}</span><span className="numero-cartao">PROJETO · {String(tatuagem.id).padStart(3, "0")}</span></div>
             <strong>{tatuagem.ideia}</strong>

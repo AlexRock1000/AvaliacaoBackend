@@ -1,5 +1,7 @@
 # Testes automatizados
 
+A ordenação dos pedidos também é verificada em `backend/tests/test_ordenacao.py`: a lista geral e as listas filtradas por cliente ou etapa devem apresentar os IDs mais altos primeiro, mesmo quando os projetos estão em etapas diferentes.
+
 Esta documentação descreve como validar o fluxo de sessões do estúdio.
 
 ## Backend
