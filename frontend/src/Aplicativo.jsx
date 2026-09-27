@@ -37,11 +37,15 @@ function proximoPassoDaCliente(etapa) {
     "aguardando aprovação": "O tatuador enviou o desenho. Confira a imagem abaixo e diga se concorda ou se precisa de ajustes.",
     "ajustes no desenho": "O estúdio vai revisar o desenho com base na sua observação e enviar uma nova versão.",
     "desenho aprovado": "O próximo passo é combinar a primeira sessão com o estúdio.",
-    "em sessões": "Podem acontecer outras sessões. Depois da última, aguarde a cicatrização e combine o retoque com o estúdio.",
+    "em sessões": "Confira abaixo a data da sua sessão. Depois que ela acontecer, o tatuador confirma por aqui e agenda o retoque.",
     "aguardando retoque": "O retoque já foi combinado. Depois da cicatrização, realize o retoque com o estúdio para concluir o projeto.",
     finalizada: "Seu projeto foi concluído. Não há próximos passos previstos.",
   };
   return orientacoes[etapa] || "Consulte o estúdio para saber qual será o próximo passo.";
+}
+
+function formatarDataAgendamento(data) {
+  return data?.split("-").reverse().join("/") || "";
 }
 
 // Exibe a tela de pedido para a cliente e mostra recusas da API no próprio formulário.
@@ -231,6 +235,11 @@ function TelaMinhasTatuagens({ perfil }) {
   }
 
   const desenhoEnviado = [...passos].reverse().find((passo) => passo.tipo === "desenho_enviado");
+  const sessoesAgendadas = passos
+    .filter((passo) => passo.tipo === "sessao" && (passo.situacao || "agendada") === "agendada")
+    .sort((primeiro, segundo) => `${primeiro.data} ${primeiro.horario || ""}`.localeCompare(`${segundo.data} ${segundo.horario || ""}`));
+  const sessaoAgendada = sessoesAgendadas[0];
+  const retoqueAgendado = [...passos].reverse().find((passo) => passo.tipo === "retoque_combinado" && (passo.situacao || "agendada") === "agendada");
 
   return (
     <section className="painel-cliente">
@@ -260,7 +269,12 @@ function TelaMinhasTatuagens({ perfil }) {
             <div><h3>{selecionada?.ideia || "Seu caminho até aqui"}</h3>{selecionada && <p>{selecionada.local_corpo} · {selecionada.tamanho}</p>}</div>
             {selecionada && <span className="selo-etapa etapa-historico"><i />{nomeDaEtapa(selecionada.etapa)}</span>}
           </div>
-          {selecionada && <p className="orientacao-proximo-passo" role="status"><strong>O que vem agora</strong>{proximoPassoDaCliente(selecionada.etapa)}</p>}
+          {selecionada && <p className="orientacao-proximo-passo" role="status">
+            <strong>O que vem agora</strong>
+            {proximoPassoDaCliente(selecionada.etapa)}
+            {selecionada.etapa === "em sessões" && sessaoAgendada && <span className="horario-proximo-passo">Sua sessão está marcada para <strong>{formatarDataAgendamento(sessaoAgendada.data)} às {sessaoAgendada.horario?.slice(0, 5)}</strong>.</span>}
+            {selecionada.etapa === "aguardando retoque" && retoqueAgendado && <span className="horario-proximo-passo">O retoque está marcado para <strong>{formatarDataAgendamento(retoqueAgendado.data)} às {retoqueAgendado.horario?.slice(0, 5)}</strong>.</span>}
+          </p>}
           {!selecionada && <p className="estado">Selecione uma tatuagem para acompanhar as etapas registradas pelo estúdio.</p>}
           {selecionada && <>
             <div className="divisor-historico"><span className="sobretitulo">LINHA DO TEMPO</span></div>
@@ -695,7 +709,11 @@ function TelaFicha({ tatuagem, aoVoltar, aoSalvar, nomeRetorno = "agenda" }) {
           tipo,
           data: tipo === "sessao" ? data : new Date().toISOString().slice(0, 10),
           horario: tipo === "sessao" ? horario : null,
-          observacao: tipo === "sessao" ? "Sessão agendada. Duração: 2 horas." : observacao,
+          observacao: tipo === "sessao"
+            ? "Sessão agendada. Duração: 2 horas."
+            : tatuagem.etapa === "aguardando retoque"
+              ? "Retoque realizado."
+              : observacao,
           imagem: enviarDesenho ? imagem : null,
         }),
       })
@@ -709,7 +727,7 @@ function TelaFicha({ tatuagem, aoVoltar, aoSalvar, nomeRetorno = "agenda" }) {
   return (
     <section className="painel-formulario">
       <button className="voltar" onClick={aoVoltar}>← Voltar para {nomeRetorno}</button>
-      <div className="titulo-secao"><span className="sobretitulo">FICHA · {String(tatuagem.id).padStart(2, "0")}</span><h2>{tatuagem.etapa === "pedida" ? "Pedido recebido." : enviarDesenho ? "Revisar desenho." : tatuagem.etapa === "desenho aprovado" ? "Desenho Aprovado" : "Registrar um passo."}</h2><p>{nomeDaEtapa(tatuagem.etapa)}</p></div>
+      <div className="titulo-secao"><span className="sobretitulo">FICHA · {String(tatuagem.id).padStart(2, "0")}</span><h2>{tatuagem.etapa === "pedida" ? "Pedido recebido." : enviarDesenho ? "Revisar desenho." : tatuagem.etapa === "desenho aprovado" ? "Desenho Aprovado" : tatuagem.etapa === "aguardando retoque" ? "Retoque" : "Registrar um passo."}</h2><p>{nomeDaEtapa(tatuagem.etapa)}</p></div>
       {tatuagem.etapa === "desenho aprovado" && imagemDesenhoAprovado && <figure className="referencia-cliente previa-desenho-aprovado">
         <figcaption>Prévia do desenho aprovado</figcaption>
         <img src={imagemDesenhoAprovado} alt="Desenho aprovado pela cliente" />
@@ -755,12 +773,12 @@ function TelaFicha({ tatuagem, aoVoltar, aoSalvar, nomeRetorno = "agenda" }) {
           </select>
           {erroHorarios && <p className="aviso aviso-erro" role="alert">{erroHorarios}</p>}
         </>}
-        {tipo !== "sessao" && <>
+        {tipo !== "sessao" && tatuagem.etapa !== "aguardando retoque" && <>
           <label htmlFor="observacao">Observação</label>
           <textarea id="observacao" value={observacao} onChange={(evento) => definirObservacao(evento.target.value)} required placeholder="Uma nota para o histórico da tatuagem" />
         </>}
         {erro && <p className="aviso aviso-erro" role="alert">{erro}</p>}
-        <button className="botao botao-escuro" disabled={salvando || tipo === "sessao" && (!horario || carregandoHorarios)}>{salvando ? "Enviando…" : tipo === "sessao" ? "Marcar sessão para a cliente" : enviarDesenho ? "Enviar desenho para a cliente" : "Salvar passo"}<span aria-hidden="true">↗</span></button>
+        <button className="botao botao-escuro" disabled={salvando || tipo === "sessao" && (!horario || carregandoHorarios)}>{salvando ? "Enviando…" : tatuagem.etapa === "aguardando retoque" ? "Confirmar retoque realizado" : tipo === "sessao" ? "Marcar sessão para a cliente" : enviarDesenho ? "Enviar desenho para a cliente" : "Salvar passo"}<span aria-hidden="true">↗</span></button>
       </form>
     </section>
   );

@@ -146,6 +146,8 @@ button.cartao-tatuagem { width: 100%; cursor: pointer; }
 .historico-cabecalho p { margin: 5px 0 0; color: rgb(245 238 225 / 78%); font-size: 14px; }
 .orientacao-proximo-passo { margin: 0 0 16px; padding: 13px 15px; border-left: 3px solid var(--oliva); border-radius: 0 8px 8px 0; background: rgb(83 102 55 / 9%); color: var(--pedra); font-size: 13px; line-height: 1.5; }
 .orientacao-proximo-passo strong { display: block; margin-bottom: 3px; color: var(--tinta); font-size: 12px; }
+.horario-proximo-passo { margin-top: 8px; display: block; color: var(--tinta); }
+.horario-proximo-passo strong { margin: 3px 0 0; color: var(--brasa); font-size: 14px; }
 .icone-historico { color: var(--ferrugem); font-size: 24px; }
 .etapa-historico { margin: 0 0 12px; }
 .historico-cabecalho .etapa-historico { margin: 0; padding: 6px 11px; border: 1px solid rgb(83 102 55 / 28%); border-radius: 999px; color: var(--oliva); background: rgb(83 102 55 / 12%); }
