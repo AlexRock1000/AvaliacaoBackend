@@ -1,5 +1,5 @@
 // Mantém em um só lugar o endereço local da API usada durante o desenvolvimento.
-const ENDERECO_API = "http://localhost:8000";
+const ENDERECO_API = import.meta.env.DEV ? "" : "http://localhost:8000";
 
 
 // Confere o status HTTP antes de entregar os dados para a tela.
