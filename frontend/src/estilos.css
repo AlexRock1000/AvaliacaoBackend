@@ -317,6 +317,14 @@ button.cartao-tatuagem { width: 100%; cursor: pointer; }
 .modo-tatuador .banner-ornamento { opacity: .12; }
 .modo-tatuador .banner-conteudo h1 { font-size: clamp(60px, 6vw, 86px); }
 .modo-tatuador .banner-conteudo p { font-size: 15px; }
+.acoes-banner { margin-top: 24px; display: flex; flex-wrap: wrap; gap: 11px; }
+.botao-contorno { border-color: rgb(245 238 225 / 30%); background: transparent; color: var(--creme); }
+.botao-contorno:hover { border-color: var(--brasa); background: rgb(245 238 225 / 7%); }
+.resumo-estudio { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.resumo-estudio article { min-height: 132px; padding: 20px; border: 1px solid var(--linha); border-radius: 20px; background: var(--carvao); }
+.resumo-estudio article > strong { color: var(--brasa); font: 700 34px/1 'Cormorant Garamond', Georgia, serif; }
+.resumo-estudio h2 { margin: 10px 0 0; color: var(--creme); font-size: 14px; }
+.resumo-estudio p { margin: 7px 0 0; color: var(--fumaca); font-size: 12px; }
 .modo-tatuador .cabecalho-agenda { margin-bottom: 18px; flex-direction: row; align-items: end; justify-content: space-between; gap: 24px; }
 .modo-tatuador .filtros-etapa { max-width: 60%; }
 .modo-tatuador .grade-agenda { grid-template-columns: 1fr; gap: 10px; }
@@ -345,6 +353,8 @@ button.cartao-tatuagem { width: 100%; cursor: pointer; }
   .modo-cliente .cartao-tatuagem { min-height: 340px; padding: 190px 22px 22px; }
   .modo-cliente .painel-linha-tempo { min-height: 340px; }
   .modo-tatuador .banner-estudio { min-height: 285px; padding: 27px 23px; }
+  .resumo-estudio { grid-template-columns: 1fr; }
+  .resumo-estudio article { min-height: 105px; }
   .modo-tatuador .banner-conteudo h1 { font-size: clamp(46px, 12vw, 62px); }
   .modo-tatuador .cabecalho-agenda { align-items: flex-start; flex-direction: column; }
   .modo-tatuador .filtros-etapa { max-width: calc(100vw - 32px); }
@@ -381,4 +391,74 @@ button.cartao-tatuagem { width: 100%; cursor: pointer; }
     margin: 0 auto;
     padding: 22px 0 40px;
   }
+}
+
+/* Ilustrações de fundo fornecidas em Docs, usadas como textura das telas. */
+.aplicativo.modo-cliente,
+.aplicativo.modo-tatuador { position: relative; isolation: isolate; }
+
+.aplicativo.modo-cliente::before,
+.aplicativo.modo-tatuador::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  background-position: center top;
+  background-repeat: repeat-y;
+  background-size: min(520px, 46vw) auto;
+  opacity: .09;
+  pointer-events: none;
+}
+
+.aplicativo.modo-cliente::before {
+  background-image: url('/imagens/mao-rosa.png');
+  background-position: 70% center;
+  background-repeat: no-repeat;
+  background-size: min(760px, 76vw) auto;
+  mix-blend-mode: multiply;
+  opacity: .16;
+}
+
+.aplicativo.modo-tatuador::before {
+  background-image: url('/imagens/mao-rosa.png');
+  background-position: 72% center;
+  background-repeat: no-repeat;
+  background-size: min(760px, 76vw) auto;
+  opacity: .12;
+  filter: invert(1);
+  mix-blend-mode: screen;
+}
+
+.modo-cliente .banner-cliente {
+  background-image: linear-gradient(90deg, rgb(151 65 36 / 94%), rgb(151 65 36 / 70%)), url('/imagens/arabesco.png');
+  background-position: center, 76% 48%;
+  background-size: cover, 540px auto;
+}
+
+.modo-tatuador .banner-estudio {
+  background-image: linear-gradient(90deg, rgb(23 18 15 / 95%), rgb(23 18 15 / 60%)), url('/imagens/arabesco-floral.png');
+  background-position: center, 78% 46%;
+  background-size: cover, 600px auto;
+}
+
+.modo-cliente .cartao-tatuagem {
+  background-image: linear-gradient(0deg, #17120f 0%, rgb(23 18 15 / 94%) 28%, transparent 76%), url('/imagens/mao-rosa.png');
+  background-position: center, center 35%;
+  background-size: cover, cover;
+}
+
+.modo-cliente .painel-linha-tempo::before,
+.modo-cliente .historico-cabecalho {
+  background-image: url('/imagens/fundo-cranio-rosa.png');
+}
+
+.selo-estudio {
+  background-image: linear-gradient(0deg, rgb(23 18 15 / 78%), rgb(23 18 15 / 5%)), url('/imagens/arabesco.png');
+  background-position: center, 50% 45%;
+  background-size: cover, 220px auto;
+}
+
+@media (max-width: 680px) {
+  .aplicativo.modo-cliente::before,
+  .aplicativo.modo-tatuador::before { background-position: center 140px; background-size: min(440px, 92vw) auto; opacity: .11; }
 }

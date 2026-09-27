@@ -227,9 +227,49 @@ function TelaAgenda({ aoAbrirFicha, atualizacao }) {
   );
 }
 
+// Resume os projetos do estúdio e encaminha os atalhos para as telas correspondentes.
+function TelaVisaoGeral({ atualizacao, aoVerAgenda, aoAbrirFicha, aoRegistrarPasso }) {
+  const [tatuagens, definirTatuagens] = useState([]);
+  const [erro, definirErro] = useState("");
+
+  useEffect(() => {
+    pedirApi("/tatuagens")
+      .then(definirTatuagens)
+      .catch((erroApi) => definirErro(erroApi.message));
+  }, [atualizacao]);
+
+  const pendentes = tatuagens.filter((tatuagem) => tatuagem.etapa !== "finalizada");
+  const emSessoes = tatuagens.filter((tatuagem) => tatuagem.etapa === "em sessões");
+
+  return (
+    <>
+      <section className="banner-estudio">
+        <img className="banner-ornamento" src="/imagens/arabesco-floral.png" alt="" />
+        <div className="banner-conteudo">
+          <span className="sobretitulo">ATELIÊ TINTA NEGRA</span>
+          <h1>Arte viva,<br /><em>agenda em ordem.</em></h1>
+          <p>Bom dia, Vitor. Acompanhe os projetos e escolha o próximo passo do estúdio.</p>
+          <div className="acoes-banner">
+            <button className="botao botao-contorno" onClick={aoVerAgenda}>Ver agenda <span aria-hidden="true">→</span></button>
+            <button className="botao botao-ember" onClick={() => aoRegistrarPasso(pendentes)}>＋ Registrar passo</button>
+          </div>
+        </div>
+        <span className="banner-selo" aria-hidden="true">TN<br />✳</span>
+      </section>
+      {erro && <p className="aviso aviso-erro" role="alert">{erro}</p>}
+      <section className="resumo-estudio" aria-label="Resumo do estúdio">
+        <article><strong>{String(pendentes.length).padStart(2, "0")}</strong><h2>Ações pendentes</h2><p>Projetos que precisam de atenção</p></article>
+        <article><strong>{String(emSessoes.length).padStart(2, "0")}</strong><h2>Sessões em andamento</h2><p>Projetos em fase de sessão</p></article>
+        <article><strong>{String(tatuagens.length).padStart(2, "0")}</strong><h2>Projetos ativos</h2><p>Pedidos registrados no estúdio</p></article>
+      </section>
+      <TelaAgenda atualizacao={atualizacao} aoAbrirFicha={aoAbrirFicha} />
+    </>
+  );
+}
+
 // Registra a aprovação do desenho, uma sessão ou um retoque na ficha escolhida.
 function TelaFicha({ tatuagem, aoVoltar, aoSalvar }) {
-  const [tipo, definirTipo] = useState("desenho_aprovado");
+  const [tipo, definirTipo] = useState(tatuagem.etapa === "pedida" ? "desenho_aprovado" : "sessao");
   const [data, definirData] = useState(new Date().toISOString().slice(0, 10));
   const [observacao, definirObservacao] = useState("");
   const [erro, definirErro] = useState("");
@@ -273,7 +313,8 @@ function TelaFicha({ tatuagem, aoVoltar, aoSalvar }) {
 // Apresenta as quatro telas da cartilha e troca os caminhos conforme o perfil escolhido.
 export default function Aplicativo() {
   const [perfilNome, definirPerfilNome] = useState("Vitor");
-  const [tela, definirTela] = useState("agenda");
+  const [tela, definirTela] = useState("visao-geral");
+  const [telaAnteriorFicha, definirTelaAnteriorFicha] = useState("agenda");
   const [ficha, definirFicha] = useState(null);
   const [atualizacao, definirAtualizacao] = useState(0);
   const perfil = PERFIS.find((opcao) => opcao.nome === perfilNome);
@@ -283,7 +324,41 @@ export default function Aplicativo() {
     const nome = evento.target.value;
     definirPerfilNome(nome);
     definirFicha(null);
-    definirTela(nome === "Vitor" ? "agenda" : "minhas");
+    definirTela(nome === "Vitor" ? "visao-geral" : "minhas");
+  }
+
+  function abrirAgenda() {
+    definirFicha(null);
+    definirTela("agenda");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function abrirVisaoGeral() {
+    definirFicha(null);
+    definirTela("visao-geral");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function abrirProjetos() {
+    definirFicha(null);
+    definirTela("agenda");
+    window.setTimeout(() => document.getElementById("projetos")?.scrollIntoView({ behavior: "smooth" }), 0);
+  }
+
+  function registrarProximoPasso(pendentes) {
+    if (pendentes.length > 0) {
+      definirTelaAnteriorFicha("visao-geral");
+      definirFicha(pendentes[0]);
+      definirTela("ficha");
+      return;
+    }
+    abrirAgenda();
+  }
+
+  function abrirFicha(tatuagem) {
+    definirTelaAnteriorFicha(tela);
+    definirFicha(tatuagem);
+    definirTela("ficha");
   }
 
   // Atualiza a agenda após gravar um passo e volta para a lista de trabalho.
@@ -302,9 +377,9 @@ export default function Aplicativo() {
         </a>
         <nav className="navegacao" aria-label="Navegação principal">
           {perfil.tipo === "tatuador" && <>
-            <button className="nav-inicio" onClick={() => { definirFicha(null); definirTela("agenda"); window.scrollTo({ top: 0, behavior: "smooth" }); }}><span className="icone-grade" aria-hidden="true">▦</span> Visão geral</button>
-            <button className="ativo" onClick={() => { definirFicha(null); definirTela("agenda"); window.scrollTo({ top: 0, behavior: "smooth" }); }}><span className="icone-grade" aria-hidden="true">▤</span> Agenda<span className="nav-contagem">3</span></button>
-            <button className="nav-projetos" onClick={() => { definirFicha(null); definirTela("agenda"); document.getElementById("projetos")?.scrollIntoView({ behavior: "smooth" }); }}><span className="icone-grade" aria-hidden="true">☷</span> Projetos</button>
+            <button className={tela === "visao-geral" ? "ativo" : "nav-inicio"} onClick={abrirVisaoGeral}><span className="icone-grade" aria-hidden="true">▦</span> Visão geral</button>
+            <button className={tela === "agenda" || tela === "ficha" ? "ativo" : "nav-agenda"} onClick={abrirAgenda}><span className="icone-grade" aria-hidden="true">▤</span> Agenda</button>
+            <button className="nav-projetos" onClick={abrirProjetos}><span className="icone-grade" aria-hidden="true">☷</span> Projetos</button>
             <div className="selo-estudio"><span>DESDE 2018</span></div>
           </>}
         </nav>
@@ -314,20 +389,16 @@ export default function Aplicativo() {
         </label>
       </header>
       <main id="inicio" className="conteudo-principal">
-        {tela === "agenda" && <section className="banner-estudio">
-          <img className="banner-ornamento" src="/imagens/ornamento.jfif" alt="" />
-          <div className="banner-conteudo"><span className="sobretitulo">ATELIÊ TINTA NEGRA</span><h1>Arte viva,<br /><em>agenda em ordem.</em></h1><p>Projetos organizados para acompanhar cada história, do traço ao retoque.</p></div>
-          <span className="banner-selo" aria-hidden="true">TN<br />✳</span>
-        </section>}
         {tela === "minhas" && <section className="banner-cliente">
-          <img className="banner-ornamento" src="/imagens/ornamento.jfif" alt="" />
+          <img className="banner-ornamento" src="/imagens/arabesco.png" alt="" />
           <div className="banner-conteudo"><span className="sobretitulo">SUA JORNADA NA PELE</span><h1>Histórias que ficam.</h1><p>Acompanhe cada traço, cada sessão e tudo o que vem depois.</p><button className="botao botao-ember" onClick={() => definirTela("pedir")}><span aria-hidden="true">＋</span> Pedir tatuagem</button></div>
         </section>}
+        {tela === "visao-geral" && <TelaVisaoGeral atualizacao={atualizacao} aoVerAgenda={abrirAgenda} aoAbrirFicha={abrirFicha} aoRegistrarPasso={registrarProximoPasso} />}
         <div className="coluna-conteudo">
           {tela === "pedir" && <TelaPedir perfil={perfil} aoVoltar={() => definirTela("minhas")} aoCriar={() => definirAtualizacao((valor) => valor + 1)} />}
           {tela === "minhas" && <TelaMinhasTatuagens key={atualizacao} perfil={perfil} />}
-          {tela === "agenda" && <TelaAgenda atualizacao={atualizacao} aoAbrirFicha={(tatuagem) => { definirFicha(tatuagem); definirTela("ficha"); }} />}
-          {tela === "ficha" && ficha && <TelaFicha tatuagem={ficha} aoVoltar={() => definirTela("agenda")} aoSalvar={salvarPasso} />}
+          {tela === "agenda" && <TelaAgenda atualizacao={atualizacao} aoAbrirFicha={abrirFicha} />}
+          {tela === "ficha" && ficha && <TelaFicha tatuagem={ficha} aoVoltar={() => definirTela(telaAnteriorFicha)} aoSalvar={salvarPasso} />}
         </div>
       </main>
       {perfil.tipo === "cliente" && <nav className="navegacao-mobile" aria-label="Navegação da cliente">
