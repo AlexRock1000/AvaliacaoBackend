@@ -59,7 +59,7 @@ def listar_horarios_disponiveis(data):
         for tatuagem in repositorio_tatuagem.listar_tatuagens():
             for passo in tatuagem["passos"]:
                 horario_marcado = passo.get("horario")
-                if passo["tipo"] == "sessao" and passo["data"] == data and horario_marcado is not None:
+                if passo["tipo"] == "sessao" and passo.get("situacao", "agendada") == "agendada" and passo["data"] == data and horario_marcado is not None:
                     inicio_marcado = datetime.combine(data, horario_marcado)
                     fim_marcado = inicio_marcado + duracao
                     if inicio < fim_marcado and inicio_marcado < fim:
@@ -115,3 +115,20 @@ def registrar_passo(tatuagem_id: int, entrada: PassoEntrada):
     resultado = repositorio_tatuagem.adicionar_passo(tatuagem_id, dados_passo)
     repositorio_tatuagem.atualizar_etapa(tatuagem_id, etapas_por_tipo[tipo])
     return resultado
+
+
+def atualizar_situacao_sessao(tatuagem_id: int, passo_id: int, situacao: str):
+    tatuagem = repositorio_tatuagem.buscar_tatuagem_por_id(tatuagem_id)
+    if tatuagem is None:
+        return None
+    passo = next((item for item in tatuagem["passos"] if item["id"] == passo_id), None)
+    if passo is None or passo["tipo"] != "sessao":
+        return "A sessão não foi encontrada."
+    if passo.get("situacao", "agendada") != "agendada":
+        return "Somente sessões agendadas podem ser atualizadas."
+    passo["situacao"] = situacao
+    if situacao == "realizada":
+        passo["observacao"] = "Sessão realizada."
+    elif situacao == "cancelada":
+        passo["observacao"] = "Sessão cancelada."
+    return passo

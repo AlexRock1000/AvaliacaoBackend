@@ -2,7 +2,7 @@ from datetime import date
 
 from fastapi import APIRouter, HTTPException, Query, status
 
-from esquemas.passos import PassoEntrada, PassoSaida
+from esquemas.passos import PassoEntrada, PassoSaida, SituacaoSessaoEntrada
 from esquemas.tatuagens import TatuagemDetalheSaida, TatuagemEntrada, TatuagemSaida
 from servicos import tatuagem as servico_tatuagem
 
@@ -58,6 +58,16 @@ def listar_passos(tatuagem_id: int):
 )
 def registrar_passo(tatuagem_id: int, entrada: PassoEntrada):
     resultado = servico_tatuagem.registrar_passo(tatuagem_id, entrada)
+    if resultado is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Tatuagem não encontrada.")
+    if isinstance(resultado, str):
+        raise HTTPException(status_code=422, detail=resultado)
+    return resultado
+
+
+@roteador.patch("/{tatuagem_id}/passos/{passo_id}/situacao", response_model=PassoSaida)
+def atualizar_situacao_sessao(tatuagem_id: int, passo_id: int, entrada: SituacaoSessaoEntrada):
+    resultado = servico_tatuagem.atualizar_situacao_sessao(tatuagem_id, passo_id, entrada.situacao)
     if resultado is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Tatuagem não encontrada.")
     if isinstance(resultado, str):

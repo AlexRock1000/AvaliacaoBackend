@@ -36,6 +36,8 @@ def adicionar_passo(tatuagem_id, dados):
     tatuagem = buscar_tatuagem_por_id(tatuagem_id)
     identificador = sum(len(item["passos"]) for item in _tatuagens) + 1
     passo = {"id": identificador, "tatuagem_id": tatuagem_id, **dados}
+    if passo["tipo"] == "sessao":
+        passo["situacao"] = "agendada"
     tatuagem["passos"].append(passo)
     return passo
 

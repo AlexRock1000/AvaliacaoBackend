@@ -23,7 +23,7 @@ function nomeDaEtapa(etapa) {
     "aguardando aprovação": "Aguardando aprovação da cliente",
     "ajustes no desenho": "Ajustes no desenho",
     "desenho aprovado": "Desenho aprovado",
-    "em sessões": "Em sessões",
+    "em sessões": "Sessões",
     "aguardando retoque": "Aguardando retoque",
     finalizada: "Finalizada",
   };
@@ -287,18 +287,22 @@ function TelaMinhasTatuagens({ perfil }) {
 }
 
 // Carrega a agenda da equipe com filtro opcional pela etapa.
-function TelaAgenda({ aoAbrirFicha, atualizacao, titulo = "Projetos." }) {
+function TelaAgenda({ aoAbrirFicha, atualizacao, aoAtualizar, titulo = "Projetos." }) {
   const [tatuagens, definirTatuagens] = useState([]);
   const [etapa, definirEtapa] = useState("");
   const [carregando, definirCarregando] = useState(true);
   const [erro, definirErro] = useState("");
+  const [sessoes, definirSessoes] = useState([]);
+  const [carregandoSessoes, definirCarregandoSessoes] = useState(false);
+  const [erroSessoes, definirErroSessoes] = useState("");
+  const [sessaoEmAtualizacao, definirSessaoEmAtualizacao] = useState(null);
   const filtros = [
     { valor: "", nome: "Todas" },
     { valor: "pedida", nome: "Pedida" },
     { valor: "aguardando aprovação", nome: "Aguardando cliente" },
     { valor: "ajustes no desenho", nome: "Ajustes no desenho" },
     { valor: "desenho aprovado", nome: "Desenho aprovado" },
-    { valor: "em sessões", nome: "Em sessões" },
+    { valor: "em sessões", nome: "Sessões" },
     { valor: "aguardando retoque", nome: "Aguardando retoque" },
     { valor: "finalizada", nome: "Finalizada" },
   ];
@@ -326,6 +330,32 @@ function TelaAgenda({ aoAbrirFicha, atualizacao, titulo = "Projetos." }) {
     carregarAgenda();
   }, [etapa, atualizacao]);
 
+  useEffect(() => {
+    if (etapa !== "em sessões") return;
+    let consultaAtiva = true;
+    definirCarregandoSessoes(true);
+    definirErroSessoes("");
+    pedirApi(`/tatuagens?etapa=${encodeURIComponent(etapa)}`)
+      .then((projetos) => Promise.all(projetos.map((projeto) => pedirApi(`/tatuagens/${projeto.id}/passos`).then((passos) => passos
+        .filter((passo) => passo.tipo === "sessao" && (passo.situacao || "agendada") === "agendada")
+        .map((passo) => ({ ...passo, tatuagem: projeto }))))))
+      .then((listas) => { if (consultaAtiva) definirSessoes(listas.flat().sort((a, b) => `${a.data} ${a.horario}`.localeCompare(`${b.data} ${b.horario}`))); })
+      .catch((erroApi) => { if (consultaAtiva) definirErroSessoes(erroApi.message); })
+      .finally(() => { if (consultaAtiva) definirCarregandoSessoes(false); });
+    return () => { consultaAtiva = false; };
+  }, [etapa, atualizacao]);
+
+  function atualizarSessao(passo, situacao) {
+    definirSessaoEmAtualizacao(passo.id);
+    pedirApi(`/tatuagens/${passo.tatuagem_id}/passos/${passo.id}/situacao`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ situacao }),
+    }).then(aoAtualizar)
+      .catch((erroApi) => definirErroSessoes(erroApi.message))
+      .finally(() => definirSessaoEmAtualizacao(null));
+  }
+
   // Prioriza pedidos novos e deixa os projetos finalizados no fim da agenda.
   const tatuagensOrdenadas = [...tatuagens].sort(
     (primeira, segunda) => (prioridadeEtapa[primeira.etapa] ?? 5) - (prioridadeEtapa[segunda.etapa] ?? 5),
@@ -341,6 +371,23 @@ function TelaAgenda({ aoAbrirFicha, atualizacao, titulo = "Projetos." }) {
       </div>
       {carregando && <p className="estado">Carregando agenda…</p>}
       {erro && <p className="aviso aviso-erro" role="alert">{erro}</p>}
+      {etapa === "em sessões" ? <>
+        {carregandoSessoes && <p className="estado">Carregando sessões agendadas…</p>}
+        {erroSessoes && <p className="aviso aviso-erro" role="alert">{erroSessoes}</p>}
+        {!carregandoSessoes && !erroSessoes && sessoes.length === 0 && <p className="estado estado-vazio">Não há sessões agendadas.</p>}
+        {!carregandoSessoes && !erroSessoes && sessoes.length > 0 && <div className="grade-tatuagens grade-agenda">
+          {sessoes.map((sessao) => <article key={sessao.id} className="cartao-tatuagem cartao-agenda cartao-sessao">
+            <div className="cartao-agenda-topo"><span className="cartao-inicial">{sessao.tatuagem.ideia.slice(0, 2).toUpperCase()}</span><span className="numero-cartao">SESSÃO · {String(sessao.id).padStart(3, "0")}</span></div>
+            <strong>{sessao.tatuagem.ideia}</strong>
+            <span>{sessao.tatuagem.local_corpo} · {sessao.tatuagem.tamanho}</span>
+            <p className="detalhe-sessao-agendada">{sessao.data.split("-").reverse().join("/")} · {sessao.horario?.slice(0, 5)} · 2 horas</p>
+            <div className="acoes-sessao">
+              <button className="botao botao-ember" disabled={sessaoEmAtualizacao !== null} onClick={() => atualizarSessao(sessao, "realizada")}>{sessaoEmAtualizacao === sessao.id ? "Salvando…" : "Confirmar realizada"}</button>
+              <button className="botao botao-claro" disabled={sessaoEmAtualizacao !== null} onClick={() => atualizarSessao(sessao, "cancelada")}>Cancelar sessão</button>
+            </div>
+          </article>)}
+        </div>}
+      </> : <>
       {!carregando && !erro && tatuagens.length === 0 && <p className="estado estado-vazio">Não há tatuagens nesta etapa.</p>}
       {!carregando && !erro && <div className="grade-tatuagens grade-agenda">
         {tatuagensOrdenadas.map((tatuagem) => (
@@ -353,6 +400,7 @@ function TelaAgenda({ aoAbrirFicha, atualizacao, titulo = "Projetos." }) {
           </article>
         ))}
       </div>}
+      </>}
     </section>
   );
 }
@@ -367,7 +415,7 @@ function TelaProjetos({ atualizacao, aoAbrirFicha }) {
     { valor: "aguardando aprovação", titulo: "Aguardando cliente" },
     { valor: "ajustes no desenho", titulo: "Ajustes no desenho" },
     { valor: "desenho aprovado", titulo: "Desenho aprovado" },
-    { valor: "em sessões", titulo: "Em sessões" },
+    { valor: "em sessões", titulo: "Sessões" },
     { valor: "aguardando retoque", titulo: "Aguardando retoque" },
     { valor: "finalizada", titulo: "Finalizados" },
   ];
@@ -415,7 +463,7 @@ function TelaProjetos({ atualizacao, aoAbrirFicha }) {
 }
 
 // Resume os projetos do estúdio e encaminha os atalhos para as telas correspondentes.
-function TelaVisaoGeral({ atualizacao, aoVerAgenda, aoAbrirFicha, aoRegistrarPasso }) {
+function TelaVisaoGeral({ atualizacao, aoVerAgenda, aoAbrirFicha, aoRegistrarPasso, aoAtualizar }) {
   const [tatuagens, definirTatuagens] = useState([]);
   const [erro, definirErro] = useState("");
 
@@ -446,10 +494,10 @@ function TelaVisaoGeral({ atualizacao, aoVerAgenda, aoAbrirFicha, aoRegistrarPas
       {erro && <p className="aviso aviso-erro" role="alert">{erro}</p>}
       <section className="resumo-estudio" aria-label="Resumo do estúdio">
         <article><strong>{String(pendentes.length).padStart(2, "0")}</strong><h2>Ações pendentes</h2><p>Projetos que precisam de atenção</p></article>
-        <article><strong>{String(emSessoes.length).padStart(2, "0")}</strong><h2>Sessões em andamento</h2><p>Projetos em fase de sessão</p></article>
+        <article><strong>{String(emSessoes.length).padStart(2, "0")}</strong><h2>Sessões</h2><p>Projetos com sessões agendadas</p></article>
         <article><strong>{String(tatuagens.length).padStart(2, "0")}</strong><h2>Projetos ativos</h2><p>Pedidos registrados no estúdio</p></article>
       </section>
-      <TelaAgenda atualizacao={atualizacao} aoAbrirFicha={aoAbrirFicha} />
+      <TelaAgenda atualizacao={atualizacao} aoAtualizar={aoAtualizar} aoAbrirFicha={aoAbrirFicha} />
     </>
   );
 }
@@ -528,6 +576,7 @@ function TelaFicha({ tatuagem, aoVoltar, aoSalvar, nomeRetorno = "agenda" }) {
   const [salvando, definirSalvando] = useState(false);
   const [observacaoAjuste, definirObservacaoAjuste] = useState("");
   const [imagemReferencia, definirImagemReferencia] = useState("");
+  const [imagemDesenhoAprovado, definirImagemDesenhoAprovado] = useState("");
   const [carregandoReferencia, definirCarregandoReferencia] = useState(true);
   const [erroReferencia, definirErroReferencia] = useState("");
 
@@ -538,6 +587,17 @@ function TelaFicha({ tatuagem, aoVoltar, aoSalvar, nomeRetorno = "agenda" }) {
       .catch((erroApi) => definirErroReferencia(erroApi.message))
       .finally(() => definirCarregandoReferencia(false));
   }, [tatuagem.id]);
+
+  // Mostra o desenho enviado pelo tatuador enquanto a primeira sessão é agendada.
+  useEffect(() => {
+    if (tatuagem.etapa !== "desenho aprovado") return;
+    pedirApi(`/tatuagens/${tatuagem.id}/passos`)
+      .then((passos) => {
+        const desenho = [...passos].reverse().find((passo) => passo.tipo === "desenho_enviado" && passo.imagem);
+        definirImagemDesenhoAprovado(desenho?.imagem || "");
+      })
+      .catch((erroApi) => definirErroReferencia(erroApi.message));
+  }, [tatuagem.id, tatuagem.etapa]);
 
   // Consulta a justificativa da cliente quando o tatuador precisa revisar o desenho.
   useEffect(() => {
@@ -642,7 +702,11 @@ function TelaFicha({ tatuagem, aoVoltar, aoSalvar, nomeRetorno = "agenda" }) {
   return (
     <section className="painel-formulario">
       <button className="voltar" onClick={aoVoltar}>← Voltar para {nomeRetorno}</button>
-      <div className="titulo-secao"><span className="sobretitulo">FICHA · {String(tatuagem.id).padStart(2, "0")}</span><h2>{tatuagem.etapa === "pedida" ? "Pedido recebido." : enviarDesenho ? "Revisar desenho." : "Registrar um passo."}</h2><p>{nomeDaEtapa(tatuagem.etapa)}</p></div>
+      <div className="titulo-secao"><span className="sobretitulo">FICHA · {String(tatuagem.id).padStart(2, "0")}</span><h2>{tatuagem.etapa === "pedida" ? "Pedido recebido." : enviarDesenho ? "Revisar desenho." : tatuagem.etapa === "desenho aprovado" ? "Desenho Aprovado" : "Registrar um passo."}</h2><p>{nomeDaEtapa(tatuagem.etapa)}</p></div>
+      {tatuagem.etapa === "desenho aprovado" && imagemDesenhoAprovado && <figure className="referencia-cliente previa-desenho-aprovado">
+        <figcaption>Prévia do desenho aprovado</figcaption>
+        <img src={imagemDesenhoAprovado} alt="Desenho aprovado pela cliente" />
+      </figure>}
       {enviarDesenho && <section className="detalhes-pedido" aria-label="Pedido enviado pela cliente">
         <span className="sobretitulo">PEDIDO DA CLIENTE</span>
         <h3>{tatuagem.ideia}</h3>
@@ -652,12 +716,12 @@ function TelaFicha({ tatuagem, aoVoltar, aoSalvar, nomeRetorno = "agenda" }) {
         </dl>
         {tatuagem.etapa === "ajustes no desenho" && <p className="observacao-ajuste"><strong>O que a cliente pediu:</strong> {observacaoAjuste || "Carregando observação…"}</p>}
       </section>}
-      {imagemReferencia && <figure className="referencia-cliente">
+      {tatuagem.etapa !== "desenho aprovado" && imagemReferencia && <figure className="referencia-cliente">
         <figcaption>Imagem de referência enviada pela cliente</figcaption>
         <img src={imagemReferencia} alt="Referência de tatuagem enviada pela cliente" />
       </figure>}
       {erroReferencia && <p className="aviso aviso-erro" role="alert">{erroReferencia}</p>}
-      {!carregandoReferencia && !erroReferencia && !imagemReferencia && enviarDesenho && <p className="sem-referencia">A cliente não enviou uma imagem de referência.</p>}
+      {tatuagem.etapa !== "desenho aprovado" && !carregandoReferencia && !erroReferencia && !imagemReferencia && enviarDesenho && <p className="sem-referencia">A cliente não enviou uma imagem de referência.</p>}
       <form onSubmit={enviarPasso} className="formulario">
         {enviarDesenho ? <>
           <label htmlFor="imagem-desenho">Desenho feito para a cliente</label>
@@ -669,7 +733,7 @@ function TelaFicha({ tatuagem, aoVoltar, aoSalvar, nomeRetorno = "agenda" }) {
               <span>{imagem ? "Imagem carregada · clique ou solte outra para substituir" : <>Ou <u>escolha uma imagem</u>. Formatos aceitos: PNG, JPG e outros formatos de imagem.</>}</span>
             </label>
           </div>
-        </> : <>
+        </> : tatuagem.etapa === "desenho aprovado" ? null : <>
           <label htmlFor="tipo-passo">O que foi feito?</label>
           <select id="tipo-passo" value={tipo} onChange={(evento) => definirTipo(evento.target.value)}>{tiposPermitidos.map((opcao) => <option key={opcao.valor} value={opcao.valor}>{opcao.nome}</option>)}</select>
         </>}
@@ -784,11 +848,11 @@ export default function Aplicativo() {
           <img className="banner-ornamento" src="/imagens/arabesco.png" alt="" />
           <div className="banner-conteudo"><span className="sobretitulo">SUA JORNADA NA PELE</span><h1>Histórias que ficam.</h1><p>Acompanhe cada traço, cada sessão e tudo o que vem depois.</p><button className="botao botao-ember" onClick={() => definirTela("pedir")}><span aria-hidden="true">＋</span> Pedir tatuagem</button></div>
         </section>}
-        {tela === "visao-geral" && <TelaVisaoGeral atualizacao={atualizacao} aoVerAgenda={abrirAgenda} aoAbrirFicha={abrirFicha} aoRegistrarPasso={registrarProximoPasso} />}
+        {tela === "visao-geral" && <TelaVisaoGeral atualizacao={atualizacao} aoVerAgenda={abrirAgenda} aoAbrirFicha={abrirFicha} aoRegistrarPasso={registrarProximoPasso} aoAtualizar={() => definirAtualizacao((valor) => valor + 1)} />}
         <div className="coluna-conteudo">
           {tela === "pedir" && <TelaPedir perfil={perfil} aoVoltar={() => definirTela("minhas")} aoCriar={concluirPedido} />}
           {tela === "minhas" && <TelaMinhasTatuagens key={atualizacao} perfil={perfil} />}
-          {tela === "agenda" && <TelaAgenda atualizacao={atualizacao} aoAbrirFicha={abrirFicha} />}
+          {tela === "agenda" && <TelaAgenda atualizacao={atualizacao} aoAtualizar={() => definirAtualizacao((valor) => valor + 1)} aoAbrirFicha={abrirFicha} />}
           {tela === "projetos" && <TelaProjetos atualizacao={atualizacao} aoAbrirFicha={abrirFicha} />}
           {tela === "ficha" && ficha && (ficha.etapa === "finalizada"
             ? <TelaPedidoFinalizado tatuagem={ficha} nomeRetorno={telaAnteriorFicha === "projetos" ? "projetos" : telaAnteriorFicha === "visao-geral" ? "visão geral" : "agenda"} aoVoltar={() => definirTela(telaAnteriorFicha)} />

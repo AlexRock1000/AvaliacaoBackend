@@ -16,7 +16,7 @@ if endereco_frontend:
         CORSMiddleware,
         allow_origins=[endereco_frontend],
         allow_credentials=False,
-        allow_methods=["GET", "POST"],
+        allow_methods=["GET", "POST", "PATCH"],
         allow_headers=["Content-Type"],
     )
 

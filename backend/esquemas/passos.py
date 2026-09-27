@@ -25,3 +25,9 @@ class PassoSaida(BaseModel):
     observacao: str
     # Devolve a imagem do desenho no histórico para a cliente e o tatuador consultarem.
     imagem: str | None = None
+    # Sessões podem ser agendadas, confirmadas como realizadas ou canceladas.
+    situacao: str | None = None
+
+
+class SituacaoSessaoEntrada(BaseModel):
+    situacao: str = Field(pattern="^(realizada|cancelada)$")
