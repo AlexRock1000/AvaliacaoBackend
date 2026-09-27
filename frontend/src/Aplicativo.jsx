@@ -48,6 +48,38 @@ function formatarDataAgendamento(data) {
   return data?.split("-").reverse().join("/") || "";
 }
 
+function hojeComoDataISO() {
+  const hoje = new Date();
+  return `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, "0")}-${String(hoje.getDate()).padStart(2, "0")}`;
+}
+
+function grupoDeProximidade(data) {
+  const [ano, mes, dia] = data.split("-").map(Number);
+  const hoje = new Date();
+  const dataHoje = Date.UTC(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
+  const dataAgendada = Date.UTC(ano, mes - 1, dia);
+  const dias = Math.round((dataAgendada - dataHoje) / 86400000);
+  if (dias < 0) return "Atrasadas";
+  if (dias === 0) return "Hoje";
+  if (dias <= 7) return "Próximos 7 dias";
+  return "Mais tarde";
+}
+
+function agruparPorProximidade(agendamentos) {
+  const ordem = ["Atrasadas", "Hoje", "Próximos 7 dias", "Mais tarde"];
+  const grupos = new Map(ordem.map((nome) => [nome, []]));
+  agendamentos.forEach((agendamento) => grupos.get(grupoDeProximidade(agendamento.data)).push(agendamento));
+  return ordem.filter((nome) => grupos.get(nome).length > 0).map((nome) => ({ nome, agendamentos: grupos.get(nome) }));
+}
+
+function registrarRetoqueRealizado(tatuagemId) {
+  return pedirApi(`/tatuagens/${tatuagemId}/passos`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ tipo: "retoque", data: hojeComoDataISO(), observacao: "Retoque realizado." }),
+  });
+}
+
 // Exibe a tela de pedido para a cliente e mostra recusas da API no próprio formulário.
 function TelaPedir({ perfil, aoCriar, aoVoltar }) {
   const [ideia, definirIdeia] = useState("");
@@ -171,6 +203,7 @@ function TelaPedir({ perfil, aoCriar, aoVoltar }) {
 // Carrega as tatuagens da cliente e permite abrir o histórico de cada uma.
 function TelaMinhasTatuagens({ perfil }) {
   const [tatuagens, definirTatuagens] = useState([]);
+  const [agendamentosPorTatuagem, definirAgendamentosPorTatuagem] = useState({});
   const [selecionada, definirSelecionada] = useState(null);
   const [passos, definirPassos] = useState([]);
   const [carregando, definirCarregando] = useState(true);
@@ -193,6 +226,26 @@ function TelaMinhasTatuagens({ perfil }) {
     }
     carregarTatuagens();
   }, [perfil.clienteId]);
+
+  // Carrega os próximos horários para que a cliente os veja sem abrir cada histórico.
+  useEffect(() => {
+    let consultaAtiva = true;
+    if (tatuagens.length === 0) {
+      definirAgendamentosPorTatuagem({});
+      return () => { consultaAtiva = false; };
+    }
+    Promise.all(tatuagens.map((tatuagem) => pedirApi(`/tatuagens/${tatuagem.id}/passos`)
+      .then((historico) => {
+        const tipo = tatuagem.etapa === "em sessões" ? "sessao" : tatuagem.etapa === "aguardando retoque" ? "retoque_combinado" : null;
+        const proximos = historico
+          .filter((passo) => passo.tipo === tipo && (passo.situacao || "agendada") === "agendada")
+          .sort((primeiro, segundo) => `${primeiro.data} ${primeiro.horario || ""}`.localeCompare(`${segundo.data} ${segundo.horario || ""}`));
+        return [tatuagem.id, proximos[0] || null];
+      })
+      .catch(() => [tatuagem.id, null])))
+      .then((entradas) => { if (consultaAtiva) definirAgendamentosPorTatuagem(Object.fromEntries(entradas)); });
+    return () => { consultaAtiva = false; };
+  }, [tatuagens]);
 
   // Abre o histórico da tatuagem escolhida, mostrando erros da API no painel.
   function abrirHistorico(tatuagem) {
@@ -259,6 +312,7 @@ function TelaMinhasTatuagens({ perfil }) {
                 <span className="numero-cartao">PROJETO · {String(tatuagem.id).padStart(3, "0")}</span>
                 <strong>{tatuagem.ideia}</strong>
                 <span>{tatuagem.local_corpo} · {tatuagem.tamanho}</span>
+                {agendamentosPorTatuagem[tatuagem.id] && <span className="agendamento-resumo-cliente">{tatuagem.etapa === "aguardando retoque" ? "Retoque" : "Sessão"}: {formatarDataAgendamento(agendamentosPorTatuagem[tatuagem.id].data)}{agendamentosPorTatuagem[tatuagem.id].horario ? ` · ${agendamentosPorTatuagem[tatuagem.id].horario.slice(0, 5)}` : ""}</span>}
                 <span className="selo-etapa"><i />{nomeDaEtapa(tatuagem.etapa)}</span>
               </button>
             ))}
@@ -375,6 +429,14 @@ function TelaAgenda({ aoAbrirFicha, atualizacao, aoAtualizar, titulo = "Projetos
       .finally(() => definirSessaoEmAtualizacao(null));
   }
 
+  function confirmarRetoque(sessao) {
+    definirSessaoEmAtualizacao(sessao.id);
+    registrarRetoqueRealizado(sessao.tatuagem_id)
+      .then(() => aoAtualizar())
+      .catch((erroApi) => definirErroSessoes(erroApi.message))
+      .finally(() => definirSessaoEmAtualizacao(null));
+  }
+
   // Prioriza pedidos novos e deixa os projetos finalizados no fim da agenda.
   const tatuagensOrdenadas = [...tatuagens].sort(
     (primeira, segunda) => (prioridadeEtapa[primeira.etapa] ?? 5) - (prioridadeEtapa[segunda.etapa] ?? 5),
@@ -394,8 +456,10 @@ function TelaAgenda({ aoAbrirFicha, atualizacao, aoAtualizar, titulo = "Projetos
         {carregandoSessoes && <p className="estado">Carregando agendamentos…</p>}
         {erroSessoes && <p className="aviso aviso-erro" role="alert">{erroSessoes}</p>}
         {!carregandoSessoes && !erroSessoes && sessoes.length === 0 && <p className="estado estado-vazio">{etapa === "em sessões" ? "Não há sessões agendadas." : "Não há retoques agendados."}</p>}
-        {!carregandoSessoes && !erroSessoes && sessoes.length > 0 && <div className="grade-tatuagens grade-agenda">
-          {sessoes.map((sessao) => <article key={sessao.id} className="cartao-tatuagem cartao-agenda cartao-sessao">
+        {!carregandoSessoes && !erroSessoes && sessoes.length > 0 && agruparPorProximidade(sessoes).map((grupo) => <section className="grupo-agendamentos" key={grupo.nome}>
+          <header className="cabecalho-grupo-agendamentos"><h3>{grupo.nome}</h3><span>{grupo.agendamentos.length}</span></header>
+          <div className="grade-tatuagens grade-agenda">
+          {grupo.agendamentos.map((sessao) => <article key={sessao.id} className="cartao-tatuagem cartao-agenda cartao-sessao">
             <div className="cartao-agenda-topo"><span className="cartao-inicial">{sessao.tatuagem.ideia.slice(0, 2).toUpperCase()}</span><span className="numero-cartao">{tipoAgendamento === "sessao" ? "SESSÃO" : "RETOQUE"} · {String(sessao.id).padStart(3, "0")}</span></div>
             <strong>{sessao.tatuagem.ideia}</strong>
             <span>{sessao.tatuagem.local_corpo} · {sessao.tatuagem.tamanho}</span>
@@ -404,10 +468,11 @@ function TelaAgenda({ aoAbrirFicha, atualizacao, aoAtualizar, titulo = "Projetos
               {tipoAgendamento === "sessao" ? <>
                 <button className="botao botao-ember" disabled={sessaoEmAtualizacao !== null} onClick={() => atualizarSessao(sessao, "realizada")}>{sessaoEmAtualizacao === sessao.id ? "Salvando…" : "Confirmar realizada"}</button>
                 <button className="botao botao-claro" disabled={sessaoEmAtualizacao !== null} onClick={() => atualizarSessao(sessao, "cancelada")}>Cancelar sessão</button>
-              </> : <button className="botao botao-ember" onClick={() => aoAbrirFicha(sessao.tatuagem)}>Registrar retoque realizado</button>}
+              </> : <button className="botao botao-ember" disabled={sessaoEmAtualizacao !== null} onClick={() => confirmarRetoque(sessao)}>{sessaoEmAtualizacao === sessao.id ? "Salvando…" : "Confirmar retoque realizado"}</button>}
             </div>
           </article>)}
-        </div>}
+          </div>
+        </section>)}
       </> : <>
       {!carregando && !erro && tatuagens.length === 0 && <p className="estado estado-vazio">Não há tatuagens nesta etapa.</p>}
       {!carregando && !erro && <div className="grade-tatuagens grade-agenda">
@@ -427,10 +492,12 @@ function TelaAgenda({ aoAbrirFicha, atualizacao, aoAtualizar, titulo = "Projetos
 }
 
 // Mostra todos os projetos agrupados por etapa, separado da agenda filtrável.
-function TelaProjetos({ atualizacao, aoAbrirFicha }) {
+function TelaProjetos({ atualizacao, aoAbrirFicha, aoAtualizar }) {
   const [tatuagens, definirTatuagens] = useState([]);
   const [carregando, definirCarregando] = useState(true);
   const [erro, definirErro] = useState("");
+  const [erroAcao, definirErroAcao] = useState("");
+  const [tatuagemEmAtualizacao, definirTatuagemEmAtualizacao] = useState(null);
   const etapas = [
     { valor: "pedida", titulo: "Pedidos recebidos" },
     { valor: "aguardando aprovação", titulo: "Aguardando cliente" },
@@ -450,6 +517,15 @@ function TelaProjetos({ atualizacao, aoAbrirFicha }) {
       .finally(() => definirCarregando(false));
   }, [atualizacao]);
 
+  function confirmarRetoque(tatuagem) {
+    definirErroAcao("");
+    definirTatuagemEmAtualizacao(tatuagem.id);
+    registrarRetoqueRealizado(tatuagem.id)
+      .then(() => aoAtualizar())
+      .catch((erroApi) => definirErroAcao(erroApi.message))
+      .finally(() => definirTatuagemEmAtualizacao(null));
+  }
+
   return (
     <section className="painel-projetos">
       <header className="cabecalho-projetos-estudio">
@@ -459,6 +535,7 @@ function TelaProjetos({ atualizacao, aoAbrirFicha }) {
       </header>
       {carregando && <p className="estado">Carregando projetos…</p>}
       {erro && <p className="aviso aviso-erro" role="alert">{erro}</p>}
+      {erroAcao && <p className="aviso aviso-erro" role="alert">{erroAcao}</p>}
       {!carregando && !erro && tatuagens.length === 0 && <p className="estado estado-vazio">Ainda não há projetos cadastrados. Os novos pedidos aparecerão aqui.</p>}
       {!carregando && !erro && tatuagens.length > 0 && <div className="quadro-projetos">
         {etapas.map((etapa) => {
@@ -472,6 +549,7 @@ function TelaProjetos({ atualizacao, aoAbrirFicha }) {
                   <span className="numero-cartao">PROJETO · {String(tatuagem.id).padStart(3, "0")}</span>
                   <h4>{tatuagem.ideia}</h4>
                   <p>{tatuagem.local_corpo} · {tatuagem.tamanho}</p>
+                  {tatuagem.etapa === "aguardando retoque" && <button className="botao botao-ember" disabled={tatuagemEmAtualizacao !== null} onClick={() => confirmarRetoque(tatuagem)}>{tatuagemEmAtualizacao === tatuagem.id ? "Salvando…" : "Confirmar retoque realizado"}</button>}
                   <button className="botao botao-claro" onClick={() => aoAbrirFicha(tatuagem)}>Abrir ficha <span aria-hidden="true">↗</span></button>
                 </article>
               ))}
@@ -878,7 +956,7 @@ export default function Aplicativo() {
           {tela === "pedir" && <TelaPedir perfil={perfil} aoVoltar={() => definirTela("minhas")} aoCriar={concluirPedido} />}
           {tela === "minhas" && <TelaMinhasTatuagens key={atualizacao} perfil={perfil} />}
           {tela === "agenda" && <TelaAgenda atualizacao={atualizacao} aoAtualizar={() => definirAtualizacao((valor) => valor + 1)} aoAbrirFicha={abrirFicha} />}
-          {tela === "projetos" && <TelaProjetos atualizacao={atualizacao} aoAbrirFicha={abrirFicha} />}
+          {tela === "projetos" && <TelaProjetos atualizacao={atualizacao} aoAbrirFicha={abrirFicha} aoAtualizar={() => definirAtualizacao((valor) => valor + 1)} />}
           {tela === "ficha" && ficha && (ficha.etapa === "finalizada"
             ? <TelaPedidoFinalizado tatuagem={ficha} nomeRetorno={telaAnteriorFicha === "projetos" ? "projetos" : telaAnteriorFicha === "visao-geral" ? "visão geral" : "agenda"} aoVoltar={() => definirTela(telaAnteriorFicha)} />
             : <TelaFicha tatuagem={ficha} nomeRetorno={telaAnteriorFicha === "projetos" ? "projetos" : telaAnteriorFicha === "visao-geral" ? "visão geral" : "agenda"} aoVoltar={() => definirTela(telaAnteriorFicha)} aoSalvar={salvarPasso} />)}
