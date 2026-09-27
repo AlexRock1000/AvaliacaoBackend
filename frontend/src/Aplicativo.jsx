@@ -49,9 +49,47 @@ function TelaPedir({ perfil, aoCriar, aoVoltar }) {
   const [ideia, definirIdeia] = useState("");
   const [localCorpo, definirLocalCorpo] = useState("");
   const [tamanho, definirTamanho] = useState("");
+  const [imagemReferencia, definirImagemReferencia] = useState("");
+  const [nomeImagemReferencia, definirNomeImagemReferencia] = useState("");
+  const [arrastandoReferencia, definirArrastandoReferencia] = useState(false);
+  const [lendoReferencia, definirLendoReferencia] = useState(false);
   const [enviando, definirEnviando] = useState(false);
   const [erro, definirErro] = useState("");
   const [mensagem, definirMensagem] = useState("");
+
+  // Lê a imagem de referência escolhida para enviá-la junto com o pedido.
+  function carregarImagemReferencia(arquivo) {
+    if (!arquivo) return;
+    if (!arquivo.type.startsWith("image/")) {
+      definirErro("Escolha um arquivo de imagem para usar como referência.");
+      return;
+    }
+    definirErro("");
+    definirLendoReferencia(true);
+    const leitor = new FileReader();
+    leitor.onload = () => {
+      definirImagemReferencia(leitor.result);
+      definirNomeImagemReferencia(arquivo.name);
+      definirLendoReferencia(false);
+    };
+    leitor.onerror = () => {
+      definirErro("Não foi possível ler essa imagem. Escolha o arquivo novamente.");
+      definirLendoReferencia(false);
+    };
+    leitor.readAsDataURL(arquivo);
+  }
+
+  // Recebe a imagem de referência pelo seletor de arquivos.
+  function selecionarImagemReferencia(evento) {
+    carregarImagemReferencia(evento.target.files?.[0]);
+  }
+
+  // Recebe a imagem de referência quando ela é solta na área de upload.
+  function soltarImagemReferencia(evento) {
+    evento.preventDefault();
+    definirArrastandoReferencia(false);
+    carregarImagemReferencia(evento.dataTransfer.files?.[0]);
+  }
 
   // Envia o pedido como JSON e conserva a mensagem de recusa para a pessoa vê-la.
   function enviarPedido(evento) {
@@ -68,12 +106,15 @@ function TelaPedir({ perfil, aoCriar, aoVoltar }) {
           local_corpo: localCorpo,
           tamanho,
           cliente_id: perfil.clienteId,
+          imagem_referencia: imagemReferencia || null,
         }),
       })
       .then((tatuagem) => {
         definirIdeia("");
         definirLocalCorpo("");
         definirTamanho("");
+        definirImagemReferencia("");
+        definirNomeImagemReferencia("");
         definirMensagem("Seu pedido foi recebido pelo estúdio.");
         aoCriar(tatuagem);
       })
@@ -104,10 +145,19 @@ function TelaPedir({ perfil, aoCriar, aoVoltar }) {
             <input id="tamanho" value={tamanho} onChange={(evento) => definirTamanho(evento.target.value)} required placeholder="Ex.: 20 cm" />
           </div>
         </div>
+        <label htmlFor="imagem-referencia">Imagem de referência (opcional)</label>
+        <div className={`area-upload ${arrastandoReferencia ? "area-upload-ativa" : ""}`} onDragOver={(evento) => { evento.preventDefault(); definirArrastandoReferencia(true); }} onDragLeave={() => definirArrastandoReferencia(false)} onDrop={soltarImagemReferencia}>
+          <input id="imagem-referencia" className="entrada-imagem-oculta" type="file" accept="image/*" onChange={selecionarImagemReferencia} />
+          <label className="conteudo-upload" htmlFor="imagem-referencia">
+            {imagemReferencia ? <img className="previa-desenho" src={imagemReferencia} alt="Prévia da imagem de referência" /> : <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 16V4m0 0L8 8m4-4 4 4" /><path d="M5 14v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4" /></svg>}
+            <strong>{imagemReferencia ? nomeImagemReferencia : "Arraste e solte uma imagem de referência."}</strong>
+            <span>{imagemReferencia ? "Imagem carregada · clique ou solte outra para substituir" : <>Ou <u>escolha uma imagem</u>. Formatos aceitos: PNG, JPG e outros formatos de imagem.</>}</span>
+          </label>
+        </div>
         {erro && <p className="aviso aviso-erro" role="alert">{erro}</p>}
         {mensagem && <p className="aviso aviso-sucesso" role="status">{mensagem}</p>}
-        <button className="botao botao-escuro" disabled={enviando}>
-          {enviando ? "Enviando pedido…" : "Enviar pedido"}<span aria-hidden="true">↗</span>
+        <button className="botao botao-escuro" disabled={enviando || lendoReferencia}>
+          {lendoReferencia ? "Lendo imagem…" : enviando ? "Enviando pedido…" : "Enviar pedido"}<span aria-hidden="true">↗</span>
         </button>
       </form>
     </section>
@@ -217,7 +267,7 @@ function TelaMinhasTatuagens({ perfil }) {
             {carregandoPassos && <p className="estado">Carregando o histórico…</p>}
             {erroPassos && <p className="aviso aviso-erro" role="alert">{erroPassos}</p>}
             {!carregandoPassos && !erroPassos && passos.length === 0 && <p className="estado">Nenhum passo registrado ainda. O estúdio atualizará esta linha do tempo.</p>}
-            {!carregandoPassos && !erroPassos && passos.map((passo) => <div className="item-historico" key={passo.id}><span className="ponto-historico" /><div><strong>{TIPOS_DE_PASSO.find((tipo) => tipo.valor === passo.tipo)?.nome || passo.tipo}</strong><p>{passo.data} · {passo.observacao}</p>{passo.imagem && <img className="imagem-desenho-historico" src={passo.imagem} alt="Desenho enviado pelo tatuador" />}</div></div>)}
+            {!carregandoPassos && !erroPassos && passos.map((passo) => <div className="item-historico" key={passo.id}><span className="ponto-historico" /><div><strong>{TIPOS_DE_PASSO.find((tipo) => tipo.valor === passo.tipo)?.nome || passo.tipo}</strong><p>{passo.data}{passo.horario ? ` · ${passo.horario.slice(0, 5)}` : ""} · {passo.observacao}</p>{passo.imagem && !(selecionada.etapa === "aguardando aprovação" && passo.id === desenhoEnviado?.id) && <img className="imagem-desenho-historico" src={passo.imagem} alt="Desenho enviado pelo tatuador" />}</div></div>)}
             {!carregandoPassos && !erroPassos && selecionada.etapa === "aguardando aprovação" && desenhoEnviado?.imagem && <section className="resposta-desenho">
               <h4>O que achou do desenho?</h4>
               <img src={desenhoEnviado.imagem} alt="Desenho enviado pelo tatuador para aprovação" />
@@ -443,7 +493,7 @@ function TelaPedidoFinalizado({ tatuagem, aoVoltar, nomeRetorno }) {
             <article className="passo-finalizado" key={passo.id}>
               <strong>{TIPOS_DE_PASSO.find((tipo) => tipo.valor === passo.tipo)?.nome || passo.tipo}</strong>
               <span>{passo.data}</span>
-              <p>{passo.observacao}</p>
+              <p>{passo.horario ? `${passo.horario.slice(0, 5)} · ` : ""}{passo.observacao}</p>
             </article>
           ))}
         </section>
@@ -469,10 +519,25 @@ function TelaFicha({ tatuagem, aoVoltar, aoSalvar, nomeRetorno = "agenda" }) {
   const [nomeImagem, definirNomeImagem] = useState("");
   const [arrastandoImagem, definirArrastandoImagem] = useState(false);
   const [data, definirData] = useState(new Date().toISOString().slice(0, 10));
+  const [horariosDisponiveis, definirHorariosDisponiveis] = useState([]);
+  const [horario, definirHorario] = useState("");
+  const [carregandoHorarios, definirCarregandoHorarios] = useState(false);
+  const [erroHorarios, definirErroHorarios] = useState("");
   const [observacao, definirObservacao] = useState("");
   const [erro, definirErro] = useState("");
   const [salvando, definirSalvando] = useState(false);
   const [observacaoAjuste, definirObservacaoAjuste] = useState("");
+  const [imagemReferencia, definirImagemReferencia] = useState("");
+  const [carregandoReferencia, definirCarregandoReferencia] = useState(true);
+  const [erroReferencia, definirErroReferencia] = useState("");
+
+  // Busca a referência enviada pela cliente ao abrir a ficha individual do pedido.
+  useEffect(() => {
+    pedirApi(`/tatuagens/${tatuagem.id}`)
+      .then((dados) => definirImagemReferencia(dados.imagem_referencia || ""))
+      .catch((erroApi) => definirErroReferencia(erroApi.message))
+      .finally(() => definirCarregandoReferencia(false));
+  }, [tatuagem.id]);
 
   // Consulta a justificativa da cliente quando o tatuador precisa revisar o desenho.
   useEffect(() => {
@@ -485,6 +550,38 @@ function TelaFicha({ tatuagem, aoVoltar, aoSalvar, nomeRetorno = "agenda" }) {
         .catch((erroApi) => definirObservacaoAjuste(erroApi.message));
     }
   }, [tatuagem.id, tatuagem.etapa]);
+
+  // Busca horários livres sempre que a data de uma sessão for escolhida.
+  useEffect(() => {
+    if (tipo !== "sessao" || !data) {
+      definirHorariosDisponiveis([]);
+      definirHorario("");
+      return;
+    }
+
+    let consultaAtiva = true;
+    definirCarregandoHorarios(true);
+    definirErroHorarios("");
+    definirHorariosDisponiveis([]);
+    definirHorario("");
+    pedirApi(`/tatuagens/horarios-disponiveis?data=${data}`)
+      .then((horarios) => {
+        if (consultaAtiva) {
+          definirHorariosDisponiveis(horarios);
+          definirHorario(horarios[0] || "");
+        }
+      })
+      .catch((erroApi) => {
+        if (consultaAtiva) definirErroHorarios(erroApi.message);
+      })
+      .finally(() => {
+        if (consultaAtiva) definirCarregandoHorarios(false);
+      });
+
+    return () => {
+      consultaAtiva = false;
+    };
+  }, [tipo, data]);
 
   // Lê a imagem selecionada ou solta na área para anexá-la ao passo do desenho.
   function carregarDesenho(arquivo) {
@@ -530,7 +627,8 @@ function TelaFicha({ tatuagem, aoVoltar, aoSalvar, nomeRetorno = "agenda" }) {
         body: JSON.stringify({
           tipo,
           data: tipo === "sessao" ? data : new Date().toISOString().slice(0, 10),
-          observacao,
+          horario: tipo === "sessao" ? horario : null,
+          observacao: tipo === "sessao" ? "Sessão agendada. Duração: 2 horas." : observacao,
           imagem: enviarDesenho ? imagem : null,
         }),
       })
@@ -554,6 +652,12 @@ function TelaFicha({ tatuagem, aoVoltar, aoSalvar, nomeRetorno = "agenda" }) {
         </dl>
         {tatuagem.etapa === "ajustes no desenho" && <p className="observacao-ajuste"><strong>O que a cliente pediu:</strong> {observacaoAjuste || "Carregando observação…"}</p>}
       </section>}
+      {imagemReferencia && <figure className="referencia-cliente">
+        <figcaption>Imagem de referência enviada pela cliente</figcaption>
+        <img src={imagemReferencia} alt="Referência de tatuagem enviada pela cliente" />
+      </figure>}
+      {erroReferencia && <p className="aviso aviso-erro" role="alert">{erroReferencia}</p>}
+      {!carregandoReferencia && !erroReferencia && !imagemReferencia && enviarDesenho && <p className="sem-referencia">A cliente não enviou uma imagem de referência.</p>}
       <form onSubmit={enviarPasso} className="formulario">
         {enviarDesenho ? <>
           <label htmlFor="imagem-desenho">Desenho feito para a cliente</label>
@@ -572,11 +676,20 @@ function TelaFicha({ tatuagem, aoVoltar, aoSalvar, nomeRetorno = "agenda" }) {
         {tipo === "sessao" && <>
           <label htmlFor="data-passo">Data da sessão</label>
           <input id="data-passo" type="date" value={data} onChange={(evento) => definirData(evento.target.value)} required />
+          <label htmlFor="horario-sessao">Horários disponíveis · sessão de 2 horas</label>
+          <select id="horario-sessao" value={horario} onChange={(evento) => definirHorario(evento.target.value)} disabled={carregandoHorarios || horariosDisponiveis.length === 0} required>
+            {carregandoHorarios && <option value="">Buscando horários…</option>}
+            {!carregandoHorarios && horariosDisponiveis.length === 0 && <option value="">Nenhum horário disponível nessa data</option>}
+            {horariosDisponiveis.map((opcao) => <option key={opcao} value={opcao}>{opcao}</option>)}
+          </select>
+          {erroHorarios && <p className="aviso aviso-erro" role="alert">{erroHorarios}</p>}
         </>}
-        <label htmlFor="observacao">Observação</label>
-        <textarea id="observacao" value={observacao} onChange={(evento) => definirObservacao(evento.target.value)} required placeholder="Uma nota para o histórico da tatuagem" />
+        {tipo !== "sessao" && <>
+          <label htmlFor="observacao">Observação</label>
+          <textarea id="observacao" value={observacao} onChange={(evento) => definirObservacao(evento.target.value)} required placeholder="Uma nota para o histórico da tatuagem" />
+        </>}
         {erro && <p className="aviso aviso-erro" role="alert">{erro}</p>}
-        <button className="botao botao-escuro" disabled={salvando}>{salvando ? "Enviando…" : enviarDesenho ? "Enviar desenho para a cliente" : "Salvar passo"}<span aria-hidden="true">↗</span></button>
+        <button className="botao botao-escuro" disabled={salvando || tipo === "sessao" && (!horario || carregandoHorarios)}>{salvando ? "Enviando…" : tipo === "sessao" ? "Marcar sessão para a cliente" : enviarDesenho ? "Enviar desenho para a cliente" : "Salvar passo"}<span aria-hidden="true">↗</span></button>
       </form>
     </section>
   );

@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, time
 
 from pydantic import BaseModel, Field
 
@@ -7,6 +7,8 @@ from pydantic import BaseModel, Field
 class PassoEntrada(BaseModel):
     tipo: str = Field(min_length=1)
     data: date
+    # Guarda o horário combinado quando o passo registra uma sessão.
+    horario: time | None = None
     observacao: str = Field(min_length=1)
     # Guarda o desenho enviado como imagem codificada, sem criar arquivos neste ciclo.
     imagem: str | None = None
@@ -18,6 +20,8 @@ class PassoSaida(BaseModel):
     tatuagem_id: int
     tipo: str
     data: date
+    # Devolve o horário combinado da sessão para a cliente consultar.
+    horario: time | None = None
     observacao: str
     # Devolve a imagem do desenho no histórico para a cliente e o tatuador consultarem.
     imagem: str | None = None

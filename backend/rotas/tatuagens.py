@@ -1,12 +1,20 @@
+from datetime import date
+
 from fastapi import APIRouter, HTTPException, Query, status
 
 from esquemas.passos import PassoEntrada, PassoSaida
-from esquemas.tatuagens import TatuagemEntrada, TatuagemSaida
+from esquemas.tatuagens import TatuagemDetalheSaida, TatuagemEntrada, TatuagemSaida
 from servicos import tatuagem as servico_tatuagem
 
 
 # Agrupa os endereços HTTP relacionados a tatuagens e seus passos.
 roteador = APIRouter(prefix="/tatuagens", tags=["Tatuagens"])
+
+
+# Lista opções de início para sessões de duas horas na data escolhida.
+@roteador.get("/horarios-disponiveis", response_model=list[str])
+def listar_horarios_disponiveis(data: date = Query(...)):
+    return servico_tatuagem.listar_horarios_disponiveis(data)
 
 
 # Na camada de rotas, recebe filtros HTTP e chama o serviço para obter a lista.
@@ -19,7 +27,7 @@ def listar_tatuagens(
 
 
 # Na camada de rotas, escolhe a resposta HTTP 404 quando o serviço não encontra o item.
-@roteador.get("/{tatuagem_id}", response_model=TatuagemSaida)
+@roteador.get("/{tatuagem_id}", response_model=TatuagemDetalheSaida)
 def mostrar_tatuagem(tatuagem_id: int):
     tatuagem = servico_tatuagem.buscar_tatuagem(tatuagem_id)
     if tatuagem is None:

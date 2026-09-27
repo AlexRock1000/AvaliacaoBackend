@@ -1,3 +1,5 @@
+from datetime import datetime, time, timedelta
+
 from esquemas.passos import PassoEntrada
 from esquemas.tatuagens import TatuagemEntrada
 from repositorios import tatuagem as repositorio_tatuagem
@@ -33,6 +35,45 @@ def listar_passos(tatuagem_id):
     return repositorio_tatuagem.listar_passos(tatuagem_id)
 
 
+# Calcula os inícios de sessão possíveis e remove horários que se sobrepõem a reservas existentes.
+def listar_horarios_disponiveis(data):
+    agora = datetime.now()
+    if data.weekday() == 0 or data < agora.date():
+        return []
+
+    duracao = timedelta(hours=2)
+    inicio_almoco = datetime.combine(data, time(hour=12))
+    fim_almoco = datetime.combine(data, time(hour=13))
+    horarios = []
+
+    for hora in range(10, 19):
+        horario = time(hour=hora)
+        inicio = datetime.combine(data, horario)
+        fim = inicio + duracao
+        if data == agora.date() and inicio <= agora:
+            continue
+        if inicio < fim_almoco and fim > inicio_almoco:
+            continue
+
+        ocupado = False
+        for tatuagem in repositorio_tatuagem.listar_tatuagens():
+            for passo in tatuagem["passos"]:
+                horario_marcado = passo.get("horario")
+                if passo["tipo"] == "sessao" and passo["data"] == data and horario_marcado is not None:
+                    inicio_marcado = datetime.combine(data, horario_marcado)
+                    fim_marcado = inicio_marcado + duracao
+                    if inicio < fim_marcado and inicio_marcado < fim:
+                        ocupado = True
+                        break
+            if ocupado:
+                break
+
+        if not ocupado:
+            horarios.append(horario.strftime("%H:%M"))
+
+    return horarios
+
+
 # Na camada de serviços, aplica a regra da cartilha e devolve texto quando precisa recusar.
 def registrar_passo(tatuagem_id: int, entrada: PassoEntrada):
     tatuagem = repositorio_tatuagem.buscar_tatuagem_por_id(tatuagem_id)
@@ -52,6 +93,10 @@ def registrar_passo(tatuagem_id: int, entrada: PassoEntrada):
         return "A cliente só pode responder depois que o desenho for enviado."
     if tipo == "sessao" and etapa not in ("desenho aprovado", "em sessões"):
         return "A sessão só pode ser registrada depois da aprovação do desenho."
+    if tipo == "sessao" and entrada.horario is None:
+        return "Escolha um horário disponível para a sessão."
+    if tipo == "sessao" and entrada.horario.strftime("%H:%M") not in listar_horarios_disponiveis(entrada.data):
+        return "Esse horário não está mais disponível. Escolha outro horário."
     if tipo == "retoque_combinado" and etapa != "em sessões":
         return "O retoque só pode ser combinado depois de pelo menos uma sessão."
     if tipo == "retoque" and etapa != "aguardando retoque":

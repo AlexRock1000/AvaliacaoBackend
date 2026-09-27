@@ -506,6 +506,10 @@ button.cartao-tatuagem { width: 100%; cursor: pointer; }
 .detalhes-pedido dd { margin: 4px 0 0; font-size: 14px; }
 .observacao-ajuste { margin: 18px 0 0; padding-top: 14px; border-top: 1px solid var(--linha); color: var(--fumaca); font-size: 13px; line-height: 1.5; }
 .observacao-ajuste strong { color: var(--brasa); }
+.referencia-cliente { margin: 18px 0 24px; padding: 14px; border: 1px solid var(--linha); border-radius: 14px; background: rgb(23 18 15 / 72%); }
+.referencia-cliente figcaption { margin-bottom: 10px; color: var(--brasa); font-size: 12px; font-weight: 700; }
+.referencia-cliente img { width: min(100%, 520px); max-height: 400px; display: block; object-fit: contain; border-radius: 10px; background: #f5eee3; }
+.sem-referencia { color: var(--fumaca); font-size: 12px; }
 .area-upload { position: relative; min-height: 145px; overflow: hidden; border: 1px dashed rgb(245 238 225 / 22%); border-radius: 16px; background: #201f1f; transition: border-color .18s, background .18s; }
 .area-upload-ativa { border-color: var(--brasa); background: #292522; }
 .entrada-imagem-oculta { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; clip-path: inset(50%); }
