@@ -2,49 +2,61 @@
 
 ## O negócio e o problema
 
-O estúdio é pequeno e conta com dois tatuadores. Cada tatuagem passa pela aprovação do desenho, por uma ou mais sessões e, depois da cicatrização, pelo retoque.
-
-Hoje, o andamento dos trabalhos fica perdido em conversas de mensagem.
-
-Com isso, clientes e tatuadores não conseguem saber com facilidade em que etapa está cada tatuagem nem qual é o próximo passo.
+O estúdio tem dois tatuadores. Cada projeto passa pela criação e aprovação do desenho, por uma ou mais sessões e, após a cicatrização, pelo retoque. Hoje as informações ficam espalhadas em conversas, dificultando o acompanhamento das etapas e dos horários.
 
 ## Para quem é o sistema
 
 ### Bruna — cliente
 
-- **Contexto:** tem 27 anos, é designer e vai fazer sua primeira tatuagem grande.
-- **O que precisa resolver:** descrever sua ideia e acompanhar as etapas, sabendo o que vem depois.
-- **Onde usa o sistema:** celular.
-- **Jornada:**
-  1. Pede uma tatuagem informando a ideia, o local do corpo e o tamanho.
-  2. Vê suas tatuagens e a etapa de cada uma.
-  3. Abre uma tatuagem e consulta o histórico do desenho, das sessões e do retoque.
+Bruna tem 27 anos, é designer e fará sua primeira tatuagem grande. Usa o sistema principalmente no celular para:
+
+1. Criar um pedido com ideia, local do corpo, tamanho e imagem de referência opcional.
+2. Consultar seus pedidos, etapas, próximos passos e histórico.
+3. Editar o pedido enquanto ele ainda está na etapa inicial.
+4. Ver o desenho enviado pelo tatuador e aprová-lo ou pedir ajustes com uma observação.
+5. Acompanhar as sessões agendadas e o retoque.
 
 ### Vitor — tatuador
 
-- **Contexto:** trabalha no estúdio e organiza a própria agenda.
-- **O que precisa resolver:** registrar o que foi feito e ver quais tatuagens estão esperando o próximo passo.
-- **Onde usa o sistema:** computador.
-- **Jornada:**
-  1. Consulta as tatuagens e filtra a lista pela etapa.
-  2. Abre uma tatuagem e registra o desenho aprovado, uma sessão ou o retoque.
-  3. Confere que a etapa da tatuagem foi atualizada.
+Vitor organiza os trabalhos do estúdio pelo computador. Usa o sistema para:
 
-## O que o sistema oferece
+1. Consultar a visão geral, a agenda e os projetos, filtrando por etapa.
+2. Abrir a ficha do pedido e consultar a referência enviada pela cliente.
+3. Enviar o desenho como imagem e acompanhar a aprovação ou solicitação de ajustes.
+4. Agendar uma ou mais sessões em horários disponíveis.
+5. Cancelar uma sessão ou marcá-la como realizada.
+6. Registrar a realização do retoque.
 
-- Pedir uma tatuagem.
-- Consultar tatuagens e filtrar por etapa ou cliente.
-- Mostrar uma tatuagem e consultar seus passos.
-- Registrar passos e atualizar a etapa correspondente.
+## Etapas e regras implementadas
 
-## Regra principal
+O pedido começa como **pedida**. O tatuador envia o desenho, que leva à etapa **aguardando aprovação**. A cliente pode aprová-lo (**desenho aprovado**) ou pedir ajustes (**ajustes no desenho**). O tatuador pode reenviar o desenho após ajustes.
 
-Uma tatuagem nova começa como **pedida**. Primeiro, o desenho é aprovado; depois, podem acontecer uma ou mais sessões; por fim, após a cicatrização, acontece o retoque. O sistema recusa uma sessão antes da aprovação do desenho e recusa o retoque antes de pelo menos uma sessão. Quando um passo é aceito, a etapa muda de acordo com ele.
+Depois da aprovação, o tatuador agenda sessões de duas horas. Horários ocupados não podem ser reservados novamente; sessões canceladas liberam o horário. Sessões e retoques não são agendados às segundas-feiras; a agenda também exclui o horário de almoço e horários passados no dia atual.
 
-## Como a pessoa acessa nesta versão
+Ao marcar uma sessão como realizada, o sistema cria um agendamento de retoque para uma data disponível a partir de 15 dias depois e atualiza a etapa para **aguardando retoque**. O tatuador registra o retoque realizado para concluir o projeto (**finalizada**). Uma sessão encerrada não pode ser alterada novamente.
 
-Enquanto o login não faz parte do projeto atual, o front permite escolher o perfil em uma lista, sem senha. A cliente informa na própria requisição quem ela é, para consultar apenas as tatuagens dela.
+## Telas do frontend
 
-## O que fica fora desta versão
+- **Pedir tatuagem:** formulário de criação e edição do pedido, com envio opcional de imagem de referência.
+- **Minhas tatuagens:** pedidos da cliente, etapa, orientação do próximo passo e histórico; inclui resposta ao desenho.
+- **Visão geral:** resumo do trabalho e acesso aos próximos itens da fila.
+- **Agenda:** tatuagens e horários de sessão, com ações de cancelamento e confirmação.
+- **Projetos:** lista de projetos para acompanhamento e acesso à ficha.
+- **Ficha:** detalhes do pedido e registro do desenho, sessão ou retoque, conforme a etapa.
 
-Orçamento, sinal, pagamento, portfólio com fotos e avisos por mensagem.
+O layout se adapta a celular e computador. A lista de perfis é uma escolha de demonstração, sem autenticação.
+
+## API implementada
+
+- `GET /tatuagens` lista tatuagens; aceita os filtros `etapa` e `cliente_id` e mostra as mais recentes primeiro.
+- `GET /tatuagens/{id}` consulta uma tatuagem.
+- `POST /tatuagens` cria um pedido.
+- `PUT /tatuagens/{id}` atualiza pedido ainda não iniciado, com validação de perfil.
+- `GET /tatuagens/{id}/passos` consulta o histórico.
+- `POST /tatuagens/{id}/passos` registra desenho, resposta da cliente, sessão ou retoque.
+- `GET /tatuagens/horarios-disponiveis?data=AAAA-MM-DD` lista horários livres.
+- `PATCH /tatuagens/{id}/passos/{passo_id}/situacao` cancela ou confirma uma sessão.
+
+## Limites desta versão
+
+Os dados são guardados em memória e desaparecem ao reiniciar o backend. Os perfis são selecionados numa lista e não representam autenticação ou autorização real. Imagens são enviadas como conteúdo codificado no JSON. Não fazem parte do escopo pagamentos, orçamento, notificações ou persistência em banco de dados.

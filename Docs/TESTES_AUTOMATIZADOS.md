@@ -1,32 +1,27 @@
-# Testes automatizados
-
-A ordenação dos pedidos também é verificada em `backend/tests/test_ordenacao.py`: a lista geral e as listas filtradas por cliente ou etapa devem apresentar os IDs mais altos primeiro, mesmo quando os projetos estão em etapas diferentes.
-
-Esta documentação descreve como validar o fluxo de sessões do estúdio.
+# Testes e validação
 
 ## Backend
 
-A suíte usa `unittest`, incluído no Python, para verificar as regras de sessão sem iniciar um servidor. Os dados em memória são limpos antes e depois de cada teste.
+Os testes usam `unittest` e exercitam os serviços sem iniciar o servidor. Cada teste limpa a lista em memória antes e depois da execução.
 
 Os cenários cobertos são:
 
-- criar um projeto, enviar o desenho, aprová-lo e agendar uma sessão;
-- verificar que o agendamento reserva o horário;
-- cancelar a sessão e verificar que o horário volta a ficar disponível;
-- confirmar uma sessão como realizada;
-- gerar automaticamente um horário de retoque a partir de 15 dias depois, sem marcar segundas-feiras;
-- reservar o horário do retoque para impedir colisão com outra sessão;
-- rejeitar uma segunda alteração de uma sessão já encerrada;
-- rejeitar situações não permitidas.
+- ordenação decrescente por identificador nas listas geral e filtradas por cliente ou etapa;
+- fluxo de envio e aprovação do desenho para preparar uma sessão;
+- reserva de horário, cancelamento e liberação do horário;
+- confirmação de sessão realizada e criação automática do agendamento de retoque;
+- escolha de horário de retoque a partir de 15 dias, sem segunda-feira e sem colisão com outra reserva;
+- recusa de alteração de sessão já encerrada;
+- validação de situação permitida pelo esquema de entrada.
 
-No PowerShell, a partir da pasta `backend`, instale as dependências do projeto uma vez e execute a suíte:
+No PowerShell, a partir da pasta `backend`, instale as dependências uma vez e rode a suíte:
 
 ```powershell
 python -m pip install -r requirements.txt
 python -m unittest discover -s tests -v
 ```
 
-Se o ambiente virtual já tiver sido criado conforme o [README](../README.md), use:
+Com o ambiente virtual do [README](../README.md):
 
 ```powershell
 .venv\Scripts\python.exe -m unittest discover -s tests -v
@@ -34,10 +29,12 @@ Se o ambiente virtual já tiver sido criado conforme o [README](../README.md), u
 
 ## Frontend
 
-O projeto ainda não tem uma suíte de testes de interface. Para verificar automaticamente que as telas e os componentes compilam para produção, execute na pasta `frontend`:
+Não há testes automatizados de interface. Para verificar se o React e o CSS compilam para produção, na pasta `frontend` execute:
 
 ```powershell
 npm.cmd run build
 ```
 
-O build verifica a compilação do React e do CSS; os testes do backend verificam as regras e os estados do agendamento usados pela API.
+## Verificação manual da API
+
+Inicie o backend e acesse `http://localhost:8000/docs`. A documentação interativa permite conferir as rotas de tatuagens, passos, horários e atualização de situação.
