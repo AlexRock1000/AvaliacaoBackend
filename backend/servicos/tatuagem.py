@@ -56,17 +56,18 @@ def listar_passos(tatuagem_id):
 
 
 # Calcula os inícios de sessão possíveis e remove horários que se sobrepõem a reservas existentes.
-def listar_horarios_disponiveis(data):
+def listar_horarios_disponiveis(data, duracao_horas=2, ignorar_passo_id=None):
     agora = datetime.now()
     if data.weekday() == 0 or data < agora.date():
         return []
 
-    duracao = timedelta(hours=2)
+    duracao = timedelta(hours=duracao_horas)
     inicio_almoco = datetime.combine(data, time(hour=12))
     fim_almoco = datetime.combine(data, time(hour=13))
     horarios = []
 
-    for hora in range(10, 19):
+    # Mantém cada reserva dentro da janela atual do estúdio, das 10h às 20h.
+    for hora in range(10, 21 - duracao_horas):
         horario = time(hour=hora)
         inicio = datetime.combine(data, horario)
         fim = inicio + duracao
@@ -79,9 +80,10 @@ def listar_horarios_disponiveis(data):
         for tatuagem in repositorio_tatuagem.listar_tatuagens():
             for passo in tatuagem["passos"]:
                 horario_marcado = passo.get("horario")
-                if passo["tipo"] in ("sessao", "retoque_combinado") and passo.get("situacao", "agendada") == "agendada" and passo["data"] == data and horario_marcado is not None:
+                if passo["id"] != ignorar_passo_id and passo["tipo"] in ("sessao", "retoque_combinado") and passo.get("situacao", "agendada") == "agendada" and passo["data"] == data and horario_marcado is not None:
                     inicio_marcado = datetime.combine(data, horario_marcado)
-                    fim_marcado = inicio_marcado + duracao
+                    duracao_marcada = timedelta(hours=passo.get("duracao_horas", 2) or 2)
+                    fim_marcado = inicio_marcado + duracao_marcada
                     if inicio < fim_marcado and inicio_marcado < fim:
                         ocupado = True
                         break
@@ -102,6 +104,7 @@ def registrar_passo(tatuagem_id: int, entrada: PassoEntrada):
 
     etapa = tatuagem["etapa"]
     tipo = entrada.tipo
+    reserva_retoque = None
 
     if tipo not in ("desenho_enviado", "desenho_aprovado", "desenho_reprovado", "sessao", "retoque_combinado", "retoque"):
         return "O passo deve registrar o desenho enviado, a decisão da cliente, sessão ou retoque."
@@ -115,12 +118,19 @@ def registrar_passo(tatuagem_id: int, entrada: PassoEntrada):
         return "A sessão só pode ser registrada depois da aprovação do desenho."
     if tipo == "sessao" and entrada.horario is None:
         return "Escolha um horário disponível para a sessão."
-    if tipo == "sessao" and entrada.horario.strftime("%H:%M") not in listar_horarios_disponiveis(entrada.data):
+    if tipo == "sessao" and entrada.horario.strftime("%H:%M") not in listar_horarios_disponiveis(entrada.data, entrada.duracao_horas):
         return "Esse horário não está mais disponível. Escolha outro horário."
     if tipo == "retoque_combinado" and etapa != "em sessões":
         return "O retoque só pode ser combinado depois de pelo menos uma sessão."
     if tipo == "retoque" and etapa != "aguardando retoque":
         return "O retoque só pode ser registrado como realizado depois de combinado."
+    if tipo == "retoque":
+        reserva_retoque = next(
+            (passo for passo in tatuagem["passos"] if passo["tipo"] == "retoque_combinado" and passo.get("situacao", "agendada") == "agendada"),
+            None,
+        )
+        if reserva_retoque is None:
+            return "O agendamento do retoque não foi encontrado."
 
     # Traduz o passo aceito para a próxima etapa que será guardada.
     etapas_por_tipo = {
@@ -132,7 +142,11 @@ def registrar_passo(tatuagem_id: int, entrada: PassoEntrada):
         "retoque": "finalizada",
     }
     dados_passo = entrada.model_dump()
+    if tipo not in ("sessao", "retoque"):
+        dados_passo["duracao_horas"] = None
     resultado = repositorio_tatuagem.adicionar_passo(tatuagem_id, dados_passo)
+    if reserva_retoque is not None:
+        reserva_retoque["situacao"] = "realizada"
     repositorio_tatuagem.atualizar_etapa(tatuagem_id, etapas_por_tipo[tipo])
     return resultado
 
@@ -151,7 +165,7 @@ def atualizar_situacao_sessao(tatuagem_id: int, passo_id: int, situacao: str):
         horarios = []
         for _ in range(370):
             if data_retoque.weekday() != 0:
-                horarios = listar_horarios_disponiveis(data_retoque)
+                horarios = listar_horarios_disponiveis(data_retoque, duracao_horas=2)
                 if horarios:
                     break
             data_retoque += timedelta(days=1)
@@ -166,6 +180,7 @@ def atualizar_situacao_sessao(tatuagem_id: int, passo_id: int, situacao: str):
                 "tipo": "retoque_combinado",
                 "data": data_retoque,
                 "horario": datetime.strptime(horarios[0], "%H:%M").time(),
+                "duracao_horas": 2,
                 "observacao": "Retoque agendado automaticamente para 15 dias após a sessão.",
                 "imagem": None,
                 "situacao": "agendada",
@@ -175,4 +190,25 @@ def atualizar_situacao_sessao(tatuagem_id: int, passo_id: int, situacao: str):
     elif situacao == "cancelada":
         passo["situacao"] = situacao
         passo["observacao"] = "Sessão cancelada."
+    return passo
+
+
+# Atualiza a duração e o horário do retoque, mantendo o horário livre para o tempo escolhido.
+def atualizar_agendamento_retoque(tatuagem_id, passo_id, entrada):
+    tatuagem = repositorio_tatuagem.buscar_tatuagem_por_id(tatuagem_id)
+    if tatuagem is None:
+        return None
+
+    passo = next((item for item in tatuagem["passos"] if item["id"] == passo_id), None)
+    if passo is None or passo["tipo"] != "retoque_combinado" or passo.get("situacao", "agendada") != "agendada":
+        return "O retoque agendado não foi encontrado."
+
+    horarios = listar_horarios_disponiveis(
+        passo["data"], entrada.duracao_horas, ignorar_passo_id=passo_id
+    )
+    if entrada.horario.strftime("%H:%M") not in horarios:
+        return "Esse horário não comporta a duração escolhida. Selecione outro horário livre."
+
+    passo["horario"] = entrada.horario
+    passo["duracao_horas"] = entrada.duracao_horas
     return passo

@@ -14,6 +14,8 @@ Os cenários cobertos são:
 - recusa de alteração de sessão já encerrada;
 - validação de situação permitida pelo esquema de entrada.
 
+Os testes de agendamento existentes usam a duração padrão de duas horas; ainda não verificam durações personalizadas nem a atualização da reserva na ficha do retoque.
+
 No PowerShell, a partir da pasta `backend`, instale as dependências uma vez e rode a suíte:
 
 ```powershell

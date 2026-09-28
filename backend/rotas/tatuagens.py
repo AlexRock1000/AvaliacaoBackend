@@ -2,7 +2,7 @@ from datetime import date
 
 from fastapi import APIRouter, HTTPException, Query, status
 
-from esquemas.passos import PassoEntrada, PassoSaida, SituacaoSessaoEntrada
+from esquemas.passos import AgendamentoRetoqueEntrada, PassoEntrada, PassoSaida, SituacaoSessaoEntrada
 from esquemas.tatuagens import TatuagemAtualizacaoEntrada, TatuagemDetalheSaida, TatuagemEntrada, TatuagemSaida
 from servicos import tatuagem as servico_tatuagem
 
@@ -11,10 +11,14 @@ from servicos import tatuagem as servico_tatuagem
 roteador = APIRouter(prefix="/tatuagens", tags=["Tatuagens"])
 
 
-# Lista opções de início para sessões de duas horas na data escolhida.
+# Lista horários que comportam a duração inteira escolhida para a sessão.
 @roteador.get("/horarios-disponiveis", response_model=list[str])
-def listar_horarios_disponiveis(data: date = Query(...)):
-    return servico_tatuagem.listar_horarios_disponiveis(data)
+def listar_horarios_disponiveis(
+    data: date = Query(...),
+    duracao_horas: int = Query(default=2, ge=1),
+    ignorar_passo_id: int | None = Query(default=None),
+):
+    return servico_tatuagem.listar_horarios_disponiveis(data, duracao_horas, ignorar_passo_id)
 
 
 # Na camada de rotas, recebe filtros HTTP e chama o serviço para obter a lista.
@@ -80,6 +84,17 @@ def registrar_passo(tatuagem_id: int, entrada: PassoEntrada):
 @roteador.patch("/{tatuagem_id}/passos/{passo_id}/situacao", response_model=PassoSaida)
 def atualizar_situacao_sessao(tatuagem_id: int, passo_id: int, entrada: SituacaoSessaoEntrada):
     resultado = servico_tatuagem.atualizar_situacao_sessao(tatuagem_id, passo_id, entrada.situacao)
+    if resultado is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Tatuagem não encontrada.")
+    if isinstance(resultado, str):
+        raise HTTPException(status_code=422, detail=resultado)
+    return resultado
+
+
+# Atualiza a reserva do retoque antes da realização para evitar conflito com outros horários.
+@roteador.patch("/{tatuagem_id}/passos/{passo_id}/agendamento", response_model=PassoSaida)
+def atualizar_agendamento_retoque(tatuagem_id: int, passo_id: int, entrada: AgendamentoRetoqueEntrada):
+    resultado = servico_tatuagem.atualizar_agendamento_retoque(tatuagem_id, passo_id, entrada)
     if resultado is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Tatuagem não encontrada.")
     if isinstance(resultado, str):
