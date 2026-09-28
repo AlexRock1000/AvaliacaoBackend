@@ -64,6 +64,23 @@ function hojeComoDataISO() {
   return `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, "0")}-${String(hoje.getDate()).padStart(2, "0")}`;
 }
 
+// Sugere a primeira data que ainda pode ter horário, sem iniciar a ficha numa segunda-feira ou após o último horário.
+function dataInicialDaSessao() {
+  const agora = new Date();
+  const data = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate());
+  if (agora.getHours() >= 18) data.setDate(data.getDate() + 1);
+  while (data.getDay() === 1) data.setDate(data.getDate() + 1);
+  return `${data.getFullYear()}-${String(data.getMonth() + 1).padStart(2, "0")}-${String(data.getDate()).padStart(2, "0")}`;
+}
+
+// Explica por que a data escolhida não oferece horário para evitar que a lista vazia pareça um erro.
+function mensagemSemHorarios(data) {
+  if (data < hojeComoDataISO()) return "Escolha hoje ou uma data futura para consultar os horários.";
+  if (new Date(`${data}T00:00:00`).getDay() === 1) return "O estúdio não agenda sessões às segundas-feiras.";
+  if (data === hojeComoDataISO()) return "Não há mais horários para hoje. Escolha outra data.";
+  return "Todos os horários desta data estão ocupados. Escolha outra data.";
+}
+
 function grupoDeProximidade(data) {
   const [ano, mes, dia] = data.split("-").map(Number);
   const hoje = new Date();
@@ -702,7 +719,7 @@ function TelaFicha({ tatuagem, aoVoltar, aoSalvar, nomeRetorno = "agenda" }) {
   const [imagem, definirImagem] = useState("");
   const [nomeImagem, definirNomeImagem] = useState("");
   const [arrastandoImagem, definirArrastandoImagem] = useState(false);
-  const [data, definirData] = useState(new Date().toISOString().slice(0, 10));
+  const [data, definirData] = useState(dataInicialDaSessao);
   const [horariosDisponiveis, definirHorariosDisponiveis] = useState([]);
   const [horario, definirHorario] = useState("");
   const [carregandoHorarios, definirCarregandoHorarios] = useState(false);
@@ -879,11 +896,11 @@ function TelaFicha({ tatuagem, aoVoltar, aoSalvar, nomeRetorno = "agenda" }) {
         </>}
         {tipo === "sessao" && <>
           <label htmlFor="data-passo">Data da sessão</label>
-          <input id="data-passo" type="date" value={data} onChange={(evento) => definirData(evento.target.value)} required />
+          <input id="data-passo" type="date" min={hojeComoDataISO()} value={data} onChange={(evento) => definirData(evento.target.value)} required />
           <label htmlFor="horario-sessao">Horários disponíveis · sessão de 2 horas</label>
           <select id="horario-sessao" value={horario} onChange={(evento) => definirHorario(evento.target.value)} disabled={carregandoHorarios || horariosDisponiveis.length === 0} required>
             {carregandoHorarios && <option value="">Buscando horários…</option>}
-            {!carregandoHorarios && horariosDisponiveis.length === 0 && <option value="">Nenhum horário disponível nessa data</option>}
+            {!carregandoHorarios && horariosDisponiveis.length === 0 && <option value="">{mensagemSemHorarios(data)}</option>}
             {horariosDisponiveis.map((opcao) => <option key={opcao} value={opcao}>{opcao}</option>)}
           </select>
           {erroHorarios && <p className="aviso aviso-erro" role="alert">{erroHorarios}</p>}
