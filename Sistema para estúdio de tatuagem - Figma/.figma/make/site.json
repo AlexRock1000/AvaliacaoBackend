@@ -1,0 +1,10 @@
+{
+  "description": "Manage tattoo studio appointments and client profiles with a stylish, tailored interface designed to enhance booking and studio operations.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}

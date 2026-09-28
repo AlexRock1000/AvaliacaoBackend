@@ -1,10 +1,18 @@
 # Regras do projeto para a IA
 
+<<<<<<< HEAD
+=======
+Atualizado até a **aula 5** da UC4. Salve na raiz do **repositório novo, o da cartilha**, com o nome
+>>>>>>> 50ebc6ac6b918fae0cfa91afff2b1f27772b037e
 `REGRAS.md`. Deste ponto em diante ele vale para esse repositório, e é nele que as próximas versões
 são gravadas por cima.
 
 ## O projeto
 
+<<<<<<< HEAD
+=======
+- Repositório novo, só para a cartilha sorteada na aula 5. É o meu projeto até o fim do curso.
+>>>>>>> 50ebc6ac6b918fae0cfa91afff2b1f27772b037e
 - Na raiz: `docs/`, `frontend/`, `backend/` e um `README.md` que diz como rodar o front e o back.
 - `docs/` guarda o que não é código:
   - `CARTILHA.md`: a cartilha sorteada, sem alteração. É a fonte do que o sistema precisa fazer.
