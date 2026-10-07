@@ -161,6 +161,7 @@ def atualizar_situacao_sessao(tatuagem_id: int, passo_id: int, situacao: str):
     if passo.get("situacao", "agendada") != "agendada":
         return "Somente sessões agendadas podem ser atualizadas."
     if situacao == "realizada":
+        observacao = "Sessão realizada."
         data_retoque = date.today() + timedelta(days=15)
         horarios = []
         for _ in range(370):
@@ -173,7 +174,8 @@ def atualizar_situacao_sessao(tatuagem_id: int, passo_id: int, situacao: str):
             return "Não foi possível encontrar um horário para agendar o retoque."
 
         passo["situacao"] = situacao
-        passo["observacao"] = "Sessão realizada."
+        passo["observacao"] = observacao
+        repositorio_tatuagem.atualizar_situacao_passo_com_obs(passo_id, situacao, observacao)
         repositorio_tatuagem.adicionar_passo(
             tatuagem_id,
             {
@@ -188,8 +190,10 @@ def atualizar_situacao_sessao(tatuagem_id: int, passo_id: int, situacao: str):
         )
         repositorio_tatuagem.atualizar_etapa(tatuagem_id, "aguardando retoque")
     elif situacao == "cancelada":
+        observacao = "Sessão cancelada."
         passo["situacao"] = situacao
-        passo["observacao"] = "Sessão cancelada."
+        passo["observacao"] = observacao
+        repositorio_tatuagem.atualizar_situacao_passo_com_obs(passo_id, situacao, observacao)
     return passo
 
 
