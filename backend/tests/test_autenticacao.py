@@ -10,6 +10,7 @@ from esquemas.tatuagens import TatuagemEntrada
 from main import aplicativo
 from repositorios import tatuagem as repositorio_tatuagem
 from repositorios import usuario as repositorio_usuario
+from seguranca import verificar_senha
 from servicos import tatuagem as servico_tatuagem
 
 
@@ -34,15 +35,53 @@ class TestAutenticacao(unittest.TestCase):
         conexao = conectar()
         try:
             senha_armazenada = conexao.execute(
-                "SELECT password_hash FROM usuarios WHERE username = 'bruna'"
-            ).fetchone()["password_hash"]
+                "SELECT senha_hash FROM usuarios WHERE username = 'bruna'"
+            ).fetchone()["senha_hash"]
         finally:
             conexao.close()
 
         usuario = repositorio_usuario.buscar_usuario_por_id(1)
-        self.assertTrue(senha_armazenada.startswith("pbkdf2_sha256$"))
+        self.assertTrue(verificar_senha("bruna123", senha_armazenada))
         self.assertNotIn("password", usuario)
-        self.assertNotIn("password_hash", usuario)
+        self.assertNotIn("senha_hash", usuario)
+
+    def test_cadastro_cria_cliente_e_permite_login_por_email(self):
+        resposta = self.cliente.post(
+            "/usuarios",
+            json={"nome": "Ana Cliente", "email": "ANA@example.com", "senha": "senha-segura-123"},
+        )
+
+        self.assertEqual(resposta.status_code, 201, resposta.text)
+        dados_usuario = resposta.json()
+        self.assertEqual(dados_usuario["tipo"], "cliente")
+        self.assertEqual(dados_usuario["email"], "ana@example.com")
+        self.assertNotIn("senha", dados_usuario)
+        self.assertNotIn("senha_hash", dados_usuario)
+
+        token = self._login("ana@example.com", "senha-segura-123")
+        self.assertTrue(token)
+
+    def test_cadastro_rejeita_email_duplicado(self):
+        dados = {"nome": "Ana", "email": "ana@example.com", "senha": "senha-segura-123"}
+        primeira = self.cliente.post("/usuarios", json=dados)
+        segunda = self.cliente.post("/usuarios", json=dados)
+
+        self.assertEqual(primeira.status_code, 201, primeira.text)
+        self.assertEqual(segunda.status_code, 409)
+
+    def test_cadastro_nao_permite_escolher_perfil_de_tatuador(self):
+        resposta = self.cliente.post(
+            "/usuarios",
+            json={
+                "nome": "Conta indevida",
+                "email": "nao-tatuador@example.com",
+                "senha": "senha-segura-123",
+                "tipo": "tatuador",
+            },
+        )
+
+        self.assertEqual(resposta.status_code, 201, resposta.text)
+        self.assertEqual(resposta.json()["tipo"], "cliente")
 
     def test_login_com_senha_incorreta_retorna_nao_autorizado(self):
         resposta = self.cliente.post(

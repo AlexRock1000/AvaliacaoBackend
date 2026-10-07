@@ -21,7 +21,7 @@ python -m venv .venv
 if (-not (Test-Path .env)) { Copy-Item .env.exemplo .env }
 ```
 
-Edite `backend/.env` para conter `ENDERECO_FRONTEND=http://localhost:5173` e uma chave JWT aleatória e exclusiva como `SECRET_KEY`. Gere uma com `python -c "import secrets; print(secrets.token_urlsafe(48))"` e configure o resultado no arquivo. A API não inicia se a chave estiver ausente ou usar o segredo demonstrativo antigo. Não compartilhe nem versione esse valor.
+Edite `backend/.env` para conter `ENDERECO_FRONTEND=http://localhost:5173` e uma chave JWT aleatória e exclusiva em `CHAVE_DO_TOKEN`. Gere uma com `python -c "import secrets; print(secrets.token_urlsafe(48))"` e configure o resultado no arquivo. `SECRET_KEY` ainda é aceita como nome alternativo. A API não inicia se a chave estiver ausente ou usar o segredo demonstrativo antigo. Não compartilhe nem versione esse valor.
 
 ```powershell
 .venv\Scripts\python.exe -m uvicorn main:aplicativo --reload
@@ -43,7 +43,7 @@ Abra `http://localhost:5173`. O seletor no cabeçalho alterna entre os perfis Br
 
 ## Funcionalidades implementadas
 
-- **Autenticação:** login para cliente e tatuador, com senhas armazenadas em hash PBKDF2 com salt individual e token JWT para proteger as rotas da API.
+- **Autenticação:** cadastro de clientes por nome, e-mail e senha; login por e-mail ou usuário; senhas armazenadas em hash PBKDF2 com salt individual e token JWT para proteger as rotas da API. O cadastro nunca permite que a pessoa escolha o perfil de tatuador.
 - **Cliente:** cria e edita pedidos enquanto estão na etapa inicial, anexa imagem de referência, acompanha etapa e histórico, consulta o desenho enviado e aprova ou pede ajustes.
 - **Tatuador:** acompanha a visão geral, agenda e projetos; filtra tatuagens por etapa; envia o desenho; agenda sessões e registra o retoque.
 - **Agenda:** o tatuador escolhe a duração inteira da sessão, a partir de uma hora. A disponibilidade considera a duração escolhida, evita sobreposições e mantém os horários entre 10h e 20h, fora do almoço; não há agendamentos às segundas-feiras.
@@ -52,6 +52,6 @@ Abra `http://localhost:5173`. O seletor no cabeçalho alterna entre os perfis Br
 
 ## Dados e organização
 
-Os dados de usuários, tatuagens e passos ficam no banco SQLite local `backend/database.sqlite3` e persistem após reiniciar a API. A inicialização migra automaticamente a tabela de usuários legada para hashes de senha. O arquivo do banco é local e ignorado pelo Git; planeje backups antes de usar os dados em produção. Imagens são mantidas como texto codificado junto ao pedido ou passo. As contas Bruna (`bruna` / `bruna123`) e Vitor (`vitor` / `vitor123`) são credenciais demonstrativas e devem ser alteradas ou removidas antes de qualquer implantação real. O backend está dividido em `rotas/`, `servicos/`, `repositorios/` e `esquemas/`; o frontend usa React e `fetch`.
+Os dados de usuários, tatuagens e passos ficam no banco SQLite local `backend/database.sqlite3` e persistem após reiniciar a API. A inicialização migra automaticamente usuários legados, preenchendo e-mail de demonstração quando necessário e convertendo senhas para hashes. O arquivo do banco é local e ignorado pelo Git; planeje backups antes de usar os dados em produção. Imagens são mantidas como texto codificado junto ao pedido ou passo. As contas Bruna (`bruna` / `bruna123`) e Vitor (`vitor` / `vitor123`) são credenciais demonstrativas e devem ser alteradas ou removidas antes de qualquer implantação real. O backend separa modelos, esquemas, serviços, repositórios, rotas e segurança; `rotas/tatuagens.py` protege as rotas próprias do domínio deste sistema.
 
 Para executar os testes automatizados, consulte [TESTES_AUTOMATIZADOS.md](Docs/TESTES_AUTOMATIZADOS.md).

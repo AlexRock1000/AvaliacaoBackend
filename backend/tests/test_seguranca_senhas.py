@@ -4,7 +4,7 @@ import tempfile
 from pathlib import Path
 
 from banco import _preparar_tabela_usuarios
-from seguranca_senhas import hashear_senha, verificar_senha
+from seguranca import hashear_senha, verificar_senha
 
 
 class TestSegurancaSenhas(unittest.TestCase):
@@ -46,14 +46,45 @@ class TestSegurancaSenhas(unittest.TestCase):
             _preparar_tabela_usuarios(conexao)
 
             usuario = conexao.execute(
-                "SELECT password_hash FROM usuarios WHERE username = 'bruna'"
+                "SELECT senha_hash FROM usuarios WHERE username = 'bruna'"
             ).fetchone()
             colunas = [coluna[1] for coluna in conexao.execute("PRAGMA table_info(usuarios)")]
             conexao.close()
 
-        self.assertIn("password_hash", colunas)
+        self.assertIn("email", colunas)
+        self.assertIn("senha_hash", colunas)
         self.assertNotIn("password", colunas)
-        self.assertTrue(verificar_senha("bruna123", usuario["password_hash"]))
+        self.assertTrue(verificar_senha("bruna123", usuario["senha_hash"]))
+
+    def test_migracao_preenche_email_para_usuarios_anteriores(self):
+        with tempfile.TemporaryDirectory() as diretorio:
+            caminho_banco = Path(diretorio) / "legado.sqlite3"
+            conexao = sqlite3.connect(caminho_banco)
+            conexao.row_factory = sqlite3.Row
+            conexao.execute(
+                """
+                CREATE TABLE usuarios (
+                    id INTEGER PRIMARY KEY,
+                    nome TEXT NOT NULL,
+                    tipo TEXT NOT NULL,
+                    username TEXT NOT NULL UNIQUE,
+                    senha_hash TEXT NOT NULL
+                )
+                """
+            )
+            conexao.execute(
+                "INSERT INTO usuarios VALUES (1, 'Vitor', 'tatuador', 'vitor', ?) ",
+                (hashear_senha("senha-teste"),),
+            )
+
+            _preparar_tabela_usuarios(conexao)
+
+            usuario = conexao.execute(
+                "SELECT email FROM usuarios WHERE username = 'vitor'"
+            ).fetchone()
+            conexao.close()
+
+        self.assertEqual(usuario["email"], "vitor@tintanegra.local")
 
 
 if __name__ == "__main__":

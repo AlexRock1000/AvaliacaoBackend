@@ -4,11 +4,14 @@ from fastapi.middleware.cors import CORSMiddleware
 from configuracao import obter_configuracao
 from rotas.autenticacao import roteador as roteador_autenticacao
 from rotas.tatuagens import roteador as roteador_tatuagens
+from rotas.usuarios import roteador as roteador_usuarios
+from seguranca import validar_chave_token
 
 
 # Cria o aplicativo e libera chamadas somente para o endereço configurado do front.
 aplicativo = FastAPI(title="Tinta Negra Tattoo Studio")
 configuracao = obter_configuracao()
+validar_chave_token()
 endereco_frontend = configuracao["endereco_frontend"]
 
 # Só registra o CORS quando o endereço foi preenchido no arquivo de ambiente.
@@ -23,4 +26,5 @@ if endereco_frontend:
     )
 
 aplicativo.include_router(roteador_autenticacao)
+aplicativo.include_router(roteador_usuarios)
 aplicativo.include_router(roteador_tatuagens)

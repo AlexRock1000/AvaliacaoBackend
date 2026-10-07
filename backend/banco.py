@@ -1,7 +1,7 @@
 import os
 import sqlite3
 
-from seguranca_senhas import hashear_senha, senha_esta_hasheada
+from seguranca import hashear_senha, senha_esta_hasheada
 
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
@@ -23,8 +23,8 @@ def _criar_tabela_usuarios(conexao):
             nome TEXT NOT NULL,
             tipo TEXT NOT NULL,
             username TEXT NOT NULL UNIQUE,
-            email TEXT NOT NULL UNIQUE,
-            password_hash TEXT NOT NULL
+            email TEXT NOT NULL COLLATE NOCASE UNIQUE,
+            senha_hash TEXT NOT NULL
         )
         """
     )
@@ -42,33 +42,31 @@ def _preparar_tabela_usuarios(conexao):
         coluna["name"]
         for coluna in conexao.execute("PRAGMA table_info(usuarios)").fetchall()
     }
-    if "password_hash" in colunas and "email" in colunas and "password" not in colunas:
+    if {"email", "senha_hash"}.issubset(colunas) and "password" not in colunas and "password_hash" not in colunas:
         return
 
     registros = conexao.execute("SELECT * FROM usuarios").fetchall()
     conexao.execute("ALTER TABLE usuarios RENAME TO usuarios_legado")
     _criar_tabela_usuarios(conexao)
     for registro in registros:
-        senha = registro["password_hash"] if "password_hash" in colunas else None
-        if not senha and "password" in colunas:
-            senha = registro["password"]
+        senha = None
+        for coluna_senha in ("senha_hash", "password_hash", "password"):
+            if coluna_senha in colunas and registro[coluna_senha]:
+                senha = registro[coluna_senha]
+                break
         senha_hash = senha if senha_esta_hasheada(senha) else hashear_senha(senha or "")
-        email = registro["email"] if "email" in colunas else None
-        if not email:
-            email = f"{registro['username']}@example.invalid"
+        username = registro["username"]
+        email = (
+            registro["email"].strip().lower()
+            if "email" in colunas and registro["email"]
+            else f"{username}@tintanegra.local"
+        )
         conexao.execute(
             """
-            INSERT INTO usuarios (id, nome, tipo, username, email, password_hash)
+            INSERT INTO usuarios (id, nome, tipo, username, email, senha_hash)
             VALUES (?, ?, ?, ?, ?, ?)
             """,
-            (
-                registro["id"],
-                registro["nome"],
-                registro["tipo"],
-                registro["username"],
-                email,
-                senha_hash,
-            ),
+            (registro["id"], registro["nome"], registro["tipo"], username, email, senha_hash),
         )
     conexao.execute("DROP TABLE usuarios_legado")
 
@@ -108,8 +106,8 @@ def inicializar_banco():
         )
 
         contas_demo = (
-            (1, "Bruna", "cliente", "bruna", "bruna@example.invalid", "bruna123"),
-            (2, "Vitor", "tatuador", "vitor", "vitor@example.invalid", "vitor123"),
+            (1, "Bruna", "cliente", "bruna", "bruna@tintanegra.local", "bruna123"),
+            (2, "Vitor", "tatuador", "vitor", "vitor@tintanegra.local", "vitor123"),
         )
         for usuario_id, nome, tipo, username, email, senha in contas_demo:
             existente = conexao.execute(
@@ -118,7 +116,7 @@ def inicializar_banco():
             if existente is None:
                 conexao.execute(
                     """
-                    INSERT INTO usuarios (id, nome, tipo, username, email, password_hash)
+                    INSERT INTO usuarios (id, nome, tipo, username, email, senha_hash)
                     VALUES (?, ?, ?, ?, ?, ?)
                     """,
                     (usuario_id, nome, tipo, username, email, hashear_senha(senha)),

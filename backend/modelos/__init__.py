@@ -1,1 +1,1 @@
-"""Modelos de domínio utilizados pelos serviços e repositórios."""
+"""Modelos de domínio do backend."""

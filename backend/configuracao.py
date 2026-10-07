@@ -8,5 +8,5 @@ def obter_configuracao():
     load_dotenv()
     return {
         "endereco_frontend": os.getenv("ENDERECO_FRONTEND"),
-        "secret_key": os.getenv("SECRET_KEY"),
+        "chave_do_token": os.getenv("CHAVE_DO_TOKEN") or os.getenv("SECRET_KEY"),
     }

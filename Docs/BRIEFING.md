@@ -29,7 +29,7 @@ Vitor organiza os trabalhos do estúdio pelo computador. Usa o sistema para:
 
 ## Autenticação e autorização
 
-A autenticação permite login para os perfis de cliente e tatuador. As senhas são armazenadas como hashes PBKDF2 com salt individual; o backend emite um token JWT assinado com uma chave `SECRET_KEY` configurada no ambiente e exige o cabeçalho `Authorization: Bearer <token>` em todas as rotas protegidas. O cliente só acessa os seus próprios pedidos e o tatuador pode consultar ou administrar qualquer tatuagem do estúdio. As credenciais Bruna (`bruna` / `bruna123`) e Vitor (`vitor` / `vitor123`) são apenas demonstrações.
+A autenticação permite cadastro de clientes por nome, e-mail e senha, além de login por e-mail ou username. As senhas são armazenadas como hashes PBKDF2 com salt individual; o backend emite um token JWT assinado com `CHAVE_DO_TOKEN` configurada no ambiente (`SECRET_KEY` é aceita como alias) e exige o cabeçalho `Authorization: Bearer <token>` em todas as rotas protegidas. O cadastro atribui sempre o perfil de cliente. O cliente só acessa os seus próprios pedidos e o tatuador pode consultar ou administrar qualquer tatuagem do estúdio. As credenciais Bruna (`bruna` / `bruna123`) e Vitor (`vitor` / `vitor123`) são apenas demonstrações.
 
 ## Etapas e regras implementadas
 
@@ -52,6 +52,9 @@ O layout se adapta a celular e computador. O fluxo de login utiliza as contas de
 
 ## API implementada
 
+- `POST /usuarios` cadastra uma conta de cliente usando nome, e-mail e senha; o perfil não pode ser escolhido na requisição.
+- `POST /login` aceita username legado ou e-mail com senha e devolve token e dados públicos do usuário.
+- `GET /me` exige bearer token e devolve os dados públicos da conta atual.
 - `GET /tatuagens` lista tatuagens; aceita os filtros `etapa` e `cliente_id` e mostra as mais recentes primeiro.
 - `GET /tatuagens/{id}` consulta uma tatuagem.
 - `POST /tatuagens` cria um pedido.

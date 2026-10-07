@@ -7,7 +7,7 @@ O projeto é o Tinta Negra Tattoo Studio. `Docs/CARTILHA.md` registra a proposta
 ## Estrutura e arquitetura
 
 - O frontend fica em `frontend/` e usa React, CSS responsivo e `fetch`.
-- O backend fica em `backend/`, com configuração em `configuracao.py`, inicialização e CORS em `main.py`, rotas em `rotas/`, regras em `servicos/`, acesso ao SQLite em `repositorios/` e validação em `esquemas/`.
+- O backend fica em `backend/`, com configuração em `configuracao.py`, inicialização/CORS/registro de routers em `main.py`, modelos de domínio em `modelos/`, validação em `esquemas/`, regras em `servicos/`, acesso ao SQLite em `repositorios/`, endpoints em `rotas/` e hashes/tokens/autorização em `seguranca.py`.
 - A direção das chamadas é rota → serviço → repositório. Não importe uma rota em outra.
 - A configuração do CORS lê `ENDERECO_FRONTEND` do `.env`; libere somente o endereço exato configurado.
 - Os dados são persistidos no SQLite local `backend/database.sqlite3`. Não introduza novos bancos, autenticação ou bibliotecas de busca no frontend sem solicitação explícita.

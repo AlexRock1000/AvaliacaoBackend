@@ -14,6 +14,8 @@ Os cenários cobertos são:
 - recusa de alteração de sessão já encerrada;
 - validação de situação permitida pelo esquema de entrada.
 - login válido e armazenamento/verificação de senhas com hash, sem expor o hash nos dados de usuário.
+- cadastro de cliente, normalização de e-mail, rejeição de duplicidade e login subsequente por e-mail.
+- migração da tabela de usuários para a coluna de e-mail e hash de senha, além do preenchimento de e-mails para contas legadas.
 
 Os testes de agendamento existentes usam a duração padrão de duas horas; ainda não verificam durações personalizadas nem a atualização da reserva na ficha do retoque.
 
