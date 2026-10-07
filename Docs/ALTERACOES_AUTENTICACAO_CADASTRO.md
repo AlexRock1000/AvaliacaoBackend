@@ -30,8 +30,8 @@ A tabela `usuarios` passa a conter:
 | `nome` | Nome público. |
 | `tipo` | Perfil de autorização, como `cliente` ou `tatuador`. |
 | `username` | Identificador compatível com as contas existentes. |
-| `email` | E-mail único, comparado sem diferenciar maiúsculas/minúsculas. |
-| `senha_hash` | Hash PBKDF2 com salt individual; nunca é devolvido pela API. |
+| `email` | Obrigatório e único, comparado sem diferenciar maiúsculas/minúsculas. |
+| `senha_hash` | Obrigatório; hash PBKDF2 com salt individual, nunca devolvido pela API. |
 
 Na inicialização, o banco detecta esquemas anteriores. Senhas em texto puro são convertidas em hash; hashes existentes são preservados. Contas antigas sem e-mail recebem um endereço interno no formato `<username>@tintanegra.local`. A migração mantém IDs, nomes, usernames e tipos já existentes. As contas demonstrativas Bruna e Vitor recebem e-mails demonstrativos nesse mesmo domínio local.
 
