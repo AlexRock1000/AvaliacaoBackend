@@ -1,47 +1,11 @@
-from datetime import datetime, timedelta, timezone
-
-import jwt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from pydantic import BaseModel
 
-from configuracao import obter_configuracao
+from esquemas.usuario import CredenciaisLogin, UsuarioSaida
 from repositorios import usuario as repositorio_usuario
-
-configuracao = obter_configuracao()
-SEGREDO = configuracao.get("secret_key") or "tinta-negra-tattoo-studio-secret-2026"
-ALGORITMO = "HS256"
+from seguranca import gerar_token, verificar_token
 
 security = HTTPBearer(auto_error=False)
-
-
-class CredenciaisLogin(BaseModel):
-    username: str
-    password: str
-
-
-class UsuarioResposta(BaseModel):
-    id: int
-    nome: str
-    tipo: str
-    username: str
-
-
-def gerar_token(usuario: dict) -> str:
-    payload = {
-        "sub": str(usuario["id"]),
-        "nome": usuario["nome"],
-        "tipo": usuario["tipo"],
-        "exp": datetime.now(timezone.utc) + timedelta(hours=8),
-    }
-    return jwt.encode(payload, SEGREDO, algorithm=ALGORITMO)
-
-
-def verificar_token(token: str) -> dict:
-    try:
-        return jwt.decode(token, SEGREDO, algorithms=[ALGORITMO])
-    except jwt.PyJWTError as erro:
-        raise ValueError("Token inválido ou expirado.") from erro
 
 
 def obter_usuario_atual(credentials: HTTPAuthorizationCredentials | None = Depends(security)):
@@ -77,3 +41,14 @@ def garantir_acesso_tatuagem(usuario: dict, tatuagem: dict):
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Este pedido não pertence a este perfil de cliente.",
         )
+
+
+__all__ = [
+    "CredenciaisLogin",
+    "UsuarioSaida",
+    "exigir_perfil",
+    "garantir_acesso_tatuagem",
+    "gerar_token",
+    "obter_usuario_atual",
+    "verificar_token",
+]

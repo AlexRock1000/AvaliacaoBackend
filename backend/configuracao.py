@@ -8,5 +8,5 @@ def obter_configuracao():
     load_dotenv()
     return {
         "endereco_frontend": os.getenv("ENDERECO_FRONTEND"),
-        "secret_key": os.getenv("SECRET_KEY") or "tinta-negra-tattoo-studio-secret-2026",
+        "secret_key": os.getenv("SECRET_KEY"),
     }

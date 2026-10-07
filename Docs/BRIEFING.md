@@ -29,7 +29,7 @@ Vitor organiza os trabalhos do estúdio pelo computador. Usa o sistema para:
 
 ## Autenticação e autorização
 
-A autenticação foi iniciada com login em memória para os perfis de cliente e tatuador. O backend emite um token JWT e exige o cabeçalho `Authorization: Bearer <token>` em todas as rotas protegidas. O cliente só acessa os seus próprios pedidos e o tatuador pode consultar ou administrar qualquer tatuagem do estúdio.
+A autenticação permite login para os perfis de cliente e tatuador. As senhas são armazenadas como hashes PBKDF2 com salt individual; o backend emite um token JWT assinado com uma chave `SECRET_KEY` configurada no ambiente e exige o cabeçalho `Authorization: Bearer <token>` em todas as rotas protegidas. O cliente só acessa os seus próprios pedidos e o tatuador pode consultar ou administrar qualquer tatuagem do estúdio. As credenciais Bruna (`bruna` / `bruna123`) e Vitor (`vitor` / `vitor123`) são apenas demonstrações.
 
 ## Etapas e regras implementadas
 
@@ -48,7 +48,7 @@ Ao marcar uma sessão como realizada, o sistema cria uma reserva inicial de reto
 - **Projetos:** lista de projetos para acompanhamento e acesso à ficha.
 - **Ficha:** detalhes do pedido e registro do desenho, sessão ou retoque, conforme a etapa.
 
-O layout se adapta a celular e computador. A lista de perfis é uma escolha de demonstração, sem autenticação.
+O layout se adapta a celular e computador. O fluxo de login utiliza as contas de demonstração criadas pelo backend.
 
 ## API implementada
 
@@ -62,6 +62,6 @@ O layout se adapta a celular e computador. A lista de perfis é uma escolha de d
 - `PATCH /tatuagens/{id}/passos/{passo_id}/situacao` cancela ou confirma uma sessão.
 - `PATCH /tatuagens/{id}/passos/{passo_id}/agendamento` ajusta a duração e o horário do retoque agendado.
 
-## Limites desta versão
+## Dados e limites desta versão
 
-Os dados são guardados em memória e desaparecem ao reiniciar o backend. A autenticação é simulada com usuários fixos em memória e não substitui um sistema de usuários real e persistente. Imagens são enviadas como conteúdo codificado no JSON. Não fazem parte do escopo pagamentos, orçamento, notificações ou persistência em banco de dados.
+Usuários, tatuagens e passos são persistidos em `backend/database.sqlite3`, um arquivo SQLite local que não deve ser enviado ao Git e precisa de rotina de backup. O esquema migra automaticamente senhas da estrutura legada para hashes. As contas de demonstração usam senhas conhecidas e não devem ser utilizadas como contas reais; ainda não há fluxo de cadastro, troca ou recuperação de senha. Imagens são enviadas como conteúdo codificado no JSON. Não fazem parte do escopo pagamentos, orçamento ou notificações.

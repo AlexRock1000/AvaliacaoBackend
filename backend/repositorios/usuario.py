@@ -1,4 +1,5 @@
 from banco import conectar, inicializar_banco
+from seguranca_senhas import verificar_senha
 
 inicializar_banco()
 
@@ -11,7 +12,6 @@ def _row_para_usuario(row):
         "nome": row["nome"],
         "tipo": row["tipo"],
         "username": row["username"],
-        "password": row["password"],
     }
 
 
@@ -19,7 +19,7 @@ def buscar_usuario_por_id(usuario_id):
     conexao = conectar()
     try:
         linha = conexao.execute(
-            "SELECT id, nome, tipo, username, password FROM usuarios WHERE id = ?",
+            "SELECT id, nome, tipo, username FROM usuarios WHERE id = ?",
             (int(usuario_id),),
         ).fetchone()
         return _row_para_usuario(linha)
@@ -29,13 +29,14 @@ def buscar_usuario_por_id(usuario_id):
 
 def autenticar(username, password):
     username_normalizado = (username or "").strip().lower()
-    password_normalizado = password or ""
     conexao = conectar()
     try:
         linha = conexao.execute(
-            "SELECT id, nome, tipo, username, password FROM usuarios WHERE username = ? AND password = ?",
-            (username_normalizado, password_normalizado),
+            "SELECT id, nome, tipo, username, password_hash FROM usuarios WHERE username = ?",
+            (username_normalizado,),
         ).fetchone()
+        if linha is None or not verificar_senha(password or "", linha["password_hash"]):
+            return None
         return _row_para_usuario(linha)
     finally:
         conexao.close()

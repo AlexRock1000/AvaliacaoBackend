@@ -1,10 +1,15 @@
+import os
 import unittest
 
 from fastapi.testclient import TestClient
 
+os.environ.setdefault("SECRET_KEY", "chave-de-testes-nao-utilizar-fora-da-suite")
+
+from banco import conectar
 from esquemas.tatuagens import TatuagemEntrada
 from main import aplicativo
 from repositorios import tatuagem as repositorio_tatuagem
+from repositorios import usuario as repositorio_usuario
 from servicos import tatuagem as servico_tatuagem
 
 
@@ -24,6 +29,26 @@ class TestAutenticacao(unittest.TestCase):
     def test_login_com_credenciais_validas_retorna_token(self):
         token = self._login("bruna", "bruna123")
         self.assertTrue(token)
+
+    def test_senha_armazenada_com_hash_e_nao_exposta_no_usuario(self):
+        conexao = conectar()
+        try:
+            senha_armazenada = conexao.execute(
+                "SELECT password_hash FROM usuarios WHERE username = 'bruna'"
+            ).fetchone()["password_hash"]
+        finally:
+            conexao.close()
+
+        usuario = repositorio_usuario.buscar_usuario_por_id(1)
+        self.assertTrue(senha_armazenada.startswith("pbkdf2_sha256$"))
+        self.assertNotIn("password", usuario)
+        self.assertNotIn("password_hash", usuario)
+
+    def test_login_com_senha_incorreta_retorna_nao_autorizado(self):
+        resposta = self.cliente.post(
+            "/login", json={"username": "bruna", "password": "senha-errada"}
+        )
+        self.assertEqual(resposta.status_code, 401)
 
     def test_cliente_nao_pode_acessar_tatuagem_de_outra_pessoa(self):
         servico_tatuagem.criar_tatuagem(

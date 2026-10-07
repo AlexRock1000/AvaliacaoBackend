@@ -2,7 +2,7 @@
 
 ## Backend
 
-Os testes usam `unittest` e exercitam os serviços sem iniciar o servidor. Cada teste limpa a lista em memória antes e depois da execução.
+Os testes usam `unittest` e exercitam serviços e rotas com o banco SQLite local. Cada teste limpa as tabelas de tatuagens e passos antes e depois da execução; os usuários de demonstração permanecem no banco.
 
 Os cenários cobertos são:
 
@@ -13,6 +13,7 @@ Os cenários cobertos são:
 - escolha de horário de retoque a partir de 15 dias, sem segunda-feira e sem colisão com outra reserva;
 - recusa de alteração de sessão já encerrada;
 - validação de situação permitida pelo esquema de entrada.
+- login válido e armazenamento/verificação de senhas com hash, sem expor o hash nos dados de usuário.
 
 Os testes de agendamento existentes usam a duração padrão de duas horas; ainda não verificam durações personalizadas nem a atualização da reserva na ficha do retoque.
 

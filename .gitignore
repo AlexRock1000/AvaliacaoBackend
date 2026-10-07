@@ -9,6 +9,9 @@ frontend/dist/
 
 # O endereço de cada máquina fica no arquivo local de ambiente.
 backend/.env
+backend/database.sqlite3
+backend/database.sqlite3-shm
+backend/database.sqlite3-wal
 
 # Arquivos temporários do sistema operacional e do editor.
 .DS_Store
