@@ -1,5 +1,6 @@
 import os
 import unittest
+from uuid import uuid4
 
 from fastapi.testclient import TestClient
 
@@ -17,10 +18,30 @@ from servicos import tatuagem as servico_tatuagem
 class TestAutenticacao(unittest.TestCase):
     def setUp(self):
         repositorio_tatuagem._tatuagens.clear()
+        self._limpar_cadastros_de_teste()
         self.cliente = TestClient(aplicativo)
 
     def tearDown(self):
         repositorio_tatuagem._tatuagens.clear()
+        self._limpar_cadastros_de_teste()
+
+    def _limpar_cadastros_de_teste(self):
+        conexao = conectar()
+        try:
+            conexao.execute(
+                """
+                DELETE FROM usuarios
+                WHERE email = 'ana@example.com'
+                   OR email = 'nao-tatuador@example.com'
+                   OR email LIKE '%@copilot-tests.invalid'
+                   OR email LIKE 'ana-%@example.com'
+                   OR email LIKE 'duplicado-%@example.com'
+                   OR email LIKE 'nao-tatuador-%@example.com'
+                """
+            )
+            conexao.commit()
+        finally:
+            conexao.close()
 
     def _login(self, username, password):
         resposta = self.cliente.post("/login", json={"username": username, "password": password})
@@ -46,23 +67,28 @@ class TestAutenticacao(unittest.TestCase):
         self.assertNotIn("senha_hash", usuario)
 
     def test_cadastro_cria_cliente_e_permite_login_por_email(self):
+        email = f"ana-{uuid4().hex}@copilot-tests.invalid"
         resposta = self.cliente.post(
             "/usuarios",
-            json={"nome": "Ana Cliente", "email": "ANA@example.com", "senha": "senha-segura-123"},
+            json={"nome": "Ana Cliente", "email": email.upper(), "senha": "senha-segura-123"},
         )
 
         self.assertEqual(resposta.status_code, 201, resposta.text)
         dados_usuario = resposta.json()
         self.assertEqual(dados_usuario["tipo"], "cliente")
-        self.assertEqual(dados_usuario["email"], "ana@example.com")
+        self.assertEqual(dados_usuario["email"], email)
         self.assertNotIn("senha", dados_usuario)
         self.assertNotIn("senha_hash", dados_usuario)
 
-        token = self._login("ana@example.com", "senha-segura-123")
+        token = self._login(email, "senha-segura-123")
         self.assertTrue(token)
 
     def test_cadastro_rejeita_email_duplicado(self):
-        dados = {"nome": "Ana", "email": "ana@example.com", "senha": "senha-segura-123"}
+        dados = {
+            "nome": "Ana",
+            "email": f"duplicado-{uuid4().hex}@copilot-tests.invalid",
+            "senha": "senha-segura-123",
+        }
         primeira = self.cliente.post("/usuarios", json=dados)
         segunda = self.cliente.post("/usuarios", json=dados)
 
@@ -74,7 +100,7 @@ class TestAutenticacao(unittest.TestCase):
             "/usuarios",
             json={
                 "nome": "Conta indevida",
-                "email": "nao-tatuador@example.com",
+                "email": f"nao-tatuador-{uuid4().hex}@copilot-tests.invalid",
                 "senha": "senha-segura-123",
                 "tipo": "tatuador",
             },

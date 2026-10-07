@@ -26,9 +26,9 @@ def validar_chave_token():
 def _obter_segredo_token() -> str:
     segredo = _SEGREDO_TOKEN
     if not segredo or segredo == "tinta-negra-tattoo-studio-secret-2026":
-    raise RuntimeError(
-        "Configure CHAVE_DO_TOKEN ou SECRET_KEY com um valor aleatório em backend/.env."
-    )
+        raise RuntimeError(
+            "Configure CHAVE_DO_TOKEN ou SECRET_KEY com um valor aleatório em backend/.env."
+        )
     return segredo
 
 _AUTORIZACAO_BEARER = HTTPBearer(auto_error=False)

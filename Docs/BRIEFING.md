@@ -68,3 +68,5 @@ O layout se adapta a celular e computador. O fluxo de login utiliza as contas de
 ## Dados e limites desta versão
 
 Usuários, tatuagens e passos são persistidos em `backend/database.sqlite3`, um arquivo SQLite local que não deve ser enviado ao Git e precisa de rotina de backup. O esquema migra automaticamente senhas da estrutura legada para hashes. As contas de demonstração usam senhas conhecidas e não devem ser utilizadas como contas reais; ainda não há fluxo de cadastro, troca ou recuperação de senha. Imagens são enviadas como conteúdo codificado no JSON. Não fazem parte do escopo pagamentos, orçamento ou notificações.
+
+Para o inventário de arquivos, responsabilidades de cada camada, migration de usuários e contratos de cadastro/login, consulte [ALTERACOES_AUTENTICACAO_CADASTRO.md](ALTERACOES_AUTENTICACAO_CADASTRO.md).

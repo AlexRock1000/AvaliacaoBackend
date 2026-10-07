@@ -2,7 +2,7 @@
 
 ## Backend
 
-Os testes usam `unittest` e exercitam serviços e rotas com o banco SQLite local. Cada teste limpa as tabelas de tatuagens e passos antes e depois da execução; os usuários de demonstração permanecem no banco.
+Os testes usam `unittest` e exercitam serviços e rotas com o banco SQLite local. Cada teste limpa as tabelas de tatuagens e passos antes e depois da execução; os usuários de demonstração permanecem no banco e contas criadas pelos testes são removidas.
 
 Os cenários cobertos são:
 
@@ -12,10 +12,10 @@ Os cenários cobertos são:
 - confirmação de sessão realizada e criação automática do agendamento de retoque;
 - escolha de horário de retoque a partir de 15 dias, sem segunda-feira e sem colisão com outra reserva;
 - recusa de alteração de sessão já encerrada;
-- validação de situação permitida pelo esquema de entrada.
-- login válido e armazenamento/verificação de senhas com hash, sem expor o hash nos dados de usuário.
-- cadastro de cliente, normalização de e-mail, rejeição de duplicidade e login subsequente por e-mail.
-- migração da tabela de usuários para a coluna de e-mail e hash de senha, além do preenchimento de e-mails para contas legadas.
+- validação de situação permitida pelo esquema de entrada;
+- login válido/inválido, armazenamento e verificação de hash, e não exposição de credenciais;
+- cadastro de cliente, normalização de e-mail, rejeição de duplicidade, recusa de autoatribuição de perfil e login subsequente por e-mail;
+- migração da tabela de usuários para e-mail e hash de senha, com preenchimento para contas legadas.
 
 Os testes de agendamento existentes usam a duração padrão de duas horas; ainda não verificam durações personalizadas nem a atualização da reserva na ficha do retoque.
 
@@ -31,6 +31,8 @@ Com o ambiente virtual do [README](../README.md):
 ```powershell
 .venv\Scripts\python.exe -m unittest discover -s tests -v
 ```
+
+A suíte de backend possui 21 testes; todos passaram na última validação após a reorganização de usuários e autenticação. O inventário completo dessa alteração está em [ALTERACOES_AUTENTICACAO_CADASTRO.md](ALTERACOES_AUTENTICACAO_CADASTRO.md).
 
 ## Frontend
 
