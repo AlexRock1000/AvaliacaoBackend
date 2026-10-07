@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 
-import { pedirApi } from "./api.js";
+import { ENDERECO_API, pedirApi } from "./api.js";
 
 const PERFIS = [
   { nome: "Bruna", tipo: "cliente", clienteId: 1 },
@@ -949,21 +949,85 @@ function TelaFicha({ tatuagem, aoVoltar, aoSalvar, nomeRetorno = "agenda" }) {
   );
 }
 
+function TelaLogin({ aoEntrar }) {
+  const [username, definirUsername] = useState("bruna");
+  const [password, definirPassword] = useState("bruna123");
+  const [carregando, definirCarregando] = useState(false);
+  const [erro, definirErro] = useState("");
+
+  async function entrar(evento) {
+    evento.preventDefault();
+    definirErro("");
+    definirCarregando(true);
+
+    try {
+      const resposta = await fetch(`${ENDERECO_API}/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password }),
+      });
+      const dados = await resposta.json();
+      if (!resposta.ok) {
+        throw new Error(dados.detail || "Credenciais inválidas.");
+      }
+
+      localStorage.setItem("tinta_negra_token", dados.token);
+      localStorage.setItem("tinta_negra_usuario", JSON.stringify(dados.usuario));
+      aoEntrar(dados.usuario);
+    } catch (erroApi) {
+      definirErro(erroApi.message || "Não foi possível entrar.");
+    } finally {
+      definirCarregando(false);
+    }
+  }
+
+  return (
+    <section className="painel-formulario" style={{ maxWidth: 420, margin: "80px auto" }}>
+      <div className="titulo-secao">
+        <span className="sobretitulo">ACESSO</span>
+        <h2>Entrar no estúdio.</h2>
+        <p>Faça login para acessar a sua área de trabalho no sistema.</p>
+      </div>
+      <form onSubmit={entrar} className="formulario">
+        <label htmlFor="username">Usuário</label>
+        <input id="username" value={username} onChange={(evento) => definirUsername(evento.target.value)} placeholder="bruna ou vitor" required />
+
+        <label htmlFor="password">Senha</label>
+        <input id="password" type="password" value={password} onChange={(evento) => definirPassword(evento.target.value)} placeholder="Digite sua senha" required />
+
+        <small className="ajuda-campo">Demonstração: Bruna / bruna123 ou Vitor / vitor123</small>
+
+        {erro && <p className="aviso aviso-erro" role="alert">{erro}</p>}
+
+        <button className="botao botao-escuro" disabled={carregando}>
+          {carregando ? "Entrando…" : "Entrar"}<span aria-hidden="true">↗</span>
+        </button>
+      </form>
+    </section>
+  );
+}
+
 // Apresenta as quatro telas da cartilha e troca os caminhos conforme o perfil escolhido.
 export default function Aplicativo() {
-  const [perfilNome, definirPerfilNome] = useState("Vitor");
+  const usuarioSalvo = localStorage.getItem("tinta_negra_usuario");
+  const [usuario, definirUsuario] = useState(usuarioSalvo ? JSON.parse(usuarioSalvo) : null);
   const [tela, definirTela] = useState("visao-geral");
   const [telaAnteriorFicha, definirTelaAnteriorFicha] = useState("agenda");
   const [ficha, definirFicha] = useState(null);
   const [atualizacao, definirAtualizacao] = useState(0);
-  const perfil = PERFIS.find((opcao) => opcao.nome === perfilNome);
 
-  // Muda a tela inicial para combinar com a pessoa escolhida na lista.
-  function escolherPerfil(evento) {
-    const nome = evento.target.value;
-    definirPerfilNome(nome);
+  if (!usuario) {
+    return <TelaLogin aoEntrar={definirUsuario} />;
+  }
+
+  const perfil = { nome: usuario.nome, tipo: usuario.tipo, clienteId: usuario.tipo === "cliente" ? usuario.id : null };
+
+  function sair() {
+    localStorage.removeItem("tinta_negra_token");
+    localStorage.removeItem("tinta_negra_usuario");
+    definirUsuario(null);
     definirFicha(null);
-    definirTela(nome === "Vitor" ? "visao-geral" : "minhas");
+    definirTela("visao-geral");
   }
 
   function abrirAgenda() {
@@ -1028,10 +1092,14 @@ export default function Aplicativo() {
             <div className="selo-estudio"><span>DESDE 2018</span></div>
           </>}
         </nav>
-        <label className="seletor-perfil">
+        <div className="seletor-perfil">
           <span className="avatar-perfil" aria-hidden="true">{perfil.tipo === "cliente" ? "BM" : "VS"}</span>
-          <span className="dados-perfil"><span>{perfil.tipo === "cliente" ? `Olá, ${perfil.nome}` : perfil.nome === "Vitor" ? "Vitor Sales" : perfil.nome}</span><select aria-label="Escolher perfil" value={perfilNome} onChange={escolherPerfil}>{PERFIS.map((opcao) => <option key={opcao.nome} value={opcao.nome}>{opcao.nome} · {opcao.tipo}</option>)}</select></span>
-        </label>
+          <span className="dados-perfil">
+            <span>{perfil.tipo === "cliente" ? `Olá, ${perfil.nome}` : perfil.nome}</span>
+            <small>{perfil.tipo === "cliente" ? "Cliente" : "Tatuador"}</small>
+          </span>
+          <button className="botao botao-ember" type="button" onClick={sair}>Sair</button>
+        </div>
       </header>
       <main id="inicio" className="conteudo-principal">
         {tela === "minhas" && <section className="banner-cliente">

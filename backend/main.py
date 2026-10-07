@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from configuracao import obter_configuracao
+from rotas.autenticacao import roteador as roteador_autenticacao
 from rotas.tatuagens import roteador as roteador_tatuagens
 
 
@@ -18,7 +19,8 @@ if endereco_frontend:
         allow_credentials=False,
         # PUT edita pedidos; PATCH atualiza sessões e agenda o retoque automático.
         allow_methods=["GET", "POST", "PUT", "PATCH"],
-        allow_headers=["Content-Type"],
+        allow_headers=["Content-Type", "Authorization"],
     )
 
+aplicativo.include_router(roteador_autenticacao)
 aplicativo.include_router(roteador_tatuagens)

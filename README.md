@@ -43,11 +43,12 @@ Abra `http://localhost:5173`. O seletor no cabeçalho alterna entre os perfis Br
 
 ## Funcionalidades implementadas
 
+- **Autenticação:** login simples com usuário e senha para cliente e tatuador, emitindo token JWT em memória para proteger as rotas da API.
 - **Cliente:** cria e edita pedidos enquanto estão na etapa inicial, anexa imagem de referência, acompanha etapa e histórico, consulta o desenho enviado e aprova ou pede ajustes.
 - **Tatuador:** acompanha a visão geral, agenda e projetos; filtra tatuagens por etapa; envia o desenho; agenda sessões e registra o retoque.
 - **Agenda:** o tatuador escolhe a duração inteira da sessão, a partir de uma hora. A disponibilidade considera a duração escolhida, evita sobreposições e mantém os horários entre 10h e 20h, fora do almoço; não há agendamentos às segundas-feiras.
 - **Retoque:** quando a sessão é confirmada como realizada, o sistema cria uma reserva inicial de duas horas a partir de 15 dias depois. Na ficha do retoque, antes de confirmá-lo como realizado, o tatuador escolhe a duração a partir de uma hora e um horário compatível; a reserva é atualizada sem sobrepor outros agendamentos.
-- **API:** lista e consulta tatuagens, filtra por etapa e cliente, cria e atualiza pedidos, consulta passos e horários disponíveis por data e duração, registra passos e atualiza a situação de sessões.
+- **API:** lista e consulta tatuagens, filtra por etapa e cliente, cria e atualiza pedidos, consulta passos e horários disponíveis por data e duração, registra passos e atualiza a situação de sessões, e agora exige autenticação e autorização por perfil.
 
 ## Dados e organização
 

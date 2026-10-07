@@ -1,10 +1,27 @@
 // Mantém em um só lugar o endereço local da API usada durante o desenvolvimento.
-const ENDERECO_API = import.meta.env.DEV ? "" : "http://localhost:8000";
+export const ENDERECO_API = import.meta.env.DEV ? "" : "http://localhost:8000";
 
+function obterToken() {
+  return localStorage.getItem("tinta_negra_token") || "";
+}
+
+function montarOpcoesAutenticadas(opcoes = {}) {
+  const token = obterToken();
+  const headers = new Headers(opcoes.headers || {});
+
+  if (token) {
+    headers.set("Authorization", `Bearer ${token}`);
+  }
+
+  return {
+    ...opcoes,
+    headers,
+  };
+}
 
 // Confere o status HTTP antes de entregar os dados para a tela.
 export function pedirApi(caminho, opcoes = {}) {
-  return fetch(`${ENDERECO_API}${caminho}`, opcoes).then((resposta) => {
+  return fetch(`${ENDERECO_API}${caminho}`, montarOpcoesAutenticadas(opcoes)).then((resposta) => {
     if (resposta.ok) {
       return resposta.json();
     }

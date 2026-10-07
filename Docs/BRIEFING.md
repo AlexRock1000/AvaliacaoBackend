@@ -27,6 +27,10 @@ Vitor organiza os trabalhos do estúdio pelo computador. Usa o sistema para:
 5. Cancelar uma sessão ou marcá-la como realizada.
 6. Registrar a realização do retoque.
 
+## Autenticação e autorização
+
+A autenticação foi iniciada com login em memória para os perfis de cliente e tatuador. O backend emite um token JWT e exige o cabeçalho `Authorization: Bearer <token>` em todas as rotas protegidas. O cliente só acessa os seus próprios pedidos e o tatuador pode consultar ou administrar qualquer tatuagem do estúdio.
+
 ## Etapas e regras implementadas
 
 O pedido começa como **pedida**. O tatuador envia o desenho, que leva à etapa **aguardando aprovação**. A cliente pode aprová-lo (**desenho aprovado**) ou pedir ajustes (**ajustes no desenho**). O tatuador pode reenviar o desenho após ajustes.
@@ -60,4 +64,4 @@ O layout se adapta a celular e computador. A lista de perfis é uma escolha de d
 
 ## Limites desta versão
 
-Os dados são guardados em memória e desaparecem ao reiniciar o backend. Os perfis são selecionados numa lista e não representam autenticação ou autorização real. Imagens são enviadas como conteúdo codificado no JSON. Não fazem parte do escopo pagamentos, orçamento, notificações ou persistência em banco de dados.
+Os dados são guardados em memória e desaparecem ao reiniciar o backend. A autenticação é simulada com usuários fixos em memória e não substitui um sistema de usuários real e persistente. Imagens são enviadas como conteúdo codificado no JSON. Não fazem parte do escopo pagamentos, orçamento, notificações ou persistência em banco de dados.
