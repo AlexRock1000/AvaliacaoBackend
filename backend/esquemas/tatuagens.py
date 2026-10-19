@@ -3,6 +3,8 @@ from decimal import Decimal, InvalidOperation
 
 from pydantic import BaseModel, Field, field_validator
 
+from esquemas.imagem import validar_imagem_codificada
+
 
 class TamanhoEmCentimetros(BaseModel):
     tamanho: str = Field(min_length=1)
@@ -36,6 +38,11 @@ class TatuagemEntrada(TamanhoEmCentimetros):
     cliente_id: int = Field(gt=0)
     # Recebe a imagem de referência codificada para ficar junto ao pedido em memória.
     imagem_referencia: str | None = None
+
+    @field_validator("imagem_referencia")
+    @classmethod
+    def validar_imagem_referencia(cls, valor):
+        return validar_imagem_codificada(valor)
 
 
 class TatuagemAtualizacaoEntrada(TatuagemEntrada):

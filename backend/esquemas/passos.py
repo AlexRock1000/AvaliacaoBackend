@@ -1,6 +1,8 @@
 from datetime import date, time
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
+
+from esquemas.imagem import validar_imagem_codificada
 
 
 # Descreve os dados enviados para registrar um dos três tipos de passo da cartilha.
@@ -14,6 +16,11 @@ class PassoEntrada(BaseModel):
     observacao: str = Field(min_length=1)
     # Guarda o desenho enviado como imagem codificada, sem criar arquivos neste ciclo.
     imagem: str | None = None
+
+    @field_validator("imagem")
+    @classmethod
+    def validar_imagem(cls, valor):
+        return validar_imagem_codificada(valor)
 
 
 # Define os campos de cada passo devolvido pela API.

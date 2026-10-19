@@ -44,9 +44,9 @@ Abra `http://localhost:5173`. O seletor no cabeçalho alterna entre os perfis Br
 
 ## Funcionalidades implementadas
 
-- **Autenticação:** cadastro de clientes por nome, e-mail e senha; login por e-mail ou usuário; senhas armazenadas em hash PBKDF2 com salt individual e token JWT para proteger as rotas da API. O cadastro nunca permite que a pessoa escolha o perfil de tatuador.
-- **Cliente:** cria e edita pedidos enquanto estão na etapa inicial, anexa imagem de referência, acompanha etapa e histórico, consulta o desenho enviado e aprova ou pede ajustes.
-- **Tatuador:** acompanha a visão geral, agenda e projetos; filtra tatuagens por etapa; envia o desenho; agenda sessões e registra o retoque.
+- **Autenticação:** cadastro de clientes por nome, e-mail e senha; login por e-mail ou usuário; senhas armazenadas em hash PBKDF2 com salt individual e token JWT para proteger as rotas da API. O app valida a sessão ao abrir e retorna ao login quando o token expira. O cadastro nunca permite que a pessoa escolha o perfil de tatuador.
+- **Cliente:** cria e edita pedidos enquanto estão na etapa inicial, anexa imagem de referência de até 5 MB, acompanha etapa e histórico, consulta o desenho enviado e aprova ou pede ajustes.
+- **Tatuador:** acompanha a visão geral, agenda e projetos; filtra tatuagens por etapa; envia o desenho de até 5 MB; agenda sessões e registra o retoque.
 - **Agenda:** o tatuador escolhe a duração inteira da sessão, a partir de uma hora. A disponibilidade considera a duração escolhida, evita sobreposições e mantém os horários entre 10h e 20h, fora do almoço; não há agendamentos às segundas-feiras.
 - **Retoque:** quando a sessão é confirmada como realizada, o sistema cria uma reserva inicial de duas horas a partir de 15 dias depois. Na ficha do retoque, antes de confirmá-lo como realizado, o tatuador escolhe a duração a partir de uma hora e um horário compatível; a reserva é atualizada sem sobrepor outros agendamentos.
 - **API:** lista e consulta tatuagens, filtra por etapa e cliente, cria e atualiza pedidos, consulta passos e horários disponíveis por data e duração, registra passos e atualiza a situação de sessões, e agora exige autenticação e autorização por perfil.
@@ -64,6 +64,6 @@ Abra `http://localhost:5173`. O seletor no cabeçalho alterna entre os perfis Br
 
 ## Dados e organização
 
-Os dados de usuários, tatuagens e passos ficam no banco SQLite local `backend/database.sqlite3` e persistem após reiniciar a API. A inicialização migra automaticamente usuários legados, preenchendo e-mail de demonstração quando necessário e convertendo senhas para hashes. O arquivo do banco é local e ignorado pelo Git; planeje backups antes de usar os dados em produção. Imagens são mantidas como texto codificado junto ao pedido ou passo. As contas Bruna (`bruna` / `bruna123`) e Vitor (`vitor` / `vitor123`) são credenciais demonstrativas e devem ser alteradas ou removidas antes de qualquer implantação real. O backend separa modelos, esquemas, serviços, repositórios, rotas e segurança; `rotas/tatuagens.py` protege as rotas próprias do domínio deste sistema.
+Os dados de usuários, tatuagens e passos ficam no banco SQLite local `backend/database.sqlite3` e persistem após reiniciar a API. A inicialização migra automaticamente usuários legados, preenchendo e-mail de demonstração quando necessário e convertendo senhas para hashes. O arquivo do banco é local e ignorado pelo Git; planeje backups antes de usar os dados em produção. Imagens são enviadas como data URL codificada em base64 e limitadas a 5 MB por arquivo. As contas Bruna (`bruna` / `bruna123`) e Vitor (`vitor` / `vitor123`) são credenciais demonstrativas e devem ser alteradas ou removidas antes de qualquer implantação real. O backend separa modelos, esquemas, serviços, repositórios, rotas e segurança; `rotas/tatuagens.py` protege as rotas próprias do domínio deste sistema.
 
 Para executar os testes automatizados, consulte [TESTES_AUTOMATIZADOS.md](Docs/TESTES_AUTOMATIZADOS.md). Para detalhes da reorganização de usuários e autenticação, consulte [ALTERACOES_AUTENTICACAO_CADASTRO.md](Docs/ALTERACOES_AUTENTICACAO_CADASTRO.md).

@@ -29,7 +29,7 @@ Vitor organiza os trabalhos do estúdio pelo computador. Usa o sistema para:
 
 ## Autenticação e autorização
 
-A autenticação permite cadastro de clientes por nome, e-mail e senha, além de login por e-mail ou username. As senhas são armazenadas como hashes PBKDF2 com salt individual; o backend emite um token JWT assinado com `CHAVE_DO_TOKEN` configurada no ambiente (`SECRET_KEY` é aceita como alias) e exige o cabeçalho `Authorization: Bearer <token>` em todas as rotas protegidas. O cadastro atribui sempre o perfil de cliente. O cliente só acessa os seus próprios pedidos e o tatuador pode consultar ou administrar qualquer tatuagem do estúdio. As credenciais Bruna (`bruna` / `bruna123`) e Vitor (`vitor` / `vitor123`) são apenas demonstrações.
+A autenticação permite cadastro de clientes por nome, e-mail e senha, além de login por e-mail ou username. As senhas são armazenadas como hashes PBKDF2 com salt individual; o backend emite um token JWT assinado com `CHAVE_DO_TOKEN` configurada no ambiente (`SECRET_KEY` é aceita como alias) e exige o cabeçalho `Authorization: Bearer <token>` em todas as rotas protegidas. O app valida a sessão ao iniciar e volta ao login se o token expirar. O cadastro atribui sempre o perfil de cliente. O cliente só acessa os seus próprios pedidos e o tatuador pode consultar ou administrar qualquer tatuagem do estúdio. As credenciais Bruna (`bruna` / `bruna123`) e Vitor (`vitor` / `vitor123`) são apenas demonstrações.
 
 ## Etapas e regras implementadas
 
@@ -67,6 +67,6 @@ O layout se adapta a celular e computador. O fluxo de login utiliza as contas de
 
 ## Dados e limites desta versão
 
-Usuários, tatuagens e passos são persistidos em `backend/database.sqlite3`, um arquivo SQLite local que não deve ser enviado ao Git e precisa de rotina de backup. O esquema migra automaticamente senhas da estrutura legada para hashes. As contas de demonstração usam senhas conhecidas e não devem ser utilizadas como contas reais; ainda não há fluxo de cadastro, troca ou recuperação de senha. Imagens são enviadas como conteúdo codificado no JSON. Não fazem parte do escopo pagamentos, orçamento ou notificações.
+Usuários, tatuagens e passos são persistidos em `backend/database.sqlite3`, um arquivo SQLite local que não deve ser enviado ao Git e precisa de rotina de backup. O esquema migra automaticamente senhas da estrutura legada para hashes. As contas de demonstração usam senhas conhecidas e não devem ser utilizadas como contas reais; ainda não há fluxo de cadastro, troca ou recuperação de senha na interface. Imagens são enviadas como data URL codificada em base64, com limite de 5 MB validado no navegador e na API. Não fazem parte do escopo pagamentos, orçamento ou notificações.
 
 Para o inventário de arquivos, responsabilidades de cada camada, migration de usuários e contratos de cadastro/login, consulte [ALTERACOES_AUTENTICACAO_CADASTRO.md](ALTERACOES_AUTENTICACAO_CADASTRO.md).

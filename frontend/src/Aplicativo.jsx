@@ -17,6 +17,7 @@ const TIPOS_DE_PASSO = [
 ];
 
 const ETAPAS_PREPARACAO = ["aguardando aprovação", "ajustes no desenho"];
+const TAMANHO_MAXIMO_IMAGEM_BYTES = 5 * 1024 * 1024;
 
 // Mostra a etapa com uma escrita legível para as duas pessoas do estúdio.
 function nomeDaEtapa(etapa) {
@@ -120,6 +121,10 @@ function TelaPedir({ perfil, aoCriar, aoAtualizar, tatuagem = null, aoVoltar }) 
     if (!arquivo) return;
     if (!arquivo.type.startsWith("image/")) {
       definirErro("Escolha um arquivo de imagem para usar como referência.");
+      return;
+    }
+    if (arquivo.size > TAMANHO_MAXIMO_IMAGEM_BYTES) {
+      definirErro("A imagem deve ter no máximo 5 MB.");
       return;
     }
     definirErro("");
@@ -226,7 +231,7 @@ function TelaPedir({ perfil, aoCriar, aoAtualizar, tatuagem = null, aoVoltar }) 
           <label className="conteudo-upload" htmlFor="imagem-referencia">
             {imagemReferencia ? <img className="previa-desenho" src={imagemReferencia} alt="Prévia da imagem de referência" /> : <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 16V4m0 0L8 8m4-4 4 4" /><path d="M5 14v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4" /></svg>}
             <strong>{imagemReferencia ? nomeImagemReferencia : editando ? "Arraste uma nova imagem de referência." : "Arraste e solte uma imagem de referência."}</strong>
-            <span>{imagemReferencia ? "Imagem carregada · clique ou solte outra para substituir" : editando ? "A imagem atual será mantida se você não enviar outra." : <>Ou <u>escolha uma imagem</u>. Formatos aceitos: PNG, JPG e outros formatos de imagem.</>}</span>
+            <span>{imagemReferencia ? "Imagem carregada · clique ou solte outra para substituir" : editando ? "A imagem atual será mantida se você não enviar outra." : <>Ou <u>escolha uma imagem</u>. Formatos aceitos: PNG, JPG e outros formatos de imagem, até 5 MB.</>}</span>
           </label>
         </div>
         {erro && <p className="aviso aviso-erro" role="alert">{erro}</p>}
@@ -808,6 +813,10 @@ function TelaFicha({ tatuagem, aoVoltar, aoSalvar, nomeRetorno = "agenda" }) {
       definirErro("Escolha um arquivo de imagem para enviar o desenho.");
       return;
     }
+    if (arquivo.size > TAMANHO_MAXIMO_IMAGEM_BYTES) {
+      definirErro("A imagem deve ter no máximo 5 MB.");
+      return;
+    }
     definirErro("");
     const leitor = new FileReader();
     leitor.onload = () => {
@@ -906,7 +915,7 @@ function TelaFicha({ tatuagem, aoVoltar, aoSalvar, nomeRetorno = "agenda" }) {
             <label className="conteudo-upload" htmlFor="imagem-desenho">
               {imagem ? <img className="previa-desenho" src={imagem} alt="Prévia do desenho selecionado" /> : <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 16V4m0 0L8 8m4-4 4 4" /><path d="M5 14v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4" /></svg>}
               <strong>{imagem ? nomeImagem : "Arraste e solte o desenho para enviá-lo."}</strong>
-              <span>{imagem ? "Imagem carregada · clique ou solte outra para substituir" : <>Ou <u>escolha uma imagem</u>. Formatos aceitos: PNG, JPG e outros formatos de imagem.</>}</span>
+              <span>{imagem ? "Imagem carregada · clique ou solte outra para substituir" : <>Ou <u>escolha uma imagem</u>. Formatos aceitos: PNG, JPG e outros formatos de imagem, até 5 MB.</>}</span>
             </label>
           </div>
         </> : tatuagem.etapa === "desenho aprovado" ? null : <>
@@ -1009,12 +1018,75 @@ function TelaLogin({ aoEntrar }) {
 
 // Apresenta as quatro telas da cartilha e troca os caminhos conforme o perfil escolhido.
 export default function Aplicativo() {
-  const usuarioSalvo = localStorage.getItem("tinta_negra_usuario");
-  const [usuario, definirUsuario] = useState(usuarioSalvo ? JSON.parse(usuarioSalvo) : null);
+  const [usuario, definirUsuario] = useState(null);
+  const [verificandoSessao, definirVerificandoSessao] = useState(true);
+  const [erroSessao, definirErroSessao] = useState("");
+  const [tentativaValidacao, definirTentativaValidacao] = useState(0);
   const [tela, definirTela] = useState("visao-geral");
   const [telaAnteriorFicha, definirTelaAnteriorFicha] = useState("agenda");
   const [ficha, definirFicha] = useState(null);
   const [atualizacao, definirAtualizacao] = useState(0);
+
+  // Restaura a sessão somente depois de confirmar a identidade com a API.
+  useEffect(() => {
+    let consultaAtiva = true;
+
+    function encerrarSessaoExpirada() {
+      if (!consultaAtiva) return;
+      definirUsuario(null);
+      definirFicha(null);
+      definirTela("visao-geral");
+      definirErroSessao("");
+      definirVerificandoSessao(false);
+    }
+
+    window.addEventListener("tinta-negra-sessao-expirada", encerrarSessaoExpirada);
+    if (!localStorage.getItem("tinta_negra_token")) {
+      localStorage.removeItem("tinta_negra_usuario");
+      definirUsuario(null);
+      definirVerificandoSessao(false);
+      return () => {
+        consultaAtiva = false;
+        window.removeEventListener("tinta-negra-sessao-expirada", encerrarSessaoExpirada);
+      };
+    }
+
+    definirVerificandoSessao(true);
+    definirErroSessao("");
+    pedirApi("/me")
+      .then((usuarioAtual) => {
+        if (!consultaAtiva) return;
+        localStorage.setItem("tinta_negra_usuario", JSON.stringify(usuarioAtual));
+        definirUsuario(usuarioAtual);
+      })
+      .catch((erroApi) => {
+        if (!consultaAtiva) return;
+        definirUsuario(null);
+        if (erroApi.status !== 401) {
+          definirErroSessao("Não foi possível validar sua sessão. Confira a conexão com o estúdio e tente novamente.");
+        }
+      })
+      .finally(() => {
+        if (consultaAtiva) definirVerificandoSessao(false);
+      });
+
+    return () => {
+      consultaAtiva = false;
+      window.removeEventListener("tinta-negra-sessao-expirada", encerrarSessaoExpirada);
+    };
+  }, [tentativaValidacao]);
+
+  if (verificandoSessao) {
+    return <section className="painel-formulario" style={{ maxWidth: 420, margin: "80px auto" }}><p className="estado">Validando sua sessão…</p></section>;
+  }
+
+  if (erroSessao) {
+    return <section className="painel-formulario" style={{ maxWidth: 420, margin: "80px auto" }}>
+      <p className="aviso aviso-erro" role="alert">{erroSessao}</p>
+      <button className="botao botao-escuro" type="button" onClick={() => definirTentativaValidacao((valor) => valor + 1)}>Tentar novamente</button>
+      <button className="botao botao-claro" type="button" onClick={() => { localStorage.removeItem("tinta_negra_token"); localStorage.removeItem("tinta_negra_usuario"); definirErroSessao(""); }}>Voltar ao login</button>
+    </section>;
+  }
 
   if (!usuario) {
     return <TelaLogin aoEntrar={definirUsuario} />;

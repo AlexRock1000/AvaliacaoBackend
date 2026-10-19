@@ -41,6 +41,8 @@ def atualizar_pedido(tatuagem_id: int, entrada: TatuagemEntrada):
         "ideia": entrada.ideia,
         "local_corpo": entrada.local_corpo,
         "tamanho": entrada.tamanho,
+        # Mantém a imagem existente quando a edição não envia outra.
+        "imagem_referencia": tatuagem["imagem_referencia"],
     }
     if "imagem_referencia" in entrada.model_fields_set:
         dados["imagem_referencia"] = entrada.imagem_referencia
