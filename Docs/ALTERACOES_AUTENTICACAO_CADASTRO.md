@@ -48,6 +48,8 @@ O projeto já declara `PyJWT` em `requirements.txt`, então a instalação diret
 
 O `.env` é ignorado pelo Git e não deve ser publicado; confirme com `git status` que ele não aparece. Nunca registre o valor da chave em logs ou documentação. Ao rotacioná-la, reinicie a API: tokens assinados com a chave anterior deixam de ser válidos e as pessoas precisam entrar novamente. Nesta atualização, a chave local foi regenerada e o backend reiniciado; o valor permanece somente em `backend/.env`.
 
+Os tokens contêm somente `sub` (ID do usuário) e `exp` (expiração), são assinados com HS256 e vencem após 60 minutos. O backend carrega o usuário atual pelo `sub` a cada requisição protegida.
+
 O `.env` local foi removido do índice do Git sem apagar a cópia de trabalho. O `.gitignore` também exclui o banco SQLite e seus arquivos auxiliares; esses arquivos permanecem locais e devem ser incluídos em uma política de backup, não em commits.
 
 ## API de usuários

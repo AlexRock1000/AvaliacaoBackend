@@ -29,7 +29,7 @@ Vitor organiza os trabalhos do estúdio pelo computador. Usa o sistema para:
 
 ## Autenticação e autorização
 
-A autenticação permite cadastro de clientes por nome, e-mail e senha, além de login por e-mail ou username. As senhas são armazenadas como hashes PBKDF2 com salt individual; o backend emite um token JWT assinado com `CHAVE_DO_TOKEN` configurada no ambiente (`SECRET_KEY` é aceita como alias) e exige o cabeçalho `Authorization: Bearer <token>` em todas as rotas protegidas. O app valida a sessão ao iniciar e volta ao login se o token expirar. O cadastro atribui sempre o perfil de cliente. O cliente só acessa os seus próprios pedidos e o tatuador pode consultar ou administrar qualquer tatuagem do estúdio. As credenciais Bruna (`bruna` / `bruna123`) e Vitor (`vitor` / `vitor123`) são apenas demonstrações.
+A autenticação permite cadastro de clientes por nome, e-mail e senha, além de login por e-mail ou username. As senhas são armazenadas como hashes PBKDF2 com salt individual; o backend emite um token JWT assinado com `CHAVE_DO_TOKEN` configurada no ambiente (`SECRET_KEY` é aceita como alias), válido por 60 minutos, e exige o cabeçalho `Authorization: Bearer <token>` em todas as rotas protegidas. O app valida a sessão ao iniciar e volta ao login se o token expirar. O cadastro atribui sempre o perfil de cliente. O cliente só acessa os seus próprios pedidos e o tatuador pode consultar ou administrar qualquer tatuagem do estúdio. As credenciais Bruna (`bruna` / `bruna123`) e Vitor (`vitor` / `vitor123`) são apenas demonstrações.
 
 ## Etapas e regras implementadas
 

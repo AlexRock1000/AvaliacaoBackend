@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from esquemas.usuario import CredenciaisLogin, UsuarioSaida
-from seguranca import gerar_token, obter_usuario_atual
+from seguranca import criar_token, obter_usuario_atual
 from servicos import usuario as servico_usuario
 
 roteador = APIRouter(tags=["Autenticação"])
@@ -16,7 +16,7 @@ def login(credenciais: CredenciaisLogin):
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Credenciais inválidas.",
         )
-    return {"token": gerar_token(usuario), "usuario": usuario}
+    return {"token": criar_token(usuario["id"]), "usuario": usuario}
 
 
 @roteador.get("/me", response_model=UsuarioSaida)

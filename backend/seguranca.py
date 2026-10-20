@@ -67,13 +67,11 @@ def verificar_senha(senha: str, senha_hash: str | None) -> bool:
     return hmac.compare_digest(hash_calculado, hash_esperado)
 
 
-def gerar_token(usuario: dict) -> str:
-    """Emite token JWT de oito horas contendo apenas identificador e perfil."""
+def criar_token(usuario_id: int) -> str:
+    """Emite token JWT com identificador e validade de 60 minutos."""
     payload = {
-        "sub": str(usuario["id"]),
-        "nome": usuario["nome"],
-        "tipo": usuario["tipo"],
-        "exp": datetime.now(timezone.utc) + timedelta(hours=8),
+        "sub": str(usuario_id),
+        "exp": datetime.now(timezone.utc) + timedelta(minutes=60),
     }
     return jwt.encode(payload, _obter_segredo_token(), algorithm=ALGORITMO_TOKEN)
 
