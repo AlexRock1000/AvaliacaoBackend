@@ -44,9 +44,10 @@ class TestAutenticacao(unittest.TestCase):
             conexao.close()
 
     def _login(self, username, password):
-        resposta = self.cliente.post("/login", json={"username": username, "password": password})
+        resposta = self.cliente.post("/login", data={"username": username, "password": password})
         self.assertEqual(resposta.status_code, 200, resposta.text)
-        return resposta.json()["token"]
+        self.assertEqual(resposta.json()["token_type"], "bearer")
+        return resposta.json()["access_token"]
 
     def test_login_com_credenciais_validas_retorna_token(self):
         token = self._login("bruna", "bruna123")
@@ -111,7 +112,7 @@ class TestAutenticacao(unittest.TestCase):
 
     def test_login_com_senha_incorreta_retorna_nao_autorizado(self):
         resposta = self.cliente.post(
-            "/login", json={"username": "bruna", "password": "senha-errada"}
+            "/login", data={"username": "bruna", "password": "senha-errada"}
         )
         self.assertEqual(resposta.status_code, 401)
 

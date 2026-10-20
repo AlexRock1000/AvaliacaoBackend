@@ -53,7 +53,7 @@ O layout se adapta a celular e computador. O fluxo de login utiliza as contas de
 ## API implementada
 
 - `POST /usuarios` cadastra uma conta de cliente usando nome, e-mail e senha; o perfil não pode ser escolhido na requisição.
-- `POST /login` aceita username legado ou e-mail com senha e devolve token e dados públicos do usuário.
+- `POST /login` aceita formulário OAuth2 (`username` recebe username ou e-mail; `password` recebe senha) e devolve `access_token` e `token_type: bearer`. Consulte `GET /me` para obter os dados públicos do usuário.
 - `GET /me` exige bearer token e devolve os dados públicos da conta atual.
 - `GET /tatuagens` lista tatuagens; aceita os filtros `etapa` e `cliente_id` e mostra as mais recentes primeiro.
 - `GET /tatuagens/{id}` consulta uma tatuagem.

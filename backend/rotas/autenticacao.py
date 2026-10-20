@@ -1,22 +1,23 @@
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordRequestForm
 
-from esquemas.usuario import CredenciaisLogin, UsuarioSaida
+from esquemas.usuario import Token, UsuarioSaida
 from seguranca import criar_token, obter_usuario_atual
 from servicos import usuario as servico_usuario
 
 roteador = APIRouter(tags=["Autenticação"])
 
 
-@roteador.post("/login")
-def login(credenciais: CredenciaisLogin):
-    """Autentica por username legado ou e-mail e retorna token e perfil público."""
-    usuario = servico_usuario.autenticar(credenciais.username, credenciais.password)
+@roteador.post("/login", response_model=Token)
+def login(formulario: OAuth2PasswordRequestForm = Depends()):
+    """Autentica formulário OAuth2 e devolve token bearer de acesso."""
+    usuario = servico_usuario.autenticar(formulario.username, formulario.password)
     if usuario is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Credenciais inválidas.",
         )
-    return {"token": criar_token(usuario["id"]), "usuario": usuario}
+    return {"access_token": criar_token(usuario["id"]), "token_type": "bearer"}
 
 
 @roteador.get("/me", response_model=UsuarioSaida)

@@ -1,4 +1,5 @@
 import re
+from typing import Literal
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -19,13 +20,6 @@ class CadastroUsuarioEntrada(BaseModel):
         return email
 
 
-class CredenciaisLogin(BaseModel):
-    """Aceita o nome de usuário legado ou o e-mail cadastrado."""
-
-    username: str = Field(min_length=1, max_length=254)
-    password: str = Field(min_length=1, max_length=128)
-
-
 class UsuarioSaida(BaseModel):
     """Campos públicos de usuário; nunca contém senha nem hash."""
 
@@ -34,3 +28,10 @@ class UsuarioSaida(BaseModel):
     tipo: str
     username: str
     email: str
+
+
+class Token(BaseModel):
+    """Resposta OAuth2 com o token de acesso e seu tipo bearer."""
+
+    access_token: str
+    token_type: Literal["bearer"] = "bearer"

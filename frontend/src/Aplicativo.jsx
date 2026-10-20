@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 
-import { ENDERECO_API, pedirApi } from "./api.js";
+import { pedirApi } from "./api.js";
 
 const PERFIS = [
   { nome: "Bruna", tipo: "cliente", clienteId: 1 },
@@ -970,20 +970,18 @@ function TelaLogin({ aoEntrar }) {
     definirCarregando(true);
 
     try {
-      const resposta = await fetch(`${ENDERECO_API}/login`, {
+      const dadosToken = await pedirApi("/login", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password }),
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({ username, password }),
       });
-      const dados = await resposta.json();
-      if (!resposta.ok) {
-        throw new Error(dados.detail || "Credenciais inválidas.");
-      }
-
-      localStorage.setItem("tinta_negra_token", dados.token);
-      localStorage.setItem("tinta_negra_usuario", JSON.stringify(dados.usuario));
-      aoEntrar(dados.usuario);
+      localStorage.setItem("tinta_negra_token", dadosToken.access_token);
+      const usuarioAtual = await pedirApi("/me");
+      localStorage.setItem("tinta_negra_usuario", JSON.stringify(usuarioAtual));
+      aoEntrar(usuarioAtual);
     } catch (erroApi) {
+      localStorage.removeItem("tinta_negra_token");
+      localStorage.removeItem("tinta_negra_usuario");
       definirErro(erroApi.message || "Não foi possível entrar.");
     } finally {
       definirCarregando(false);

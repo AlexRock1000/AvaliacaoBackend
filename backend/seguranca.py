@@ -5,7 +5,7 @@ from datetime import datetime, timedelta, timezone
 
 import jwt
 from fastapi import Depends, HTTPException, status
-from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from fastapi.security import OAuth2PasswordBearer
 
 from configuracao import obter_configuracao
 
@@ -31,7 +31,7 @@ def _obter_segredo_token() -> str:
         )
     return segredo
 
-_AUTORIZACAO_BEARER = HTTPBearer(auto_error=False)
+_ESQUEMA_OAUTH = OAuth2PasswordBearer(tokenUrl="login", auto_error=False)
 
 
 def hashear_senha(senha: str) -> str:
@@ -76,31 +76,34 @@ def criar_token(usuario_id: int) -> str:
     return jwt.encode(payload, _obter_segredo_token(), algorithm=ALGORITMO_TOKEN)
 
 
-def verificar_token(token: str) -> dict:
-    """Valida a assinatura e a expiração do token recebido."""
+def ler_token(token: str) -> int | None:
+    """Lê o ID do usuário em um JWT válido ou retorna None."""
     try:
-        return jwt.decode(token, _obter_segredo_token(), algorithms=[ALGORITMO_TOKEN])
-    except jwt.PyJWTError as erro:
-        raise ValueError("Token inválido ou expirado.") from erro
+        dados = jwt.decode(token, _obter_segredo_token(), algorithms=[ALGORITMO_TOKEN])
+        return int(dados["sub"])
+    except (jwt.InvalidTokenError, KeyError, TypeError, ValueError):
+        return None
 
 
 def obter_usuario_atual(
-    credenciais: HTTPAuthorizationCredentials | None = Depends(_AUTORIZACAO_BEARER),
+    token: str | None = Depends(_ESQUEMA_OAUTH),
 ) -> dict:
     """Resolve o usuário do token sem importar serviço durante a carga do módulo."""
-    if credenciais is None:
+    if token is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Token de autenticação ausente.",
         )
-    try:
-        payload = verificar_token(credenciais.credentials)
-    except ValueError as erro:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(erro)) from erro
+    usuario_id = ler_token(token)
+    if usuario_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token inválido ou expirado.",
+        )
 
     from servicos import usuario as servico_usuario
 
-    usuario = servico_usuario.buscar_por_id(payload.get("sub"))
+    usuario = servico_usuario.buscar_por_id(usuario_id)
     if usuario is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

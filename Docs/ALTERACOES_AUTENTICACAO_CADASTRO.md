@@ -9,7 +9,7 @@ Esta alteração organiza o cadastro e a autenticação do backend em camadas ex
 - [../backend/main.py](../backend/main.py): valida a chave de assinatura no startup e registra os routers de autenticação, usuários e tatuagens.
 - [../backend/seguranca.py](../backend/seguranca.py): reúne PBKDF2 com salt aleatório, verificação de senha, geração/validação de JWT, dependência bearer e verificações de perfil/dono do pedido. Substitui a lógica anteriormente separada entre `autenticacao.py` e `seguranca_senhas.py`.
 - [../backend/modelos/usuario.py](../backend/modelos/usuario.py): modelo interno com `email` e `senha_hash`; `para_publico()` remove campos de autenticação antes de devolver um usuário.
-- [../backend/esquemas/usuario.py](../backend/esquemas/usuario.py): valida nome, e-mail e senha de cadastro, credenciais de login, e define os campos públicos de resposta.
+- [../backend/esquemas/usuario.py](../backend/esquemas/usuario.py): valida nome, e-mail e senha de cadastro e define a resposta OAuth2 e os campos públicos do usuário.
 - [../backend/repositorios/usuario.py](../backend/repositorios/usuario.py): implementa busca por ID, username e e-mail, além de `salvar()` no SQLite.
 - [../backend/servicos/usuario.py](../backend/servicos/usuario.py): concentra cadastro, autenticação e resolução do usuário atual; as contas cadastradas recebem sempre o perfil `cliente`.
 - [../backend/rotas/autenticacao.py](../backend/rotas/autenticacao.py): fornece login e consulta da identidade autenticada.
@@ -17,7 +17,7 @@ Esta alteração organiza o cadastro e a autenticação do backend em camadas ex
 - [../backend/rotas/tatuagens.py](../backend/rotas/tatuagens.py): permanece como router do domínio do produto; as operações exigem token e validam perfil e propriedade da tatuagem.
 - [../backend/configuracao.py](../backend/configuracao.py) e [../backend/.env.exemplo](../backend/.env.exemplo): leem `CHAVE_DO_TOKEN`; `SECRET_KEY` continua disponível como alias para compatibilidade.
 - [../backend/banco.py](../backend/banco.py): cria o esquema atual e migra usuários legados.
-- [../backend/requirements.txt](../backend/requirements.txt): declara `httpx2`, utilizado pelo `TestClient` no ambiente atual.
+- [../backend/requirements.txt](../backend/requirements.txt): declara `python-multipart` para ler o formulário OAuth2 e `httpx2` para o `TestClient`.
 - [../.gitignore](../.gitignore): exclui `.env`, banco SQLite e arquivos auxiliares locais do versionamento.
 
 ## Banco e migração
@@ -70,7 +70,7 @@ Retorna HTTP `201` com `id`, `nome`, `tipo`, `username` e `email`. Não retorna 
 
 ### `POST /login`
 
-Mantém o formato de credenciais compatível com o frontend: `username` aceita o username existente ou um e-mail, e `password` recebe a senha. Em sucesso, retorna um token JWT e os dados públicos da conta. Credenciais inválidas retornam HTTP `401`.
+Recebe `username` e `password` como formulário `application/x-www-form-urlencoded`, conforme o fluxo OAuth2 password. `username` aceita o username existente ou um e-mail. Em sucesso, retorna `access_token` e `token_type: bearer`; o frontend consulta `GET /me` para carregar os dados públicos da conta. Credenciais inválidas retornam HTTP `401`.
 
 ### `GET /me`
 
