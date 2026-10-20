@@ -2,6 +2,7 @@ import os
 import sqlite3
 
 from seguranca import hashear_senha, senha_esta_hasheada
+from permissoes import GRUPOS_CADASTRO, PERMISSOES_CADASTRO
 
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
@@ -71,10 +72,114 @@ def _preparar_tabela_usuarios(conexao):
     conexao.execute("DROP TABLE usuarios_legado")
 
 
+# GRUPOS E PERMISSÕES: cria o catálogo e grava as permissões iniciais de cada persona.
+def _preparar_tabelas_autorizacao(conexao):
+    conexao.execute(
+        """
+        CREATE TABLE IF NOT EXISTS grupos (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            codigo TEXT NOT NULL UNIQUE,
+            nome TEXT NOT NULL
+        )
+        """
+    )
+    conexao.execute(
+        """
+        CREATE TABLE IF NOT EXISTS permissoes (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            codigo TEXT NOT NULL UNIQUE,
+            descricao TEXT NOT NULL
+        )
+        """
+    )
+    conexao.execute(
+        """
+        CREATE TABLE IF NOT EXISTS grupo_permissoes (
+            grupo_id INTEGER NOT NULL,
+            permissao_id INTEGER NOT NULL,
+            PRIMARY KEY (grupo_id, permissao_id),
+            FOREIGN KEY(grupo_id) REFERENCES grupos(id) ON DELETE CASCADE,
+            FOREIGN KEY(permissao_id) REFERENCES permissoes(id) ON DELETE CASCADE
+        )
+        """
+    )
+
+    # Mantém o catálogo conhecido pelo código disponível para referências do banco.
+    for codigo, descricao in PERMISSOES_CADASTRO.items():
+        conexao.execute(
+            "INSERT OR IGNORE INTO permissoes (codigo, descricao) VALUES (?, ?)",
+            (codigo, descricao),
+        )
+
+    # A matriz em permissoes.py é a configuração editável; o SQLite guarda os
+    # vínculos efetivos que as rotas consultam, sincronizados a cada inicialização.
+    for codigo, dados_grupo in GRUPOS_CADASTRO.items():
+        existente = conexao.execute(
+            "SELECT id FROM grupos WHERE codigo = ?", (codigo,)
+        ).fetchone()
+        if existente is None:
+            cursor = conexao.execute(
+                "INSERT INTO grupos (codigo, nome) VALUES (?, ?)",
+                (codigo, dados_grupo["nome"]),
+            )
+            grupo_id = cursor.lastrowid
+        else:
+            grupo_id = existente["id"]
+
+        # Sincroniza inclusões e remoções feitas na matriz antes de aceitar requisições.
+        conexao.execute("DELETE FROM grupo_permissoes WHERE grupo_id = ?", (grupo_id,))
+        for permissao_codigo in dados_grupo["permissoes"]:
+            permissao = conexao.execute(
+                "SELECT id FROM permissoes WHERE codigo = ?",
+                (permissao_codigo,),
+            ).fetchone()
+            if permissao is None:
+                raise RuntimeError(
+                    f"Permissão inicial não cadastrada: {permissao_codigo}."
+                )
+            conexao.execute(
+                "INSERT INTO grupo_permissoes (grupo_id, permissao_id) VALUES (?, ?)",
+                (grupo_id, permissao["id"]),
+            )
+
+
+# GRUPOS E PERMISSÕES: cada conta recebe exatamente um grupo, definido pela persona.
+def _preparar_vinculos_grupos(conexao):
+    conexao.execute(
+        """
+        CREATE TABLE IF NOT EXISTS usuario_grupos (
+            usuario_id INTEGER PRIMARY KEY,
+            grupo_id INTEGER NOT NULL,
+            FOREIGN KEY(usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE,
+            FOREIGN KEY(grupo_id) REFERENCES grupos(id)
+        )
+        """
+    )
+
+    # Associa contas existentes sem vínculo; perfis desconhecidos recebem o grupo
+    # de menor privilégio para impedir que uma migração antiga conceda acesso maior.
+    contas = conexao.execute("SELECT id, tipo FROM usuarios").fetchall()
+    codigos_grupo = set(GRUPOS_CADASTRO)
+    for conta in contas:
+        grupo_codigo = conta["tipo"] if conta["tipo"] in codigos_grupo else "cliente"
+        grupo = conexao.execute(
+            "SELECT id FROM grupos WHERE codigo = ?", (grupo_codigo,)
+        ).fetchone()
+        if grupo is None:
+            raise RuntimeError(f"Grupo necessário não cadastrado: {grupo_codigo}.")
+        conexao.execute(
+            "INSERT OR IGNORE INTO usuario_grupos (usuario_id, grupo_id) VALUES (?, ?)",
+            (conta["id"], grupo["id"]),
+        )
+
+
 def inicializar_banco():
     conexao = conectar()
     try:
+        # GRUPOS E PERMISSÕES: cria grupos antes de migrar usuários e atribuir vínculos.
+        _preparar_tabelas_autorizacao(conexao)
         _preparar_tabela_usuarios(conexao)
+        _preparar_vinculos_grupos(conexao)
         conexao.execute(
             """
             CREATE TABLE IF NOT EXISTS tatuagens (
@@ -121,6 +226,9 @@ def inicializar_banco():
                     """,
                     (usuario_id, nome, tipo, username, email, hashear_senha(senha)),
                 )
+
+        # GRUPOS E PERMISSÕES: também associa as contas de demonstração recém-criadas.
+        _preparar_vinculos_grupos(conexao)
 
         conexao.commit()
     finally:

@@ -8,6 +8,7 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 
 from configuracao import obter_configuracao
+from permissoes import PERMISSAO_LISTAR_TODAS_TATUAGENS
 
 
 ALGORITMO_HASH = "pbkdf2_sha256"
@@ -112,23 +113,46 @@ def obter_usuario_atual(
     return usuario
 
 
-def exigir_perfil(*tipos_permitidos):
-    """Gera dependência FastAPI que limita o endpoint aos perfis informados."""
+# GRUPOS E PERMISSÕES: as verificações consultam os vínculos persistidos no SQLite.
+def usuario_tem_permissao(usuario: dict, codigo_permissao: str) -> bool:
+    """Informa se o grupo atual da conta recebeu a permissão solicitada."""
+    usuario_id = usuario.get("id")
+    if usuario_id is None:
+        return False
+
+    from repositorios import grupo as repositorio_grupo
+
+    return codigo_permissao in repositorio_grupo.listar_permissoes_usuario(usuario_id)
+
+
+# GRUPOS E PERMISSÕES: valida diretamente uma permissão antes da operação da rota.
+def garantir_permissao(usuario: dict, codigo_permissao: str):
+    """Interrompe a chamada com HTTP 403 quando o grupo não tem a permissão."""
+    if not usuario_tem_permissao(usuario, codigo_permissao):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="O grupo desta conta não tem permissão para esta operação.",
+        )
+
+
+# GRUPOS E PERMISSÕES: cria dependência FastAPI para proteger uma rota por operação.
+def exigir_permissao(codigo_permissao: str):
+    """Gera dependência que exige a permissão indicada do grupo atual."""
     def dependente(usuario: dict = Depends(obter_usuario_atual)) -> dict:
-        if usuario["tipo"] not in tipos_permitidos:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Você não tem permissão para acessar este recurso.",
-            )
+        garantir_permissao(usuario, codigo_permissao)
         return usuario
 
     return dependente
 
 
 def garantir_acesso_tatuagem(usuario: dict, tatuagem: dict):
-    """Impede que uma cliente consulte ou altere pedido pertencente a outra."""
-    if usuario["tipo"] == "cliente" and tatuagem["cliente_id"] != usuario["id"]:
+    """Impede que grupos sem escopo de estúdio acessem pedido de outra cliente."""
+    # GRUPOS E PERMISSÕES: só um grupo com escopo global pode acessar qualquer pedido.
+    if (
+        not usuario_tem_permissao(usuario, PERMISSAO_LISTAR_TODAS_TATUAGENS)
+        and tatuagem["cliente_id"] != usuario["id"]
+    ):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Este pedido não pertence a este perfil de cliente.",
+            detail="Este pedido não pertence à conta autenticada.",
         )

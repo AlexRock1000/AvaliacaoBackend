@@ -13,6 +13,7 @@ def cadastrar(nome: str, email: str, senha: str) -> dict:
     usuario = Usuario(
         id=None,
         nome=nome_normalizado,
+        # GRUPOS E PERMISSÕES: o cadastro público só pode entrar no grupo de clientes.
         tipo="cliente",
         username=email_normalizado,
         email=email_normalizado,

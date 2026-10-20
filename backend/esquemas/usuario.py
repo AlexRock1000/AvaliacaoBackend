@@ -20,6 +20,13 @@ class CadastroUsuarioEntrada(BaseModel):
         return email
 
 
+# GRUPOS E PERMISSÕES: forma pública da associação usuário-grupo.
+class GrupoUsuarioSaida(BaseModel):
+    id: int
+    codigo: str
+    nome: str
+
+
 class UsuarioSaida(BaseModel):
     """Campos públicos de usuário; nunca contém senha nem hash."""
 
@@ -28,6 +35,8 @@ class UsuarioSaida(BaseModel):
     tipo: str
     username: str
     email: str
+    # GRUPOS E PERMISSÕES: permite que clientes da API identifiquem o grupo associado.
+    grupo: GrupoUsuarioSaida
 
 
 class Token(BaseModel):

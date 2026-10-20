@@ -2,7 +2,26 @@ from datetime import date
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
-from seguranca import garantir_acesso_tatuagem, obter_usuario_atual
+from seguranca import (
+    exigir_permissao,
+    garantir_acesso_tatuagem,
+    garantir_permissao,
+    obter_usuario_atual,
+    usuario_tem_permissao,
+)
+from permissoes import (
+    PERMISSAO_AGENDAR_RETOQUE,
+    PERMISSAO_ATUALIZAR_SESSAO,
+    PERMISSAO_CONSULTAR_HORARIOS,
+    PERMISSAO_CONSULTAR_TATUAGEM,
+    PERMISSAO_CRIAR_TATUAGEM,
+    PERMISSAO_DECIDIR_DESENHO,
+    PERMISSAO_EDITAR_PEDIDO,
+    PERMISSAO_LISTAR_PASSOS,
+    PERMISSAO_LISTAR_TATUAGENS,
+    PERMISSAO_LISTAR_TODAS_TATUAGENS,
+    PERMISSAO_REGISTRAR_PASSO,
+)
 from esquemas.passos import AgendamentoRetoqueEntrada, PassoEntrada, PassoSaida, SituacaoSessaoEntrada
 from esquemas.tatuagens import TatuagemAtualizacaoEntrada, TatuagemDetalheSaida, TatuagemEntrada, TatuagemSaida
 from servicos import tatuagem as servico_tatuagem
@@ -18,9 +37,9 @@ def listar_horarios_disponiveis(
     data: date = Query(...),
     duracao_horas: int = Query(default=2, ge=1),
     ignorar_passo_id: int | None = Query(default=None),
-    usuario: dict = Depends(obter_usuario_atual),
+    # GRUPOS E PERMISSÕES: a agenda só responde a contas com permissão explícita.
+    usuario: dict = Depends(exigir_permissao(PERMISSAO_CONSULTAR_HORARIOS)),
 ):
-    del usuario
     return servico_tatuagem.listar_horarios_disponiveis(data, duracao_horas, ignorar_passo_id)
 
 
@@ -29,18 +48,19 @@ def listar_horarios_disponiveis(
 def listar_tatuagens(
     etapa: str | None = Query(default=None),
     cliente_id: int | None = Query(default=None),
-    usuario: dict = Depends(obter_usuario_atual),
+    # GRUPOS E PERMISSÕES: exige permissão de lista e aplica o escopo gravado no grupo.
+    usuario: dict = Depends(exigir_permissao(PERMISSAO_LISTAR_TATUAGENS)),
 ):
-    if usuario["tipo"] == "cliente":
+    if not usuario_tem_permissao(usuario, PERMISSAO_LISTAR_TODAS_TATUAGENS):
         cliente_id = usuario["id"]
-    elif cliente_id is not None and usuario["tipo"] != "tatuador":
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Você não tem permissão para filtrar por cliente.")
     return servico_tatuagem.listar_tatuagens(etapa, cliente_id)
 
 
 # Na camada de rotas, escolhe a resposta HTTP 404 quando o serviço não encontra o item.
 @roteador.get("/{tatuagem_id}", response_model=TatuagemDetalheSaida)
 def mostrar_tatuagem(tatuagem_id: int, usuario: dict = Depends(obter_usuario_atual)):
+    # GRUPOS E PERMISSÕES: detalhes exigem permissão do grupo além da propriedade do pedido.
+    garantir_permissao(usuario, PERMISSAO_CONSULTAR_TATUAGEM)
     tatuagem = servico_tatuagem.buscar_tatuagem(tatuagem_id)
     if tatuagem is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Tatuagem não encontrada.")
@@ -50,9 +70,11 @@ def mostrar_tatuagem(tatuagem_id: int, usuario: dict = Depends(obter_usuario_atu
 
 # Na camada de rotas, recebe o JSON e responde HTTP 201 após o serviço criar o pedido.
 @roteador.post("", response_model=TatuagemSaida, status_code=status.HTTP_201_CREATED)
-def pedir_tatuagem(entrada: TatuagemEntrada, usuario: dict = Depends(obter_usuario_atual)):
-    if usuario["tipo"] != "cliente":
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Apenas clientes podem criar pedidos.")
+def pedir_tatuagem(
+    entrada: TatuagemEntrada,
+    # GRUPOS E PERMISSÕES: somente grupos autorizados podem criar pedidos.
+    usuario: dict = Depends(exigir_permissao(PERMISSAO_CRIAR_TATUAGEM)),
+):
     entrada.cliente_id = usuario["id"]
     return servico_tatuagem.criar_tatuagem(entrada)
 
@@ -61,14 +83,13 @@ def pedir_tatuagem(entrada: TatuagemEntrada, usuario: dict = Depends(obter_usuar
 def atualizar_pedido(
     tatuagem_id: int,
     entrada: TatuagemAtualizacaoEntrada,
-    usuario: dict = Depends(obter_usuario_atual),
+    # GRUPOS E PERMISSÕES: a edição depende da permissão de pedido do grupo atual.
+    usuario: dict = Depends(exigir_permissao(PERMISSAO_EDITAR_PEDIDO)),
 ):
     tatuagem = servico_tatuagem.buscar_tatuagem(tatuagem_id)
     if tatuagem is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Tatuagem não encontrada.")
     garantir_acesso_tatuagem(usuario, tatuagem)
-    if usuario["tipo"] != "cliente":
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Apenas clientes podem editar o pedido.")
     entrada.cliente_id = usuario["id"]
     try:
         return servico_tatuagem.atualizar_pedido(tatuagem_id, entrada)
@@ -82,7 +103,11 @@ def atualizar_pedido(
 
 # Na camada de rotas, devolve o histórico e escolhe HTTP 404 se a tatuagem não existe.
 @roteador.get("/{tatuagem_id}/passos", response_model=list[PassoSaida])
-def listar_passos(tatuagem_id: int, usuario: dict = Depends(obter_usuario_atual)):
+def listar_passos(
+    tatuagem_id: int,
+    # GRUPOS E PERMISSÕES: o grupo precisa poder consultar o histórico.
+    usuario: dict = Depends(exigir_permissao(PERMISSAO_LISTAR_PASSOS)),
+):
     tatuagem = servico_tatuagem.buscar_tatuagem(tatuagem_id)
     if tatuagem is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Tatuagem não encontrada.")
@@ -105,8 +130,13 @@ def registrar_passo(
     if tatuagem is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Tatuagem não encontrada.")
     garantir_acesso_tatuagem(usuario, tatuagem)
-    if usuario["tipo"] == "cliente" and entrada.tipo not in {"desenho_aprovado", "desenho_reprovado"}:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Clientes só podem aprovar ou pedir ajustes no desenho.")
+    # GRUPOS E PERMISSÕES: a operação permitida depende do tipo de passo solicitado.
+    permissao_da_operacao = (
+        PERMISSAO_DECIDIR_DESENHO
+        if entrada.tipo in {"desenho_aprovado", "desenho_reprovado"}
+        else PERMISSAO_REGISTRAR_PASSO
+    )
+    garantir_permissao(usuario, permissao_da_operacao)
     resultado = servico_tatuagem.registrar_passo(tatuagem_id, entrada)
     if isinstance(resultado, str):
         raise HTTPException(status_code=422, detail=resultado)
@@ -118,14 +148,13 @@ def atualizar_situacao_sessao(
     tatuagem_id: int,
     passo_id: int,
     entrada: SituacaoSessaoEntrada,
-    usuario: dict = Depends(obter_usuario_atual),
+    # GRUPOS E PERMISSÕES: a rota exige permissão própria para atualizar sessões.
+    usuario: dict = Depends(exigir_permissao(PERMISSAO_ATUALIZAR_SESSAO)),
 ):
     tatuagem = servico_tatuagem.buscar_tatuagem(tatuagem_id)
     if tatuagem is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Tatuagem não encontrada.")
     garantir_acesso_tatuagem(usuario, tatuagem)
-    if usuario["tipo"] != "tatuador":
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Apenas tatuadores podem atualizar a situação da sessão.")
     resultado = servico_tatuagem.atualizar_situacao_sessao(tatuagem_id, passo_id, entrada.situacao)
     if isinstance(resultado, str):
         raise HTTPException(status_code=422, detail=resultado)
@@ -138,14 +167,13 @@ def atualizar_agendamento_retoque(
     tatuagem_id: int,
     passo_id: int,
     entrada: AgendamentoRetoqueEntrada,
-    usuario: dict = Depends(obter_usuario_atual),
+    # GRUPOS E PERMISSÕES: somente grupos com gestão de retoque podem alterar a reserva.
+    usuario: dict = Depends(exigir_permissao(PERMISSAO_AGENDAR_RETOQUE)),
 ):
     tatuagem = servico_tatuagem.buscar_tatuagem(tatuagem_id)
     if tatuagem is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Tatuagem não encontrada.")
     garantir_acesso_tatuagem(usuario, tatuagem)
-    if usuario["tipo"] != "tatuador":
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Apenas tatuadores podem ajustar o agendamento do retoque.")
     resultado = servico_tatuagem.atualizar_agendamento_retoque(tatuagem_id, passo_id, entrada)
     if isinstance(resultado, str):
         raise HTTPException(status_code=422, detail=resultado)

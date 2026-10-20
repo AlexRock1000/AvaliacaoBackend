@@ -9,6 +9,7 @@ roteador = APIRouter(prefix="/usuarios", tags=["Usuários"])
 @roteador.post("", response_model=UsuarioSaida, status_code=status.HTTP_201_CREATED)
 def cadastrar_usuario(entrada: CadastroUsuarioEntrada):
     """Cria conta de cliente sem permitir que o solicitante escolha o próprio perfil."""
+    # GRUPOS E PERMISSÕES: cadastro público sempre recebe o grupo cliente no serviço.
     try:
         return servico_usuario.cadastrar(entrada.nome, entrada.email, entrada.senha)
     except ValueError as erro:

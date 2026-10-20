@@ -2,7 +2,8 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 
 from esquemas.usuario import Token, UsuarioSaida
-from seguranca import criar_token, obter_usuario_atual
+from permissoes import PERMISSAO_CONSULTAR_PROPRIA_CONTA
+from seguranca import criar_token, exigir_permissao
 from servicos import usuario as servico_usuario
 
 roteador = APIRouter(tags=["Autenticação"])
@@ -21,6 +22,9 @@ def login(formulario: OAuth2PasswordRequestForm = Depends()):
 
 
 @roteador.get("/me", response_model=UsuarioSaida)
-def me(usuario: dict = Depends(obter_usuario_atual)):
+def me(
+    # GRUPOS E PERMISSÕES: cada grupo pode consultar a própria identidade autenticada.
+    usuario: dict = Depends(exigir_permissao(PERMISSAO_CONSULTAR_PROPRIA_CONTA)),
+):
     """Retorna a identidade pública associada ao bearer token atual."""
     return usuario
