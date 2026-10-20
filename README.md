@@ -22,7 +22,14 @@ python -m venv .venv
 if (-not (Test-Path .env)) { Copy-Item .env.exemplo .env }
 ```
 
-Edite `backend/.env` para conter `ENDERECO_FRONTEND=http://localhost:5173` e uma chave JWT aleatória e exclusiva em `CHAVE_DO_TOKEN`. Gere uma com `python -c "import secrets; print(secrets.token_urlsafe(48))"` e configure o resultado no arquivo. `SECRET_KEY` ainda é aceita como nome alternativo. A API não inicia se a chave estiver ausente ou usar o segredo demonstrativo antigo. Não compartilhe nem versione esse valor.
+O `requirements.txt` já inclui `PyJWT`; também é possível instalá-lo diretamente. Para gerar uma chave hexadecimal aleatória de 64 caracteres, rode na pasta `backend`:
+
+```powershell
+.venv\Scripts\python.exe -m pip install PyJWT
+.venv\Scripts\python.exe -c "import secrets; print(secrets.token_hex(32))"
+```
+
+Copie o resultado para `CHAVE_DO_TOKEN=` em `backend/.env`, junto com `ENDERECO_FRONTEND=http://localhost:5173`. Em `backend/.env.exemplo`, mantenha a linha `CHAVE_DO_TOKEN=` sem valor. `configuracao.py` lê essa variável; `SECRET_KEY` continua aceita como alias. O `.env` local é ignorado pelo Git, então `git status` não deve listá-lo. Nunca copie a chave para o exemplo, logs ou documentação. Ao trocar a chave, reinicie a API e faça login novamente: os tokens emitidos com a chave anterior deixam de valer.
 
 ```powershell
 .venv\Scripts\python.exe -m uvicorn main:aplicativo --reload

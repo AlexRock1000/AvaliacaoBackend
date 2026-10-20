@@ -37,7 +37,16 @@ Na inicialização, o banco detecta esquemas anteriores. Senhas em texto puro s�
 
 ## Chave JWT
 
-Configure `CHAVE_DO_TOKEN` em `backend/.env` com um valor aleatório exclusivo para cada ambiente. A configuração aceita `SECRET_KEY` como alias de compatibilidade. A API falha no startup se a chave estiver ausente ou usar o segredo padrão conhecido. O arquivo `.env` é local, ignorado pelo Git e não deve ser publicado. O valor configurado não deve ser registrado em logs nem enviado em documentação.
+Configure `CHAVE_DO_TOKEN` em `backend/.env` com um valor aleatório exclusivo para cada ambiente. Para gerar uma chave hexadecimal de 64 caracteres, execute na pasta `backend`:
+
+```powershell
+.venv\Scripts\python.exe -m pip install PyJWT
+.venv\Scripts\python.exe -c "import secrets; print(secrets.token_hex(32))"
+```
+
+O projeto já declara `PyJWT` em `requirements.txt`, então a instalação direta só é necessária quando as dependências ainda não foram instaladas. Copie o resultado para `CHAVE_DO_TOKEN=` no arquivo local. Em `.env.exemplo`, mantenha o nome da variável sem valor, para indicar a configuração necessária sem publicar um segredo. `configuracao.py` carrega `CHAVE_DO_TOKEN`; `SECRET_KEY` continua aceita como alias de compatibilidade. A API falha no startup se a chave estiver ausente ou usar o segredo padrão conhecido.
+
+O `.env` é ignorado pelo Git e não deve ser publicado; confirme com `git status` que ele não aparece. Nunca registre o valor da chave em logs ou documentação. Ao rotacioná-la, reinicie a API: tokens assinados com a chave anterior deixam de ser válidos e as pessoas precisam entrar novamente. Nesta atualização, a chave local foi regenerada e o backend reiniciado; o valor permanece somente em `backend/.env`.
 
 O `.env` local foi removido do índice do Git sem apagar a cópia de trabalho. O `.gitignore` também exclui o banco SQLite e seus arquivos auxiliares; esses arquivos permanecem locais e devem ser incluídos em uma política de backup, não em commits.
 
