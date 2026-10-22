@@ -5,14 +5,18 @@ from pydantic import BaseModel, Field, field_validator, model_validator
 from esquemas.imagem import validar_imagem_codificada
 
 
+# Mantém em um único lugar o limite de duração para sessões e retoques.
+DURACAO_MAXIMA_AGENDAMENTO_HORAS = 10
+
+
 # Descreve os dados enviados para registrar um dos três tipos de passo da cartilha.
 class PassoEntrada(BaseModel):
     tipo: str = Field(min_length=1)
     data: date
     # Guarda o horário combinado quando o passo registra uma sessão.
     horario: time | None = None
-    # Recebe a duração em horas inteiras; uma hora é o mínimo.
-    duracao_horas: int = Field(default=2, ge=1)
+    # Recebe a duração em horas inteiras, entre uma hora e o limite de dez horas.
+    duracao_horas: int = Field(default=2, ge=1, le=DURACAO_MAXIMA_AGENDAMENTO_HORAS)
     observacao: str = Field(min_length=1)
     # Guarda o desenho enviado como imagem codificada, sem criar arquivos neste ciclo.
     imagem: str | None = None
@@ -54,4 +58,4 @@ class SituacaoSessaoEntrada(BaseModel):
 # Valida o novo horário e a duração quando o tatuador ajusta o retoque agendado.
 class AgendamentoRetoqueEntrada(BaseModel):
     horario: time
-    duracao_horas: int = Field(ge=1)
+    duracao_horas: int = Field(ge=1, le=DURACAO_MAXIMA_AGENDAMENTO_HORAS)

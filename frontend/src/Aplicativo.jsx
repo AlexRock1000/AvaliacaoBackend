@@ -17,6 +17,7 @@ const TIPOS_DE_PASSO = [
 ];
 
 const ETAPAS_PREPARACAO = ["aguardando aprovação", "ajustes no desenho"];
+const DURACAO_MAXIMA_HORAS = 10;
 const TAMANHO_MAXIMO_IMAGEM_BYTES = 5 * 1024 * 1024;
 
 // Mostra a etapa com uma escrita legível para as duas pessoas do estúdio.
@@ -770,7 +771,7 @@ function TelaFicha({ tatuagem, aoVoltar, aoSalvar, nomeRetorno = "agenda" }) {
   const [imagemDesenhoAprovado, definirImagemDesenhoAprovado] = useState("");
   const [carregandoReferencia, definirCarregandoReferencia] = useState(true);
   const [erroReferencia, definirErroReferencia] = useState("");
-  const duracaoValida = Number.isInteger(Number(duracaoHoras)) && Number(duracaoHoras) >= 1;
+  const duracaoValida = Number.isInteger(Number(duracaoHoras)) && Number(duracaoHoras) >= 1 && Number(duracaoHoras) <= DURACAO_MAXIMA_HORAS;
 
   // Busca a referência enviada pela cliente ao abrir a ficha individual do pedido.
   useEffect(() => {
@@ -1044,7 +1045,8 @@ function TelaFicha({ tatuagem, aoVoltar, aoSalvar, nomeRetorno = "agenda" }) {
         </>}
         {tipo === "sessao" && <>
           <label htmlFor="duracao-sessao">Duração da sessão (horas)</label>
-          <input id="duracao-sessao" type="number" min="1" step="1" value={duracaoHoras} onChange={(evento) => definirDuracaoHoras(evento.target.value)} required />
+          <input id="duracao-sessao" type="number" min="1" max={DURACAO_MAXIMA_HORAS} step="1" value={duracaoHoras} onChange={(evento) => definirDuracaoHoras(evento.target.value)} required />
+          {duracaoHoras && !duracaoValida && <p className="aviso aviso-erro" role="alert">Informe uma duração inteira entre 1 e {DURACAO_MAXIMA_HORAS} horas.</p>}
           <label htmlFor="data-passo">Data da sessão</label>
           <input id="data-passo" type="date" min={hojeComoDataISO()} value={data} onChange={(evento) => definirData(evento.target.value)} required />
           <label htmlFor="horario-sessao">Horários disponíveis para {duracaoHoras || "a duração escolhida"} {Number(duracaoHoras) === 1 ? "hora" : "horas"}</label>
@@ -1057,7 +1059,8 @@ function TelaFicha({ tatuagem, aoVoltar, aoSalvar, nomeRetorno = "agenda" }) {
         </>}
         {tipo === "retoque" && tatuagem.etapa === "aguardando retoque" && <>
           <label htmlFor="duracao-retoque">Duração do retoque (horas)</label>
-          <input id="duracao-retoque" type="number" min="1" step="1" value={duracaoHoras} onChange={(evento) => definirDuracaoHoras(evento.target.value)} required />
+          <input id="duracao-retoque" type="number" min="1" max={DURACAO_MAXIMA_HORAS} step="1" value={duracaoHoras} onChange={(evento) => definirDuracaoHoras(evento.target.value)} required />
+          {duracaoHoras && !duracaoValida && <p className="aviso aviso-erro" role="alert">Informe uma duração inteira entre 1 e {DURACAO_MAXIMA_HORAS} horas.</p>}
           <p className="estado">Data prevista: {formatarDataAgendamento(data)}</p>
           <label htmlFor="horario-retoque">Horários que comportam essa duração</label>
           <select id="horario-retoque" value={horario} onChange={(evento) => definirHorario(evento.target.value)} disabled={!passoRetoque || !duracaoValida || carregandoPassoRetoque || carregandoHorarios || horariosDisponiveis.length === 0} required>

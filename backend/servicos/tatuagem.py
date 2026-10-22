@@ -1,6 +1,6 @@
 from datetime import date, datetime, time, timedelta
 
-from esquemas.passos import PassoEntrada
+from esquemas.passos import DURACAO_MAXIMA_AGENDAMENTO_HORAS, PassoEntrada
 from esquemas.tatuagens import TatuagemEntrada
 from repositorios import tatuagem as repositorio_tatuagem
 
@@ -59,6 +59,10 @@ def listar_passos(tatuagem_id):
 
 # Calcula os inícios de sessão possíveis e remove horários que se sobrepõem a reservas existentes.
 def listar_horarios_disponiveis(data, duracao_horas=2, ignorar_passo_id=None):
+    # Recusa durações fora do limite também em chamadas internas ao serviço.
+    if not 1 <= duracao_horas <= DURACAO_MAXIMA_AGENDAMENTO_HORAS:
+        return []
+
     agora = datetime.now()
     if data.weekday() == 0 or data < agora.date():
         return []
@@ -107,6 +111,10 @@ def registrar_passo(tatuagem_id: int, entrada: PassoEntrada):
     etapa = tatuagem["etapa"]
     tipo = entrada.tipo
     reserva_retoque = None
+
+    # Mantém a regra de duração no serviço, além da validação do esquema HTTP.
+    if tipo in ("sessao", "retoque") and not 1 <= entrada.duracao_horas <= DURACAO_MAXIMA_AGENDAMENTO_HORAS:
+        return "A duração da sessão ou do retoque deve ser entre 1 e 10 horas."
 
     if tipo not in ("desenho_enviado", "desenho_aprovado", "desenho_reprovado", "sessao", "retoque_combinado", "retoque"):
         return "O passo deve registrar o desenho enviado, a decisão da cliente, sessão ou retoque."
@@ -218,6 +226,10 @@ def atualizar_agendamento_retoque(tatuagem_id, passo_id, entrada):
     passo = next((item for item in tatuagem["passos"] if item["id"] == passo_id), None)
     if passo is None or passo["tipo"] != "retoque_combinado" or (passo.get("situacao") or "agendada") != "agendada":
         return "O retoque agendado não foi encontrado."
+
+    # Impede que chamadas internas contornem o limite definido para o agendamento.
+    if not 1 <= entrada.duracao_horas <= DURACAO_MAXIMA_AGENDAMENTO_HORAS:
+        return "A duração do retoque deve ser entre 1 e 10 horas."
 
     horarios = listar_horarios_disponiveis(
         passo["data"], entrada.duracao_horas, ignorar_passo_id=passo_id

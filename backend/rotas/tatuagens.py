@@ -22,7 +22,13 @@ from permissoes import (
     PERMISSAO_LISTAR_TODAS_TATUAGENS,
     PERMISSAO_REGISTRAR_PASSO,
 )
-from esquemas.passos import AgendamentoRetoqueEntrada, PassoEntrada, PassoSaida, SituacaoSessaoEntrada
+from esquemas.passos import (
+    DURACAO_MAXIMA_AGENDAMENTO_HORAS,
+    AgendamentoRetoqueEntrada,
+    PassoEntrada,
+    PassoSaida,
+    SituacaoSessaoEntrada,
+)
 from esquemas.tatuagens import TatuagemAtualizacaoEntrada, TatuagemDetalheSaida, TatuagemEntrada, TatuagemSaida
 from servicos import tatuagem as servico_tatuagem
 
@@ -35,7 +41,7 @@ roteador = APIRouter(prefix="/tatuagens", tags=["Tatuagens"])
 @roteador.get("/horarios-disponiveis", response_model=list[str])
 def listar_horarios_disponiveis(
     data: date = Query(...),
-    duracao_horas: int = Query(default=2, ge=1),
+    duracao_horas: int = Query(default=2, ge=1, le=DURACAO_MAXIMA_AGENDAMENTO_HORAS),
     ignorar_passo_id: int | None = Query(default=None),
     # GRUPOS E PERMISSÕES: a agenda só responde a contas com permissão explícita.
     usuario: dict = Depends(exigir_permissao(PERMISSAO_CONSULTAR_HORARIOS)),
