@@ -71,10 +71,10 @@ class TestSessoes(unittest.TestCase):
         self.assertNotIn(horario, servico_tatuagem.listar_horarios_disponiveis(data_sessao))
 
         cancelada = servico_tatuagem.atualizar_situacao_sessao(
-            tatuagem_id, sessao["id"], "cancelada"
+            tatuagem_id, sessao["id"], "cancelada", "Preciso remarcar por um imprevisto."
         )
         self.assertEqual(cancelada["situacao"], "cancelada")
-        self.assertEqual(cancelada["observacao"], "Sessão cancelada.")
+        self.assertEqual(cancelada["observacao"], "Mensagem do tatuador: Preciso remarcar por um imprevisto.")
         self.assertIn(horario, servico_tatuagem.listar_horarios_disponiveis(data_sessao))
 
     def test_confirmacao_marca_sessao_como_realizada(self):
@@ -131,7 +131,9 @@ class TestSessoes(unittest.TestCase):
         tatuagem_id = self.criar_projeto_com_desenho_aprovado()
         data_sessao, horario = self.obter_data_e_horario_disponiveis()
         sessao = self.agendar_sessao(tatuagem_id, data_sessao, horario)
-        servico_tatuagem.atualizar_situacao_sessao(tatuagem_id, sessao["id"], "cancelada")
+        servico_tatuagem.atualizar_situacao_sessao(
+            tatuagem_id, sessao["id"], "cancelada", "Preciso remarcar por um imprevisto."
+        )
 
         resultado = servico_tatuagem.atualizar_situacao_sessao(
             tatuagem_id, sessao["id"], "realizada"

@@ -1,6 +1,6 @@
 from datetime import date, time
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 from esquemas.imagem import validar_imagem_codificada
 
@@ -42,6 +42,13 @@ class PassoSaida(BaseModel):
 
 class SituacaoSessaoEntrada(BaseModel):
     situacao: str = Field(pattern="^(realizada|cancelada)$")
+    observacao: str | None = None
+
+    @model_validator(mode="after")
+    def exigir_mensagem_ao_cancelar(self):
+        if self.situacao == "cancelada" and not (self.observacao or "").strip():
+            raise ValueError("Escreva uma mensagem para a cliente antes de desmarcar a sessão.")
+        return self
 
 
 # Valida o novo horário e a duração quando o tatuador ajusta o retoque agendado.

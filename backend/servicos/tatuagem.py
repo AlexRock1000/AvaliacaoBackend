@@ -82,7 +82,7 @@ def listar_horarios_disponiveis(data, duracao_horas=2, ignorar_passo_id=None):
         for tatuagem in repositorio_tatuagem.listar_tatuagens():
             for passo in tatuagem["passos"]:
                 horario_marcado = passo.get("horario")
-                if passo["id"] != ignorar_passo_id and passo["tipo"] in ("sessao", "retoque_combinado") and passo.get("situacao", "agendada") == "agendada" and passo["data"] == data and horario_marcado is not None:
+                if passo["id"] != ignorar_passo_id and passo["tipo"] in ("sessao", "retoque_combinado") and (passo.get("situacao") or "agendada") == "agendada" and passo["data"] == data and horario_marcado is not None:
                     inicio_marcado = datetime.combine(data, horario_marcado)
                     duracao_marcada = timedelta(hours=passo.get("duracao_horas", 2) or 2)
                     fim_marcado = inicio_marcado + duracao_marcada
@@ -118,6 +118,11 @@ def registrar_passo(tatuagem_id: int, entrada: PassoEntrada):
         return "A cliente só pode responder depois que o desenho for enviado."
     if tipo == "sessao" and etapa not in ("desenho aprovado", "em sessões"):
         return "A sessão só pode ser registrada depois da aprovação do desenho."
+    if tipo == "sessao" and any(
+        passo["tipo"] == "sessao" and (passo.get("situacao") or "agendada") == "agendada"
+        for passo in tatuagem["passos"]
+    ):
+        return "Este projeto já tem uma sessão agendada. Desmarque-a antes de marcar outra."
     if tipo == "sessao" and entrada.horario is None:
         return "Escolha um horário disponível para a sessão."
     if tipo == "sessao" and entrada.horario.strftime("%H:%M") not in listar_horarios_disponiveis(entrada.data, entrada.duracao_horas):
@@ -128,7 +133,7 @@ def registrar_passo(tatuagem_id: int, entrada: PassoEntrada):
         return "O retoque só pode ser registrado como realizado depois de combinado."
     if tipo == "retoque":
         reserva_retoque = next(
-            (passo for passo in tatuagem["passos"] if passo["tipo"] == "retoque_combinado" and passo.get("situacao", "agendada") == "agendada"),
+            (passo for passo in tatuagem["passos"] if passo["tipo"] == "retoque_combinado" and (passo.get("situacao") or "agendada") == "agendada"),
             None,
         )
         if reserva_retoque is None:
@@ -153,14 +158,16 @@ def registrar_passo(tatuagem_id: int, entrada: PassoEntrada):
     return resultado
 
 
-def atualizar_situacao_sessao(tatuagem_id: int, passo_id: int, situacao: str):
+def atualizar_situacao_sessao(
+    tatuagem_id: int, passo_id: int, situacao: str, mensagem_cancelamento: str | None = None
+):
     tatuagem = repositorio_tatuagem.buscar_tatuagem_por_id(tatuagem_id)
     if tatuagem is None:
         return None
     passo = next((item for item in tatuagem["passos"] if item["id"] == passo_id), None)
     if passo is None or passo["tipo"] != "sessao":
         return "A sessão não foi encontrada."
-    if passo.get("situacao", "agendada") != "agendada":
+    if (passo.get("situacao") or "agendada") != "agendada":
         return "Somente sessões agendadas podem ser atualizadas."
     if situacao == "realizada":
         observacao = "Sessão realizada."
@@ -192,7 +199,10 @@ def atualizar_situacao_sessao(tatuagem_id: int, passo_id: int, situacao: str):
         )
         repositorio_tatuagem.atualizar_etapa(tatuagem_id, "aguardando retoque")
     elif situacao == "cancelada":
-        observacao = "Sessão cancelada."
+        mensagem = (mensagem_cancelamento or "").strip()
+        if not mensagem:
+            return "Escreva uma mensagem para a cliente antes de desmarcar a sessão."
+        observacao = f"Mensagem do tatuador: {mensagem}"
         passo["situacao"] = situacao
         passo["observacao"] = observacao
         repositorio_tatuagem.atualizar_situacao_passo_com_obs(passo_id, situacao, observacao)
@@ -206,7 +216,7 @@ def atualizar_agendamento_retoque(tatuagem_id, passo_id, entrada):
         return None
 
     passo = next((item for item in tatuagem["passos"] if item["id"] == passo_id), None)
-    if passo is None or passo["tipo"] != "retoque_combinado" or passo.get("situacao", "agendada") != "agendada":
+    if passo is None or passo["tipo"] != "retoque_combinado" or (passo.get("situacao") or "agendada") != "agendada":
         return "O retoque agendado não foi encontrado."
 
     horarios = listar_horarios_disponiveis(

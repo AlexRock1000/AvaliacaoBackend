@@ -155,7 +155,9 @@ def atualizar_situacao_sessao(
     if tatuagem is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Tatuagem não encontrada.")
     garantir_acesso_tatuagem(usuario, tatuagem)
-    resultado = servico_tatuagem.atualizar_situacao_sessao(tatuagem_id, passo_id, entrada.situacao)
+    resultado = servico_tatuagem.atualizar_situacao_sessao(
+        tatuagem_id, passo_id, entrada.situacao, entrada.observacao
+    )
     if isinstance(resultado, str):
         raise HTTPException(status_code=422, detail=resultado)
     return resultado

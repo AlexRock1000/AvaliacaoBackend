@@ -421,6 +421,31 @@ function TelaMinhasTatuagens({ perfil }) {
   );
 }
 
+// Reúne a mensagem obrigatória antes de desmarcar uma sessão.
+function FormularioCancelamentoSessao({ id, mensagem, aoAlterarMensagem, erro, salvando, aoConfirmar, aoFechar }) {
+  return (
+    <div className="formulario-cancelamento-sessao">
+      <label htmlFor={`mensagem-cancelamento-${id}`}>Mensagem para a cliente (obrigatória)</label>
+      <textarea
+        id={`mensagem-cancelamento-${id}`}
+        value={mensagem}
+        onChange={(evento) => aoAlterarMensagem(evento.target.value)}
+        placeholder="Explique o motivo do cancelamento."
+        rows="3"
+        required
+      />
+      <small>Esta mensagem ficará visível no histórico do pedido da cliente.</small>
+      {erro && <p className="aviso aviso-erro" role="alert">{erro}</p>}
+      <div className="acoes-cancelamento-sessao">
+        <button className="botao botao-ember" type="button" disabled={salvando || !mensagem.trim()} onClick={aoConfirmar}>
+          {salvando ? "Desmarcando…" : "Desmarcar e registrar mensagem"}
+        </button>
+        <button className="botao botao-claro" type="button" disabled={salvando} onClick={aoFechar}>Voltar</button>
+      </div>
+    </div>
+  );
+}
+
 // Carrega a agenda da equipe com filtro opcional pela etapa.
 function TelaAgenda({ aoAbrirFicha, atualizacao, aoAtualizar, titulo = "Projetos." }) {
   const [tatuagens, definirTatuagens] = useState([]);
@@ -431,6 +456,9 @@ function TelaAgenda({ aoAbrirFicha, atualizacao, aoAtualizar, titulo = "Projetos
   const [carregandoSessoes, definirCarregandoSessoes] = useState(false);
   const [erroSessoes, definirErroSessoes] = useState("");
   const [sessaoEmAtualizacao, definirSessaoEmAtualizacao] = useState(null);
+  const [sessaoParaCancelar, definirSessaoParaCancelar] = useState(null);
+  const [mensagemCancelamento, definirMensagemCancelamento] = useState("");
+  const [erroCancelamento, definirErroCancelamento] = useState("");
   const tipoAgendamento = etapa === "em sessões" ? "sessao" : "retoque_combinado";
   const filtros = [
     { valor: "", nome: "Todas" },
@@ -471,17 +499,25 @@ function TelaAgenda({ aoAbrirFicha, atualizacao, aoAtualizar, titulo = "Projetos
     return () => { consultaAtiva = false; };
   }, [etapa, atualizacao]);
 
-  function atualizarSessao(passo, situacao) {
+  function atualizarSessao(passo, situacao, mensagem = "") {
     definirSessaoEmAtualizacao(passo.id);
+    definirErroCancelamento("");
     pedirApi(`/tatuagens/${passo.tatuagem_id}/passos/${passo.id}/situacao`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ situacao }),
+      body: JSON.stringify({ situacao, ...(situacao === "cancelada" ? { observacao: mensagem.trim() } : {}) }),
     }).then(() => {
+      if (situacao === "cancelada") {
+        definirSessaoParaCancelar(null);
+        definirMensagemCancelamento("");
+      }
       aoAtualizar();
       if (situacao === "realizada") definirEtapa("aguardando retoque");
     })
-      .catch((erroApi) => definirErroSessoes(erroApi.message))
+      .catch((erroApi) => {
+        if (situacao === "cancelada") definirErroCancelamento(erroApi.message);
+        else definirErroSessoes(erroApi.message);
+      })
       .finally(() => definirSessaoEmAtualizacao(null));
   }
 
@@ -510,7 +546,17 @@ function TelaAgenda({ aoAbrirFicha, atualizacao, aoAtualizar, titulo = "Projetos
             <div className="acoes-sessao">
               {tipoAgendamento === "sessao" ? <>
                 <button className="botao botao-ember" disabled={sessaoEmAtualizacao !== null} onClick={() => atualizarSessao(sessao, "realizada")}>{sessaoEmAtualizacao === sessao.id ? "Salvando…" : "Confirmar realizada"}</button>
-                <button className="botao botao-claro" disabled={sessaoEmAtualizacao !== null} onClick={() => atualizarSessao(sessao, "cancelada")}>Cancelar sessão</button>
+                {sessaoParaCancelar === sessao.id
+                  ? <FormularioCancelamentoSessao
+                    id={`agenda-${sessao.id}`}
+                    mensagem={mensagemCancelamento}
+                    aoAlterarMensagem={definirMensagemCancelamento}
+                    erro={erroCancelamento}
+                    salvando={sessaoEmAtualizacao === sessao.id}
+                    aoConfirmar={() => atualizarSessao(sessao, "cancelada", mensagemCancelamento)}
+                    aoFechar={() => { definirSessaoParaCancelar(null); definirMensagemCancelamento(""); definirErroCancelamento(""); }}
+                  />
+                  : <button className="botao botao-claro" type="button" disabled={sessaoEmAtualizacao !== null} onClick={() => { definirSessaoParaCancelar(sessao.id); definirMensagemCancelamento(""); definirErroCancelamento(""); }}>Desmarcar sessão</button>}
               </> : <button className="botao botao-ember" onClick={() => aoAbrirFicha(sessao.tatuagem)}>Abrir ficha do retoque</button>}
             </div>
           </article>)}
@@ -682,6 +728,7 @@ function TelaPedidoFinalizado({ tatuagem, aoVoltar, nomeRetorno }) {
 // Registra a aprovação do desenho, uma sessão ou um retoque na ficha escolhida.
 function TelaFicha({ tatuagem, aoVoltar, aoSalvar, nomeRetorno = "agenda" }) {
   const enviarDesenho = tatuagem.etapa === "pedida" || tatuagem.etapa === "ajustes no desenho";
+  const etapaPermiteSessao = tatuagem.etapa === "desenho aprovado" || tatuagem.etapa === "em sessões";
   const tiposPermitidos = enviarDesenho
     ? TIPOS_DE_PASSO.filter((opcao) => opcao.valor === "desenho_enviado")
     : tatuagem.etapa === "desenho aprovado"
@@ -701,6 +748,13 @@ function TelaFicha({ tatuagem, aoVoltar, aoSalvar, nomeRetorno = "agenda" }) {
   const [horario, definirHorario] = useState("");
   const [carregandoHorarios, definirCarregandoHorarios] = useState(false);
   const [erroHorarios, definirErroHorarios] = useState("");
+  const [sessaoAgendada, definirSessaoAgendada] = useState(null);
+  const [carregandoSessao, definirCarregandoSessao] = useState(etapaPermiteSessao);
+  const [erroConsultaSessao, definirErroConsultaSessao] = useState("");
+  const [abrirCancelamento, definirAbrirCancelamento] = useState(false);
+  const [mensagemCancelamento, definirMensagemCancelamento] = useState("");
+  const [erroCancelamento, definirErroCancelamento] = useState("");
+  const [cancelandoSessao, definirCancelandoSessao] = useState(false);
   const [passoRetoque, definirPassoRetoque] = useState(null);
   const [carregandoPassoRetoque, definirCarregandoPassoRetoque] = useState(tatuagem.etapa === "aguardando retoque");
   const [observacao, definirObservacao] = useState("");
@@ -720,6 +774,30 @@ function TelaFicha({ tatuagem, aoVoltar, aoSalvar, nomeRetorno = "agenda" }) {
       .catch((erroApi) => definirErroReferencia(erroApi.message))
       .finally(() => definirCarregandoReferencia(false));
   }, [tatuagem.id]);
+
+  // Consulta se o projeto já possui uma sessão reservada antes de oferecer outro agendamento.
+  useEffect(() => {
+    if (!etapaPermiteSessao) {
+      definirSessaoAgendada(null);
+      definirCarregandoSessao(false);
+      definirErroConsultaSessao("");
+      return;
+    }
+
+    let consultaAtiva = true;
+    definirCarregandoSessao(true);
+    definirErroConsultaSessao("");
+    pedirApi(`/tatuagens/${tatuagem.id}/passos`)
+      .then((passos) => {
+        if (!consultaAtiva) return;
+        const reserva = [...passos].reverse().find((passo) => passo.tipo === "sessao" && (passo.situacao || "agendada") === "agendada");
+        definirSessaoAgendada(reserva || null);
+      })
+      .catch((erroApi) => { if (consultaAtiva) definirErroConsultaSessao(erroApi.message); })
+      .finally(() => { if (consultaAtiva) definirCarregandoSessao(false); });
+
+    return () => { consultaAtiva = false; };
+  }, [tatuagem.id, tatuagem.etapa, etapaPermiteSessao]);
 
   // Localiza a reserva automática para permitir ajustar o retoque antes de confirmá-lo.
   useEffect(() => {
@@ -884,6 +962,26 @@ function TelaFicha({ tatuagem, aoVoltar, aoSalvar, nomeRetorno = "agenda" }) {
       });
   }
 
+  // Desmarca a sessão e registra a mensagem que a cliente verá no histórico do pedido.
+  function desmarcarSessao() {
+    if (!sessaoAgendada || !mensagemCancelamento.trim()) {
+      definirErroCancelamento("Escreva uma mensagem explicando o motivo do cancelamento.");
+      return;
+    }
+    definirErroCancelamento("");
+    definirCancelandoSessao(true);
+    pedirApi(`/tatuagens/${tatuagem.id}/passos/${sessaoAgendada.id}/situacao`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ situacao: "cancelada", observacao: mensagemCancelamento.trim() }),
+    })
+      .then(() => aoSalvar())
+      .catch((erroApi) => definirErroCancelamento(erroApi.message))
+      .finally(() => definirCancelandoSessao(false));
+  }
+
+  const exibirFormulario = !etapaPermiteSessao || (!carregandoSessao && !erroConsultaSessao && !sessaoAgendada);
+
   return (
     <section className="painel-formulario">
       <button className="voltar" onClick={aoVoltar}>← Voltar para {nomeRetorno}</button>
@@ -907,7 +1005,24 @@ function TelaFicha({ tatuagem, aoVoltar, aoSalvar, nomeRetorno = "agenda" }) {
       </figure>}
       {erroReferencia && <p className="aviso aviso-erro" role="alert">{erroReferencia}</p>}
       {tatuagem.etapa !== "desenho aprovado" && !carregandoReferencia && !erroReferencia && !imagemReferencia && enviarDesenho && <p className="sem-referencia">A cliente não enviou uma imagem de referência.</p>}
-      <form onSubmit={enviarPasso} className="formulario">
+      {etapaPermiteSessao && carregandoSessao && <p className="estado">Conferindo se já existe uma sessão marcada…</p>}
+      {etapaPermiteSessao && erroConsultaSessao && <p className="aviso aviso-erro" role="alert">{erroConsultaSessao}</p>}
+      {sessaoAgendada && <section className="bloco-sessao-agendada" aria-label="Sessão já marcada">
+        <div><span className="sobretitulo">SESSÃO AGENDADA</span><h3>Este projeto já tem um horário reservado.</h3></div>
+        <p>{formatarDataAgendamento(sessaoAgendada.data)} · {sessaoAgendada.horario?.slice(0, 5)} · {sessaoAgendada.duracao_horas || 2} {(sessaoAgendada.duracao_horas || 2) === 1 ? "hora" : "horas"}</p>
+        {!abrirCancelamento
+          ? <button className="botao botao-claro" type="button" disabled={cancelandoSessao} onClick={() => { definirAbrirCancelamento(true); definirMensagemCancelamento(""); definirErroCancelamento(""); }}>Desmarcar sessão</button>
+          : <FormularioCancelamentoSessao
+            id={`ficha-${sessaoAgendada.id}`}
+            mensagem={mensagemCancelamento}
+            aoAlterarMensagem={definirMensagemCancelamento}
+            erro={erroCancelamento}
+            salvando={cancelandoSessao}
+            aoConfirmar={desmarcarSessao}
+            aoFechar={() => { definirAbrirCancelamento(false); definirMensagemCancelamento(""); definirErroCancelamento(""); }}
+          />}
+      </section>}
+      {exibirFormulario && <form onSubmit={enviarPasso} className="formulario">
         {enviarDesenho ? <>
           <label htmlFor="imagem-desenho">Desenho feito para a cliente</label>
           <div className={`area-upload ${arrastandoImagem ? "area-upload-ativa" : ""} ${imagem ? "area-upload-com-imagem" : ""}`} onDragOver={(evento) => { evento.preventDefault(); definirArrastandoImagem(true); }} onDragLeave={() => definirArrastandoImagem(false)} onDrop={soltarDesenho}>
@@ -953,7 +1068,7 @@ function TelaFicha({ tatuagem, aoVoltar, aoSalvar, nomeRetorno = "agenda" }) {
         </>}
         {erro && <p className="aviso aviso-erro" role="alert">{erro}</p>}
         <button className="botao botao-escuro" disabled={salvando || tipo === "sessao" && (!duracaoValida || !horario || carregandoHorarios) || tipo === "retoque" && (!duracaoValida || !passoRetoque || !horario || carregandoPassoRetoque || carregandoHorarios)}>{salvando ? "Enviando…" : tatuagem.etapa === "aguardando retoque" ? "Confirmar retoque realizado" : tipo === "sessao" ? "Marcar sessão para a cliente" : enviarDesenho ? "Enviar desenho para a cliente" : "Salvar passo"}<span aria-hidden="true">↗</span></button>
-      </form>
+      </form>}
     </section>
   );
 }
@@ -961,6 +1076,7 @@ function TelaFicha({ tatuagem, aoVoltar, aoSalvar, nomeRetorno = "agenda" }) {
 function TelaLogin({ aoEntrar }) {
   const [username, definirUsername] = useState("bruna");
   const [password, definirPassword] = useState("bruna123");
+  const [senhaVisivel, definirSenhaVisivel] = useState(false);
   const [carregando, definirCarregando] = useState(false);
   const [erro, definirErro] = useState("");
 
@@ -1000,7 +1116,33 @@ function TelaLogin({ aoEntrar }) {
         <input id="username" value={username} onChange={(evento) => definirUsername(evento.target.value)} placeholder="bruna ou vitor" required />
 
         <label htmlFor="password">Senha</label>
-        <input id="password" type="password" value={password} onChange={(evento) => definirPassword(evento.target.value)} placeholder="Digite sua senha" required />
+        <div className="campo-senha">
+          <input id="password" type={senhaVisivel ? "text" : "password"} value={password} onChange={(evento) => definirPassword(evento.target.value)} placeholder="Digite sua senha" required />
+          <button
+            className="botao-visualizar-senha"
+            type="button"
+            aria-label={senhaVisivel ? "Ocultar senha" : "Mostrar senha"}
+            aria-controls="password"
+            aria-pressed={senhaVisivel}
+            onClick={() => definirSenhaVisivel((visivel) => !visivel)}
+          >
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              {senhaVisivel ? (
+                <>
+                  <path d="M3 3l18 18" />
+                  <path d="M10.6 10.6a2 2 0 0 0 2.8 2.8" />
+                  <path d="M9.9 5.2A10.8 10.8 0 0 1 12 5c5.5 0 9 7 9 7a15.5 15.5 0 0 1-3.1 3.9" />
+                  <path d="M6.2 6.2C3.9 7.7 3 12 3 12s3.5 7 9 7a9.8 9.8 0 0 0 3.1-.5" />
+                </>
+              ) : (
+                <>
+                  <path d="M2.5 12s3.4-7 9.5-7 9.5 7 9.5 7-3.4 7-9.5 7-9.5-7-9.5-7Z" />
+                  <circle cx="12" cy="12" r="3" />
+                </>
+              )}
+            </svg>
+          </button>
+        </div>
 
         <small className="ajuda-campo">Demonstração: Bruna / bruna123 ou Vitor / vitor123</small>
 
@@ -1024,6 +1166,13 @@ export default function Aplicativo() {
   const [telaAnteriorFicha, definirTelaAnteriorFicha] = useState("agenda");
   const [ficha, definirFicha] = useState(null);
   const [atualizacao, definirAtualizacao] = useState(0);
+
+  // Abre a tela inicial correspondente ao grupo da conta autenticada.
+  function iniciarSessao(usuarioAtual) {
+    definirFicha(null);
+    definirTela(usuarioAtual.tipo === "cliente" ? "minhas" : "visao-geral");
+    definirUsuario(usuarioAtual);
+  }
 
   // Restaura a sessão somente depois de confirmar a identidade com a API.
   useEffect(() => {
@@ -1055,7 +1204,7 @@ export default function Aplicativo() {
       .then((usuarioAtual) => {
         if (!consultaAtiva) return;
         localStorage.setItem("tinta_negra_usuario", JSON.stringify(usuarioAtual));
-        definirUsuario(usuarioAtual);
+        iniciarSessao(usuarioAtual);
       })
       .catch((erroApi) => {
         if (!consultaAtiva) return;
@@ -1087,7 +1236,7 @@ export default function Aplicativo() {
   }
 
   if (!usuario) {
-    return <TelaLogin aoEntrar={definirUsuario} />;
+    return <TelaLogin aoEntrar={iniciarSessao} />;
   }
 
   const perfil = { nome: usuario.nome, tipo: usuario.tipo, clienteId: usuario.tipo === "cliente" ? usuario.id : null };
@@ -1184,7 +1333,7 @@ export default function Aplicativo() {
           {tela === "projetos" && <TelaProjetos atualizacao={atualizacao} aoAbrirFicha={abrirFicha} />}
           {tela === "ficha" && ficha && (ficha.etapa === "finalizada"
             ? <TelaPedidoFinalizado tatuagem={ficha} nomeRetorno={telaAnteriorFicha === "projetos" ? "projetos" : telaAnteriorFicha === "visao-geral" ? "visão geral" : "agenda"} aoVoltar={() => definirTela(telaAnteriorFicha)} />
-            : <TelaFicha tatuagem={ficha} nomeRetorno={telaAnteriorFicha === "projetos" ? "projetos" : telaAnteriorFicha === "visao-geral" ? "visão geral" : "agenda"} aoVoltar={() => definirTela(telaAnteriorFicha)} aoSalvar={salvarPasso} />)}
+            : <TelaFicha key={ficha.id} tatuagem={ficha} nomeRetorno={telaAnteriorFicha === "projetos" ? "projetos" : telaAnteriorFicha === "visao-geral" ? "visão geral" : "agenda"} aoVoltar={() => definirTela(telaAnteriorFicha)} aoSalvar={salvarPasso} />)}
         </div>
       </main>
       {perfil.tipo === "cliente" && <nav className="navegacao-mobile" aria-label="Navegação da cliente">
