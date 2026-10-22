@@ -143,7 +143,7 @@ button.cartao-tatuagem { width: 100%; cursor: pointer; }
 .cartao-selecionado { border-color: var(--brasa); box-shadow: 0 0 0 1px var(--brasa); }
 .cartao-tatuagem strong { grid-column: 2; grid-row: 1; font: 700 16px/1.2 'DM Sans', sans-serif; }
 .cartao-tatuagem .numero-cartao { grid-column: 2; grid-row: 1; margin-left: 138px; color: var(--fumaca); letter-spacing: 0; text-transform: none; }
-.cartao-tatuagem > span:not(.numero-cartao):not(.selo-etapa):not(.agendamento-resumo-cliente) { grid-column: 2; grid-row: 2; color: var(--fumaca); font-size: 15px; }
+.cartao-tatuagem > span:not(.numero-cartao):not(.selo-etapa):not(.agendamento-resumo-cliente):not(.atalho-atualizacoes) { grid-column: 2; grid-row: 2; color: var(--fumaca); font-size: 15px; }
 .cartao-tatuagem::before { content: attr(data-initials); grid-column: 1; grid-row: 1 / span 2; width: 48px; height: 48px; display: grid; place-items: center; border-radius: 12px; background: var(--ferrugem); color: var(--creme); font: 700 18px 'Cormorant Garamond', Georgia, serif; }
 .selo-etapa { width: fit-content; display: inline-flex; align-items: center; gap: 7px; color: var(--ferrugem); font-size: 13px; font-weight: 700; }
 .selo-etapa i { width: 7px; height: 7px; display: inline-block; border-radius: 50%; background: currentColor; }
@@ -229,7 +229,7 @@ button.cartao-tatuagem { width: 100%; cursor: pointer; }
   .cartao-tatuagem { grid-template-columns: 42px minmax(0, 1fr) auto; min-height: 76px; padding: 12px; column-gap: 10px; }
   .cartao-tatuagem::before { width: 42px; height: 42px; }
   .cartao-tatuagem .numero-cartao { margin-left: 0; grid-column: 2; grid-row: 2; font-size: 12px; }
-  .cartao-tatuagem > span:not(.numero-cartao):not(.selo-etapa):not(.agendamento-resumo-cliente) { display: none; }
+  .cartao-tatuagem > span:not(.numero-cartao):not(.selo-etapa):not(.agendamento-resumo-cliente):not(.atalho-atualizacoes) { display: none; }
   .cartao-tatuagem .selo-etapa { grid-column: 3; grid-row: 1 / span 2; font-size: 12px; }
   .historico-cabecalho { margin: -20px -20px 18px; padding: 10px 20px; }
   .lista-projetos, .painel-linha-tempo { padding: 20px; border-radius: 20px; }
@@ -310,7 +310,7 @@ button.cartao-tatuagem { width: 100%; cursor: pointer; }
 .modo-cliente .cartao-tatuagem::before { display: none; }
 .modo-cliente .cartao-tatuagem strong { grid-column: 1; grid-row: 1; font: 700 36px/1.05 'Cormorant Garamond', Georgia, serif; }
 .modo-cliente .cartao-tatuagem .numero-cartao { grid-column: 1; grid-row: 2; margin: 0; color: var(--areia); }
-.modo-cliente .cartao-tatuagem > span:not(.numero-cartao):not(.selo-etapa):not(.agendamento-resumo-cliente) { display: block; grid-column: 1; grid-row: 3; }
+.modo-cliente .cartao-tatuagem > span:not(.numero-cartao):not(.selo-etapa):not(.agendamento-resumo-cliente):not(.atalho-atualizacoes) { display: block; grid-column: 1; grid-row: 3; }
 .modo-cliente .cartao-tatuagem .agendamento-resumo-cliente { grid-column: 1; grid-row: 4; color: var(--creme); font-size: 14px; font-weight: 700; }
 .modo-cliente .cartao-tatuagem .selo-etapa { grid-column: 2; grid-row: 1; color: var(--brasa); }
 .modo-cliente .painel-linha-tempo { min-height: 390px; padding: 30px; border: 1px solid rgb(107 77 50 / 12%); background-color: #f5eee3; }
@@ -603,10 +603,13 @@ button.cartao-tatuagem { width: 100%; cursor: pointer; }
 .modo-cliente .cartao-agenda-cliente .cartao-inicial { background: var(--ferrugem); color: var(--creme); }
 .modo-cliente .cartao-agenda-cliente .numero-cartao { display: none; }
 .modo-cliente .cartao-agenda-cliente strong { grid-column: 2; grid-row: 1; font: 700 18px/1.2 'DM Sans', sans-serif; }
-.modo-cliente .cartao-agenda-cliente > span:not(.numero-cartao):not(.selo-etapa):not(.agendamento-resumo-cliente) { grid-column: 2; grid-row: 2; color: var(--fumaca); font-size: 14px; }
+.modo-cliente .cartao-agenda-cliente > span:not(.numero-cartao):not(.selo-etapa):not(.agendamento-resumo-cliente):not(.atalho-atualizacoes) { grid-column: 2; grid-row: 2; color: var(--fumaca); font-size: 14px; }
 .modo-cliente .cartao-agenda-cliente .agendamento-resumo-cliente { grid-column: 2; grid-row: 3; color: var(--brasa); font-size: 14px; font-weight: 700; }
 .modo-cliente .cartao-agenda-cliente .selo-etapa { grid-column: 3; grid-row: 1 / span 3; color: var(--brasa); white-space: nowrap; }
 .modo-cliente .cartao-agenda-cliente.cartao-selecionado { border-color: var(--brasa); box-shadow: 0 0 0 1px var(--brasa); }
+/* Deixa explícito que o cartão da cliente abre a tela com o histórico do projeto. */
+.modo-cliente .cartao-agenda-cliente .atalho-atualizacoes { grid-column: 2; grid-row: 4; color: var(--areia); font-size: 13px; font-weight: 700; }
+.modo-cliente .tela-historico-cliente { width: min(920px, 100%); margin: 0 auto; }
 
 @media (max-width: 680px) {
   .modo-cliente .cartao-agenda-cliente { min-height: 84px; padding: 13px; grid-template-columns: 42px minmax(0, 1fr) auto; column-gap: 10px; }
@@ -654,8 +657,8 @@ button.cartao-tatuagem { width: 100%; cursor: pointer; }
 .modo-cliente .selo-etapa,
 .modo-cliente .detalhes-pedido > .sobretitulo,
 .modo-cliente .referencia-cliente figcaption { font-size: 15px; }
-.modo-cliente .cartao-agenda-cliente > span:not(.numero-cartao):not(.selo-etapa):not(.agendamento-resumo-cliente),
-.modo-cliente .cartao-tatuagem > span:not(.numero-cartao):not(.selo-etapa):not(.agendamento-resumo-cliente) { font-size: 16px; }
+.modo-cliente .cartao-agenda-cliente > span:not(.numero-cartao):not(.selo-etapa):not(.agendamento-resumo-cliente):not(.atalho-atualizacoes),
+.modo-cliente .cartao-tatuagem > span:not(.numero-cartao):not(.selo-etapa):not(.agendamento-resumo-cliente):not(.atalho-atualizacoes) { font-size: 16px; }
 .modo-cliente .botao,
 .modo-cliente .navegacao-mobile button { font-size: 16px; }
 .botao-editar-pedido { margin: 0 0 18px; }
@@ -671,3 +674,74 @@ button.cartao-tatuagem { width: 100%; cursor: pointer; }
   .modo-cliente .cartao-tatuagem .selo-etapa { font-size: 14px; }
   .modo-cliente .navegacao-mobile button { font-size: 15px; }
 }
+
+/* Escurece a área da cliente e ilumina os cartões para separar melhor os projetos. */
+.aplicativo.modo-cliente { background-color: #30241e; }
+.modo-cliente .cabecalho-projetos h2,
+.modo-cliente .titulo-secao h2 { color: var(--creme); }
+.modo-cliente .cabecalho-projetos p,
+.modo-cliente .titulo-secao p,
+.modo-cliente .voltar { color: #e3d6c4; }
+.modo-cliente .cartao-agenda-cliente {
+  border-color: #c9b99f;
+  background-color: #eee2cf;
+  background-image: none;
+  color: var(--tinta);
+  box-shadow: 0 8px 20px rgb(0 0 0 / 16%);
+}
+.modo-cliente .cartao-agenda-cliente:hover { border-color: var(--brasa); background-color: #f5ead8; }
+.modo-cliente .cartao-agenda-cliente strong { color: var(--tinta); }
+.modo-cliente .cartao-agenda-cliente > span:not(.numero-cartao):not(.selo-etapa):not(.agendamento-resumo-cliente):not(.atalho-atualizacoes) { color: #5d5145; }
+.modo-cliente .cartao-agenda-cliente .agendamento-resumo-cliente,
+.modo-cliente .cartao-agenda-cliente .selo-etapa,
+.modo-cliente .cartao-agenda-cliente .atalho-atualizacoes { color: #8c4828; }
+
+/* Aumenta o texto de leitura, controles e metadados da interface da cliente. */
+.modo-cliente .marca-texto small,
+.modo-cliente .sobretitulo,
+.modo-cliente .numero-cartao { font-size: 15px; }
+.modo-cliente .dados-perfil,
+.modo-cliente .dados-perfil select { font-size: 16px; }
+.modo-cliente .banner-conteudo p,
+.modo-cliente .cabecalho-projetos p,
+.modo-cliente .titulo-secao p,
+.modo-cliente .estado,
+.modo-cliente .orientacao-proximo-passo,
+.modo-cliente .item-historico p,
+.modo-cliente .historico-cabecalho p,
+.modo-cliente .horario-proximo-passo,
+.modo-cliente .detalhes-pedido dt,
+.modo-cliente .detalhes-pedido dd,
+.modo-cliente .observacao-ajuste,
+.modo-cliente .ficha-finalizada-imagem figcaption,
+.modo-cliente .passo-finalizado strong,
+.modo-cliente .passo-finalizado span,
+.modo-cliente .passo-finalizado p,
+.modo-cliente .referencia-cliente figcaption,
+.modo-cliente .sem-referencia,
+.modo-cliente .formulario label,
+.modo-cliente .formulario input,
+.modo-cliente .formulario textarea,
+.modo-cliente .formulario select,
+.modo-cliente .aviso { font-size: 17px; }
+.modo-cliente .cartao-agenda-cliente strong { font-size: 20px; }
+.modo-cliente .cartao-agenda-cliente > span:not(.numero-cartao):not(.selo-etapa):not(.agendamento-resumo-cliente):not(.atalho-atualizacoes),
+.modo-cliente .cartao-agenda-cliente .agendamento-resumo-cliente,
+.modo-cliente .cartao-agenda-cliente .selo-etapa { font-size: 16px; }
+.modo-cliente .cartao-agenda-cliente .atalho-atualizacoes { font-size: 15px; }
+.modo-cliente .orientacao-proximo-passo strong,
+.modo-cliente .item-historico strong,
+.modo-cliente .horario-proximo-passo strong { font-size: 17px; }
+.modo-cliente .botao,
+.modo-cliente .navegacao-mobile button { font-size: 17px; }
+
+@media (max-width: 680px) {
+  .modo-cliente .dados-perfil,
+  .modo-cliente .dados-perfil select { font-size: 15px; }
+  .modo-cliente .cartao-agenda-cliente .selo-etapa { max-width: 128px; font-size: 15px; }
+  .modo-cliente .navegacao-mobile button { font-size: 16px; }
+}
+.modo-cliente .ajuda-campo,
+.modo-cliente .erro-campo,
+.modo-cliente .conteudo-upload strong,
+.modo-cliente .conteudo-upload span { font-size: 16px; }

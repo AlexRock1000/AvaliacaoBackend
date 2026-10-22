@@ -244,21 +244,12 @@ function TelaPedir({ perfil, aoCriar, aoAtualizar, tatuagem = null, aoVoltar }) 
   );
 }
 
-// Carrega as tatuagens da cliente e permite abrir o histórico de cada uma.
-function TelaMinhasTatuagens({ perfil }) {
+// Carrega os projetos da cliente; o cartão encaminha para a tela separada de histórico.
+function TelaMinhasTatuagens({ perfil, aoAbrirHistorico }) {
   const [tatuagens, definirTatuagens] = useState([]);
   const [agendamentosPorTatuagem, definirAgendamentosPorTatuagem] = useState({});
-  const [selecionada, definirSelecionada] = useState(null);
-  const [passos, definirPassos] = useState([]);
   const [carregando, definirCarregando] = useState(true);
-  const [carregandoPassos, definirCarregandoPassos] = useState(false);
   const [erro, definirErro] = useState("");
-  const [erroPassos, definirErroPassos] = useState("");
-  const [observacaoResposta, definirObservacaoResposta] = useState("");
-  const [erroResposta, definirErroResposta] = useState("");
-  const [salvandoResposta, definirSalvandoResposta] = useState(false);
-  const [editandoPedido, definirEditandoPedido] = useState(false);
-  const [mensagemEdicao, definirMensagemEdicao] = useState("");
 
   // Atualiza a lista quando o perfil da pessoa muda.
   useEffect(() => {
@@ -293,30 +284,67 @@ function TelaMinhasTatuagens({ perfil }) {
     return () => { consultaAtiva = false; };
   }, [tatuagens]);
 
-  // Abre o histórico da tatuagem escolhida, mostrando erros da API no painel.
-  function abrirHistorico(tatuagem) {
-    definirEditandoPedido(false);
-    definirMensagemEdicao("");
-    definirSelecionada(tatuagem);
-    definirPassos([]);
-    definirErroPassos("");
+  return (
+    <section className="painel-cliente">
+      <div className="cabecalho-projetos">
+        <div><span className="sobretitulo">ACOMPANHE CADA HISTÓRIA</span><h2>Minhas tatuagens.</h2></div>
+        <p>Do primeiro traço até o último retoque.</p>
+      </div>
+      <div className="grade-cliente">
+        <div className="lista-projetos">
+          <h3>Seus projetos</h3>
+          {carregando && <p className="estado">Carregando suas tatuagens…</p>}
+          {erro && <p className="aviso aviso-erro" role="alert">{erro}</p>}
+          {!carregando && !erro && tatuagens.length === 0 && <p className="estado estado-vazio">Ainda não há tatuagens no seu histórico. Seu primeiro pedido começa em “Pedir tatuagem”.</p>}
+          {!carregando && !erro && tatuagens.length > 0 && <div className="grade-tatuagens">
+            {tatuagens.map((tatuagem) => (
+              <button key={tatuagem.id} className="cartao-tatuagem cartao-agenda cartao-agenda-cliente" aria-label={`Abrir histórico de atualizações: ${tatuagem.ideia}`} onClick={() => aoAbrirHistorico(tatuagem)}>
+                <div className="cartao-agenda-topo"><span className="cartao-inicial">{tatuagem.ideia.slice(0, 2).toUpperCase()}</span><span className="numero-cartao">PROJETO · {String(tatuagem.id).padStart(3, "0")}</span></div>
+                <strong>{tatuagem.ideia}</strong>
+                <span>{tatuagem.local_corpo} · {tatuagem.tamanho}</span>
+                {agendamentosPorTatuagem[tatuagem.id] && <span className="agendamento-resumo-cliente">{tatuagem.etapa === "aguardando retoque" ? "Retoque" : "Sessão"}: {formatarDataAgendamento(agendamentosPorTatuagem[tatuagem.id].data)}{agendamentosPorTatuagem[tatuagem.id].horario ? ` · ${agendamentosPorTatuagem[tatuagem.id].horario.slice(0, 5)}` : ""}{agendamentosPorTatuagem[tatuagem.id].duracao_horas ? ` · ${agendamentosPorTatuagem[tatuagem.id].duracao_horas}h` : ""}</span>}
+                <span className="selo-etapa"><i />{nomeDaEtapa(tatuagem.etapa)}</span>
+                <span className="atalho-atualizacoes">Abrir histórico <span aria-hidden="true">↗</span></span>
+              </button>
+            ))}
+          </div>}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// Apresenta em uma tela independente o histórico e as ações disponíveis para o projeto da cliente.
+function TelaHistoricoCliente({ perfil, tatuagem, aoVoltar }) {
+  const [selecionada, definirSelecionada] = useState(tatuagem);
+  const [passos, definirPassos] = useState([]);
+  const [carregandoPassos, definirCarregandoPassos] = useState(true);
+  const [erroPassos, definirErroPassos] = useState("");
+  const [observacaoResposta, definirObservacaoResposta] = useState("");
+  const [erroResposta, definirErroResposta] = useState("");
+  const [salvandoResposta, definirSalvandoResposta] = useState(false);
+  const [editandoPedido, definirEditandoPedido] = useState(false);
+  const [mensagemEdicao, definirMensagemEdicao] = useState("");
+
+  // Busca os passos ao entrar nesta tela e ignora a resposta se a tela for fechada.
+  useEffect(() => {
+    let consultaAtiva = true;
     definirCarregandoPassos(true);
+    definirErroPassos("");
     pedirApi(`/tatuagens/${tatuagem.id}/passos`)
-      .then((dados) => definirPassos(dados))
-      .catch((erroApi) => definirErroPassos(erroApi.message))
-      .finally(() => {
-        definirCarregandoPassos(false);
-      });
-  }
+      .then((dados) => { if (consultaAtiva) definirPassos(dados); })
+      .catch((erroApi) => { if (consultaAtiva) definirErroPassos(erroApi.message); })
+      .finally(() => { if (consultaAtiva) definirCarregandoPassos(false); });
+    return () => { consultaAtiva = false; };
+  }, [tatuagem.id]);
 
   function salvarEdicaoPedido(tatuagemAtualizada) {
     definirSelecionada(tatuagemAtualizada);
-    definirTatuagens((atuais) => atuais.map((item) => item.id === tatuagemAtualizada.id ? tatuagemAtualizada : item));
     definirEditandoPedido(false);
     definirMensagemEdicao("Pedido atualizado com sucesso.");
   }
 
-  // Envia a decisão da cliente e atualiza a etapa e o histórico exibidos na tela.
+  // Envia a decisão da cliente e atualiza a etapa e a linha do tempo após confirmação da API.
   function responderDesenho(tipo) {
     if (tipo === "desenho_reprovado" && !observacaoResposta.trim()) {
       definirErroResposta("Escreva o que você gostaria que o tatuador ajustasse.");
@@ -332,9 +360,7 @@ function TelaMinhasTatuagens({ perfil }) {
     })
       .then((passo) => {
         const etapa = tipo === "desenho_aprovado" ? "desenho aprovado" : "ajustes no desenho";
-        const tatuagemAtualizada = { ...selecionada, etapa };
-        definirSelecionada(tatuagemAtualizada);
-        definirTatuagens((atuais) => atuais.map((item) => item.id === tatuagemAtualizada.id ? tatuagemAtualizada : item));
+        definirSelecionada((atual) => ({ ...atual, etapa }));
         definirPassos((atuais) => [...atuais, passo]);
         definirObservacaoResposta("");
       })
@@ -342,14 +368,7 @@ function TelaMinhasTatuagens({ perfil }) {
       .finally(() => definirSalvandoResposta(false));
   }
 
-  const desenhoEnviado = [...passos].reverse().find((passo) => passo.tipo === "desenho_enviado");
-  const sessoesAgendadas = passos
-    .filter((passo) => passo.tipo === "sessao" && (passo.situacao || "agendada") === "agendada")
-    .sort((primeiro, segundo) => `${primeiro.data} ${primeiro.horario || ""}`.localeCompare(`${segundo.data} ${segundo.horario || ""}`));
-  const sessaoAgendada = sessoesAgendadas[0];
-  const retoqueAgendado = [...passos].reverse().find((passo) => passo.tipo === "retoque_combinado" && (passo.situacao || "agendada") === "agendada");
-
-  if (editandoPedido && selecionada) {
+  if (editandoPedido) {
     return <TelaPedir
       key={`editar-pedido-${selecionada.id}`}
       perfil={perfil}
@@ -359,64 +378,50 @@ function TelaMinhasTatuagens({ perfil }) {
     />;
   }
 
+  const desenhoEnviado = [...passos].reverse().find((passo) => passo.tipo === "desenho_enviado");
+  const sessoesAgendadas = passos
+    .filter((passo) => passo.tipo === "sessao" && (passo.situacao || "agendada") === "agendada")
+    .sort((primeiro, segundo) => `${primeiro.data} ${primeiro.horario || ""}`.localeCompare(`${segundo.data} ${segundo.horario || ""}`));
+  const sessaoAgendada = sessoesAgendadas[0];
+  const retoqueAgendado = [...passos].reverse().find((passo) => passo.tipo === "retoque_combinado" && (passo.situacao || "agendada") === "agendada");
+
   return (
-    <section className="painel-cliente">
-      <div className="cabecalho-projetos">
-        <div><span className="sobretitulo">ACOMPANHE CADA HISTÓRIA</span><h2>Minhas tatuagens.</h2></div>
-        <p>Do primeiro traço até o último retoque.</p>
-      </div>
+    <section className="painel-cliente tela-historico-cliente">
+      <button className="voltar" type="button" onClick={aoVoltar}>← Voltar para minhas tatuagens</button>
       {mensagemEdicao && <p className="aviso aviso-sucesso" role="status">{mensagemEdicao}</p>}
-      <div className="grade-cliente">
-        <div className="lista-projetos">
-          <h3>Seus projetos</h3>
-          {carregando && <p className="estado">Carregando suas tatuagens…</p>}
-          {erro && <p className="aviso aviso-erro" role="alert">{erro}</p>}
-          {!carregando && !erro && tatuagens.length === 0 && <p className="estado estado-vazio">Ainda não há tatuagens no seu histórico. Seu primeiro pedido começa em “Pedir tatuagem”.</p>}
-          {!carregando && !erro && tatuagens.length > 0 && <div className="grade-tatuagens">
-            {tatuagens.map((tatuagem) => (
-              <button key={tatuagem.id} className={`cartao-tatuagem cartao-agenda cartao-agenda-cliente ${selecionada?.id === tatuagem.id ? "cartao-selecionado" : ""}`} onClick={() => abrirHistorico(tatuagem)}>
-                <div className="cartao-agenda-topo"><span className="cartao-inicial">{tatuagem.ideia.slice(0, 2).toUpperCase()}</span><span className="numero-cartao">PROJETO · {String(tatuagem.id).padStart(3, "0")}</span></div>
-                <strong>{tatuagem.ideia}</strong>
-                <span>{tatuagem.local_corpo} · {tatuagem.tamanho}</span>
-                {agendamentosPorTatuagem[tatuagem.id] && <span className="agendamento-resumo-cliente">{tatuagem.etapa === "aguardando retoque" ? "Retoque" : "Sessão"}: {formatarDataAgendamento(agendamentosPorTatuagem[tatuagem.id].data)}{agendamentosPorTatuagem[tatuagem.id].horario ? ` · ${agendamentosPorTatuagem[tatuagem.id].horario.slice(0, 5)}` : ""}{agendamentosPorTatuagem[tatuagem.id].duracao_horas ? ` · ${agendamentosPorTatuagem[tatuagem.id].duracao_horas}h` : ""}</span>}
-                <span className="selo-etapa"><i />{nomeDaEtapa(tatuagem.etapa)}</span>
-              </button>
-            ))}
-          </div>}
-        </div>
-        <section className="historico painel-linha-tempo">
-          <div className="historico-cabecalho">
-            <div><h3>{selecionada?.ideia || "Seu caminho até aqui"}</h3>{selecionada && <p>{selecionada.local_corpo} · {selecionada.tamanho}</p>}</div>
-            {selecionada && <span className="selo-etapa etapa-historico"><i />{nomeDaEtapa(selecionada.etapa)}</span>}
-          </div>
-          {selecionada && <p className="orientacao-proximo-passo" role="status">
-            <strong>O que vem agora</strong>
-            {proximoPassoDaCliente(selecionada.etapa)}
-            {selecionada.etapa === "em sessões" && sessaoAgendada && <span className="horario-proximo-passo">Sua sessão está marcada para <strong>{formatarDataAgendamento(sessaoAgendada.data)} às {sessaoAgendada.horario?.slice(0, 5)} ({sessaoAgendada.duracao_horas} {sessaoAgendada.duracao_horas === 1 ? "hora" : "horas"})</strong>.</span>}
-            {selecionada.etapa === "aguardando retoque" && retoqueAgendado && <span className="horario-proximo-passo">O retoque está marcado para <strong>{formatarDataAgendamento(retoqueAgendado.data)} às {retoqueAgendado.horario?.slice(0, 5)} ({retoqueAgendado.duracao_horas} {retoqueAgendado.duracao_horas === 1 ? "hora" : "horas"})</strong>.</span>}
-          </p>}
-          {selecionada?.etapa === "pedida" && <button className="botao botao-ember botao-editar-pedido" type="button" onClick={() => { definirMensagemEdicao(""); definirEditandoPedido(true); }}>Editar pedido</button>}
-          {!selecionada && <p className="estado">Selecione uma tatuagem para acompanhar as etapas registradas pelo estúdio.</p>}
-          {selecionada && <>
-            <div className="divisor-historico"><span className="sobretitulo">LINHA DO TEMPO</span></div>
-            {carregandoPassos && <p className="estado">Carregando o histórico…</p>}
-            {erroPassos && <p className="aviso aviso-erro" role="alert">{erroPassos}</p>}
-            {!carregandoPassos && !erroPassos && passos.length === 0 && <p className="estado">Nenhum passo registrado ainda. O estúdio atualizará esta linha do tempo.</p>}
-            {!carregandoPassos && !erroPassos && passos.map((passo) => <div className="item-historico" key={passo.id}><span className="ponto-historico" /><div><strong>{TIPOS_DE_PASSO.find((tipo) => tipo.valor === passo.tipo)?.nome || passo.tipo}</strong><p>{passo.data}{passo.horario ? ` · ${passo.horario.slice(0, 5)}` : ""}{(passo.tipo === "sessao" || passo.tipo === "retoque_combinado") && passo.duracao_horas ? ` · ${passo.duracao_horas} ${passo.duracao_horas === 1 ? "hora" : "horas"}` : ""} · {passo.observacao}</p>{passo.imagem && !(selecionada.etapa === "aguardando aprovação" && passo.id === desenhoEnviado?.id) && <img className="imagem-desenho-historico" src={passo.imagem} alt="Desenho enviado pelo tatuador" />}</div></div>)}
-            {!carregandoPassos && !erroPassos && selecionada.etapa === "aguardando aprovação" && desenhoEnviado?.imagem && <section className="resposta-desenho">
-              <h4>O que achou do desenho?</h4>
-              <img src={desenhoEnviado.imagem} alt="Desenho enviado pelo tatuador para aprovação" />
-              <label htmlFor="observacao-resposta-desenho">Sua observação</label>
-              <textarea id="observacao-resposta-desenho" value={observacaoResposta} onChange={(evento) => definirObservacaoResposta(evento.target.value)} placeholder="Se precisar de ajustes, conte ao tatuador o que gostaria de mudar." />
-              {erroResposta && <p className="aviso aviso-erro" role="alert">{erroResposta}</p>}
-              <div className="acoes-resposta-desenho">
-                <button className="botao botao-escuro" type="button" disabled={salvandoResposta} onClick={() => responderDesenho("desenho_aprovado")}>Concordo com o desenho</button>
-                <button className="botao botao-claro" type="button" disabled={salvandoResposta} onClick={() => responderDesenho("desenho_reprovado")}>Quero pedir ajustes</button>
-              </div>
-            </section>}
-          </>}
-        </section>
+      <div className="cabecalho-projetos">
+        <div><span className="sobretitulo">ATUALIZAÇÕES DO PROJETO · {String(selecionada.id).padStart(3, "0")}</span><h2>{selecionada.ideia}</h2></div>
+        <p>{selecionada.local_corpo} · {selecionada.tamanho}</p>
       </div>
+      <section className="historico painel-linha-tempo">
+        <div className="historico-cabecalho">
+          <div><h3>Histórico da conversa</h3><p>Etapas, mensagens e registros deste projeto.</p></div>
+          <span className="selo-etapa etapa-historico"><i />{nomeDaEtapa(selecionada.etapa)}</span>
+        </div>
+        <p className="orientacao-proximo-passo" role="status">
+          <strong>O que vem agora</strong>
+          {proximoPassoDaCliente(selecionada.etapa)}
+          {selecionada.etapa === "em sessões" && sessaoAgendada && <span className="horario-proximo-passo">Sua sessão está marcada para <strong>{formatarDataAgendamento(sessaoAgendada.data)} às {sessaoAgendada.horario?.slice(0, 5)} ({sessaoAgendada.duracao_horas} {sessaoAgendada.duracao_horas === 1 ? "hora" : "horas"})</strong>.</span>}
+          {selecionada.etapa === "aguardando retoque" && retoqueAgendado && <span className="horario-proximo-passo">O retoque está marcado para <strong>{formatarDataAgendamento(retoqueAgendado.data)} às {retoqueAgendado.horario?.slice(0, 5)} ({retoqueAgendado.duracao_horas} {retoqueAgendado.duracao_horas === 1 ? "hora" : "horas"})</strong>.</span>}
+        </p>
+        {selecionada.etapa === "pedida" && <button className="botao botao-ember botao-editar-pedido" type="button" onClick={() => { definirMensagemEdicao(""); definirEditandoPedido(true); }}>Editar pedido</button>}
+        <div className="divisor-historico"><span className="sobretitulo">LINHA DO TEMPO</span></div>
+        {carregandoPassos && <p className="estado">Carregando o histórico…</p>}
+        {erroPassos && <p className="aviso aviso-erro" role="alert">{erroPassos}</p>}
+        {!carregandoPassos && !erroPassos && passos.length === 0 && <p className="estado">Nenhum passo registrado ainda. O estúdio atualizará esta linha do tempo.</p>}
+        {!carregandoPassos && !erroPassos && passos.map((passo) => <div className="item-historico" key={passo.id}><span className="ponto-historico" /><div><strong>{TIPOS_DE_PASSO.find((tipo) => tipo.valor === passo.tipo)?.nome || passo.tipo}</strong><p>{passo.data}{passo.horario ? ` · ${passo.horario.slice(0, 5)}` : ""}{(passo.tipo === "sessao" || passo.tipo === "retoque_combinado") && passo.duracao_horas ? ` · ${passo.duracao_horas} ${passo.duracao_horas === 1 ? "hora" : "horas"}` : ""} · {passo.observacao}</p>{passo.imagem && !(selecionada.etapa === "aguardando aprovação" && passo.id === desenhoEnviado?.id) && <img className="imagem-desenho-historico" src={passo.imagem} alt="Desenho enviado pelo tatuador" />}</div></div>)}
+        {!carregandoPassos && !erroPassos && selecionada.etapa === "aguardando aprovação" && desenhoEnviado?.imagem && <section className="resposta-desenho">
+          <h4>O que achou do desenho?</h4>
+          <img src={desenhoEnviado.imagem} alt="Desenho enviado pelo tatuador para aprovação" />
+          <label htmlFor="observacao-resposta-desenho">Sua observação</label>
+          <textarea id="observacao-resposta-desenho" value={observacaoResposta} onChange={(evento) => definirObservacaoResposta(evento.target.value)} placeholder="Se precisar de ajustes, conte ao tatuador o que gostaria de mudar." />
+          {erroResposta && <p className="aviso aviso-erro" role="alert">{erroResposta}</p>}
+          <div className="acoes-resposta-desenho">
+            <button className="botao botao-escuro" type="button" disabled={salvandoResposta} onClick={() => responderDesenho("desenho_aprovado")}>Concordo com o desenho</button>
+            <button className="botao botao-claro" type="button" disabled={salvandoResposta} onClick={() => responderDesenho("desenho_reprovado")}>Quero pedir ajustes</button>
+          </div>
+        </section>}
+      </section>
     </section>
   );
 }
@@ -1165,11 +1170,13 @@ export default function Aplicativo() {
   const [tela, definirTela] = useState("visao-geral");
   const [telaAnteriorFicha, definirTelaAnteriorFicha] = useState("agenda");
   const [ficha, definirFicha] = useState(null);
+  const [projetoCliente, definirProjetoCliente] = useState(null);
   const [atualizacao, definirAtualizacao] = useState(0);
 
   // Abre a tela inicial correspondente ao grupo da conta autenticada.
   function iniciarSessao(usuarioAtual) {
     definirFicha(null);
+    definirProjetoCliente(null);
     definirTela(usuarioAtual.tipo === "cliente" ? "minhas" : "visao-geral");
     definirUsuario(usuarioAtual);
   }
@@ -1182,6 +1189,7 @@ export default function Aplicativo() {
       if (!consultaAtiva) return;
       definirUsuario(null);
       definirFicha(null);
+      definirProjetoCliente(null);
       definirTela("visao-geral");
       definirErroSessao("");
       definirVerificandoSessao(false);
@@ -1241,11 +1249,30 @@ export default function Aplicativo() {
 
   const perfil = { nome: usuario.nome, tipo: usuario.tipo, clienteId: usuario.tipo === "cliente" ? usuario.id : null };
 
+  // Alterna entre a lista da cliente e a tela independente de histórico do projeto.
+  function abrirMinhasTatuagens() {
+    definirProjetoCliente(null);
+    definirTela("minhas");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function abrirHistoricoCliente(tatuagem) {
+    definirProjetoCliente(tatuagem);
+    definirTela("historico-cliente");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function abrirPedidoCliente() {
+    definirProjetoCliente(null);
+    definirTela("pedir");
+  }
+
   function sair() {
     localStorage.removeItem("tinta_negra_token");
     localStorage.removeItem("tinta_negra_usuario");
     definirUsuario(null);
     definirFicha(null);
+    definirProjetoCliente(null);
     definirTela("visao-geral");
   }
 
@@ -1293,13 +1320,14 @@ export default function Aplicativo() {
   // Atualiza a lista da cliente e volta à tela inicial depois que o pedido foi recebido.
   function concluirPedido() {
     definirAtualizacao((valor) => valor + 1);
+    definirProjetoCliente(null);
     definirTela("minhas");
   }
 
   return (
     <div className={`aplicativo modo-${perfil.tipo}`}>
       <header className="barra-superior">
-        <a className="marca" href="#inicio" onClick={() => definirTela(perfil.tipo === "cliente" ? "minhas" : "agenda")} aria-label="Tinta Negra Tattoo Studio">
+        <a className="marca" href="#inicio" onClick={perfil.tipo === "cliente" ? abrirMinhasTatuagens : abrirAgenda} aria-label="Tinta Negra Tattoo Studio">
           <span className="marca-simbolo" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 4.5 19 9 9 19H4.5v-4.5l10-10Z" /><path d="m12 7 5 5M4.5 19 3 21l2-1" /></svg></span>
           <span className="marca-texto"><strong>Tinta Negra</strong><small>Tattoo Studio</small></span>
         </a>
@@ -1323,12 +1351,13 @@ export default function Aplicativo() {
       <main id="inicio" className="conteudo-principal">
         {tela === "minhas" && <section className="banner-cliente">
           <img className="banner-ornamento" src="/imagens/arabesco.png" alt="" />
-          <div className="banner-conteudo"><span className="sobretitulo">SUA JORNADA NA PELE</span><h1>Histórias que ficam.</h1><p>Acompanhe cada traço, cada sessão e tudo o que vem depois.</p><button className="botao botao-ember" onClick={() => definirTela("pedir")}><span aria-hidden="true">＋</span> Pedir tatuagem</button></div>
+          <div className="banner-conteudo"><span className="sobretitulo">SUA JORNADA NA PELE</span><h1>Histórias que ficam.</h1><p>Acompanhe cada traço, cada sessão e tudo o que vem depois.</p><button className="botao botao-ember" onClick={abrirPedidoCliente}><span aria-hidden="true">＋</span> Pedir tatuagem</button></div>
         </section>}
         {tela === "visao-geral" && <TelaVisaoGeral atualizacao={atualizacao} aoVerAgenda={abrirAgenda} aoAbrirFicha={abrirFicha} aoRegistrarPasso={registrarProximoPasso} aoAtualizar={() => definirAtualizacao((valor) => valor + 1)} />}
         <div className="coluna-conteudo">
-          {tela === "pedir" && <TelaPedir perfil={perfil} aoVoltar={() => definirTela("minhas")} aoCriar={concluirPedido} />}
-          {tela === "minhas" && <TelaMinhasTatuagens key={atualizacao} perfil={perfil} />}
+          {tela === "pedir" && <TelaPedir perfil={perfil} aoVoltar={abrirMinhasTatuagens} aoCriar={concluirPedido} />}
+          {tela === "minhas" && <TelaMinhasTatuagens key={atualizacao} perfil={perfil} aoAbrirHistorico={abrirHistoricoCliente} />}
+          {tela === "historico-cliente" && projetoCliente && <TelaHistoricoCliente key={projetoCliente.id} perfil={perfil} tatuagem={projetoCliente} aoVoltar={abrirMinhasTatuagens} />}
           {tela === "agenda" && <TelaAgenda atualizacao={atualizacao} aoAtualizar={() => definirAtualizacao((valor) => valor + 1)} aoAbrirFicha={abrirFicha} />}
           {tela === "projetos" && <TelaProjetos atualizacao={atualizacao} aoAbrirFicha={abrirFicha} />}
           {tela === "ficha" && ficha && (ficha.etapa === "finalizada"
@@ -1337,8 +1366,8 @@ export default function Aplicativo() {
         </div>
       </main>
       {perfil.tipo === "cliente" && <nav className="navegacao-mobile" aria-label="Navegação da cliente">
-        <button className={tela === "minhas" ? "ativo" : ""} onClick={() => definirTela("minhas")}>☷ <span>Minhas tatuagens</span></button>
-        <button className={tela === "pedir" ? "ativo" : ""} onClick={() => definirTela("pedir")}>＋ <span>Novo pedido</span></button>
+        <button className={tela === "minhas" || tela === "historico-cliente" ? "ativo" : ""} onClick={abrirMinhasTatuagens}>☷ <span>Minhas tatuagens</span></button>
+        <button className={tela === "pedir" ? "ativo" : ""} onClick={abrirPedidoCliente}>＋ <span>Novo pedido</span></button>
       </nav>}
       <footer className="rodape"><span>UM PASSO DE CADA VEZ.</span><span>TINTA NEGRA · TATTOO STUDIO</span></footer>
     </div>
