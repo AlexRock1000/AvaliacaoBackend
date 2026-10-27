@@ -45,3 +45,9 @@ npm.cmd run build
 ## Verificação manual da API
 
 Inicie o backend e acesse `http://localhost:8000/docs`. A documentação interativa permite conferir as rotas de tatuagens, passos, horários e atualização de situação.
+
+## Verificação integrada do build
+
+O frontend não tem testes automatizados de interface. A validação manual mais recente do fluxo integrado gerou o build com `npm.cmd run build`, serviu `frontend/dist` pelo Caddy em `http://localhost:8080` e confirmou login e consultas pelos dois perfis demonstrativos. No JavaScript gerado, a base das chamadas é `/api`; o navegador usa o mesmo host e a mesma porta da tela. Essa execução local não representa uma publicação HTTPS.
+
+Para repetir a verificação, siga a seção [Build e teste integrado com Caddy](../README.md#build-e-teste-integrado-com-caddy). Mantenha a API acessível ao contêiner na porta 8000 e confira também `http://127.0.0.1:8000/health`, que deve responder `{"status":"ok"}`. Durante o teste no navegador, a aba Rede deve mostrar chamadas para `localhost:8080/api/...`; o Caddy encaminha essas rotas à API.

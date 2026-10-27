@@ -10,6 +10,8 @@ Aplicação para acompanhar pedidos, desenhos, sessões e retoques em um estúdi
 - [Grupos e permissões](Docs/GRUPOS_PERMISSOES.md): grupos por persona e permissões aplicadas às rotas.
 - [Regras do projeto](REGRAS.md)
 - [Testes automatizados](Docs/TESTES_AUTOMATIZADOS.md)
+- [Plano de infraestrutura e ambientes](.Docs/infra.md)
+- [Decisão sobre a URL da API no build](decisoes.md)
 - [Protótipo visual no Figma](https://www.figma.com/make/wLYOJUSL3igbq7cDs07YNY/Sistema-para-est%C3%BAdio-de-tatuagem?t=KweCrSBwk0mXwx39-1)
 
 ## Rodar o backend
@@ -49,6 +51,36 @@ npm.cmd run dev
 ```
 
 Abra `http://localhost:5173`. O seletor no cabeçalho alterna entre os perfis Bruna e Vitor.
+
+## Build e teste integrado com Caddy
+
+O frontend centraliza a URL da API em `frontend/src/api.js`. No desenvolvimento, a URL relativa passa pelo proxy do Vite até a API local. O build de produção usa `/api`, para que o navegador envie as chamadas à mesma origem que serviu a tela. Veja [decisoes.md](decisoes.md) para o motivo e [o plano de infraestrutura](.Docs/infra.md) para o diagrama completo.
+
+Para testar o build integrado localmente, mantenha a API rodando em outro terminal. Como o Caddy será executado em um contêiner, inicie a API aceitando conexões da rede local do Docker:
+
+```powershell
+cd backend
+.venv\Scripts\python.exe -m uvicorn main:aplicativo --host 0.0.0.0 --reload
+```
+
+Confira `http://127.0.0.1:8000/health`; a resposta esperada é `{"status":"ok"}`. Em outro terminal, gere os arquivos estáticos:
+
+```powershell
+cd frontend
+npm.cmd run build
+cd ..
+```
+
+Na raiz do repositório, sirva `frontend/dist` pelo Caddy:
+
+```powershell
+docker run --rm -p 8080:80 `
+  -v ./Caddyfile:/etc/caddy/Caddyfile `
+  -v ./frontend/dist:/srv `
+  caddy:2
+```
+
+Abra `http://localhost:8080`. A tela e os pedidos `/api/...` usam a mesma origem; o Caddy remove `/api` ao encaminhar o pedido para a API na porta 8000 do computador host. A configuração atual é um teste local em HTTP, não uma publicação de produção com HTTPS. Pare o contêiner com `Ctrl+C`.
 
 ## Funcionalidades implementadas
 

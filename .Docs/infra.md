@@ -55,7 +55,7 @@ Não encontrei um desenho anterior de infraestrutura da IA no repositório. Conf
 
 | Item | Desenvolvimento | Produção planejada |
 | --- | --- | --- |
-| Endereço da API | A tela usa rotas relativas; `VITE_URL_DA_API` fica vazio e o Vite encaminha `/login`, `/me`, `/usuarios` e `/tatuagens` para `127.0.0.1:8000`. | O navegador chama `/api/...` na mesma origem HTTPS. O servidor web remove `/api` e encaminha a rota ao FastAPI interno na porta 8000. `frontend/.env.production` define `VITE_URL_DA_API=/api`. O Caddyfile do slide é um teste local em HTTP na porta 8080, não a configuração pública HTTPS. |
+| Endereço da API | A tela usa rotas relativas; `VITE_URL_DA_API` fica vazio e o Vite encaminha `/login`, `/me`, `/usuarios` e `/tatuagens` para `127.0.0.1:8000`. | O navegador chama `/api/...` na mesma origem HTTPS. O servidor web remove `/api` e encaminha a rota ao FastAPI interno na porta 8000. `frontend/.env.production` define `VITE_URL_DA_API=/api`. No teste local do Caddy, a tela fica em `http://localhost:8080` e os pedidos da API usam essa mesma origem; o contêiner escuta na 80 e publica a 8080 no computador. Esse teste HTTP não é a configuração pública HTTPS. |
 | Tela | Vite entrega a aplicação; React roda no navegador do computador de desenvolvimento. | Servidor web entrega os arquivos da aplicação ao navegador da pessoa. Ainda não há hospedagem configurada. |
 | Banco | SQLite local no arquivo `backend/database.sqlite3`, na máquina que roda a API. | Proposta inicial: manter SQLite em disco persistente na máquina da API e definir cópias de segurança. Sem réplica nem várias instâncias da API. |
 | Configuração e segredo | `backend/.env` local fornece `ENDERECO_FRONTEND` e `CHAVE_DO_TOKEN`; o `.env` não deve ir ao Git. | Configurações e chave próprias do ambiente, fornecidas ao servidor sem publicar o segredo. Hospedagem e mecanismo de configuração ainda não escolhidos. |
@@ -69,7 +69,7 @@ Não encontrei um desenho anterior de infraestrutura da IA no repositório. Conf
 4. **O FastAPI assina e devolve um JWT** para o navegador. O token contém o identificador e expira em 60 minutos. O navegador guarda o token em `localStorage` e consulta `GET /me` com `Authorization: Bearer ...`.
 5. **O FastAPI valida o token e busca a conta atual** no SQLite. A tela abre a área de cliente ou tatuador conforme o perfil retornado. As chamadas protegidas seguintes também enviam o bearer token; uma resposta `401` apaga os dados locais da sessão.
 
-Na produção proposta, o navegador continuaria no aparelho da pessoa; DNS e servidor web receberiam o acesso HTTPS, e o proxy encaminharia `/api/...` ao FastAPI interno após remover o prefixo. O Caddyfile copiado da aula atende HTTP na porta 80 dentro do contêiner e publica a porta 8080 localmente, sem domínio nem HTTPS; é um teste local, separado da proposta pública HTTPS.
+Na produção proposta, o navegador continuaria no aparelho da pessoa; DNS e servidor web receberiam o acesso HTTPS, e o proxy encaminharia `/api/...` ao FastAPI interno após remover o prefixo. O Caddyfile copiado da aula atende HTTP na porta 80 dentro do contêiner e publica a porta 8080 localmente em `http://localhost:8080`, sem domínio nem HTTPS; é um teste local, separado da proposta pública HTTPS.
 
 Referências do fluxo: [formulário e login no React](../frontend/src/Aplicativo.jsx#L1091), [proxy de desenvolvimento](../frontend/vite.config.js#L3), [rota `/login` e `/me`](../backend/rotas/autenticacao.py#L12), [autenticação](../backend/servicos/usuario.py#L25), [consulta SQLite](../backend/repositorios/usuario.py#L36), [JWT e validação](../backend/seguranca.py#L71), [banco local](../backend/banco.py#L8).
 
@@ -80,3 +80,5 @@ Referências do fluxo: [formulário e login no React](../frontend/src/Aplicativo
 - `host.docker.internal`: [Caddyfile](../Caddyfile#L5), linha 5 — o Caddy no contêiner usa esse nome para alcançar a API na máquina host; não é um endereço usado pelo navegador.
 
 `frontend/src/api.js` lê `VITE_URL_DA_API`; em desenvolvimento, a base vazia mantém as chamadas relativas, e no build de produção a base é `/api`. A API também expõe `GET /health`, que retorna `{"status":"ok"}`.
+
+Na validação integrada local, o build foi servido pelo Caddy em `http://localhost:8080`; o JavaScript gerado usa `/api`, sem endereço loopback como base das chamadas, e os logins e consultas dos dois perfis demonstrativos foram conferidos. Esse resultado valida o caminho navegador → Caddy → API no ambiente local, sem significar que a proposta HTTPS esteja publicada. Os passos para repetir o teste estão no [README](../README.md#build-e-teste-integrado-com-caddy).

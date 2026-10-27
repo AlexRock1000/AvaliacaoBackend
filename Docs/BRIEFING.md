@@ -65,6 +65,12 @@ O layout se adapta a celular e computador. O fluxo de login utiliza as contas de
 - `PATCH /tatuagens/{id}/passos/{passo_id}/situacao` cancela ou confirma uma sessão.
 - `PATCH /tatuagens/{id}/passos/{passo_id}/agendamento` ajusta a duração e o horário do retoque agendado.
 
+## Ambientes e publicação
+
+No desenvolvimento, o Vite entrega a tela em `localhost:5173` e encaminha as chamadas relativas à API local na porta 8000. O frontend centraliza a URL da API em `frontend/src/api.js`; no build, a base `/api` mantém tela e API na mesma origem. O build foi servido localmente pelo Caddy em `http://localhost:8080`, com login e consultas dos dois perfis demonstrativos conferidos. Esse Caddy atende HTTP para o teste de integração; não há publicação de produção configurada.
+
+A arquitetura de produção continua sendo uma proposta: um servidor web receberia HTTPS e encaminharia `/api` à API interna. O banco implementado neste checkout é SQLite em arquivo, não MySQL. O diagrama, as diferenças entre ambientes e os limites dessa proposta estão em [Infraestrutura](../.Docs/infra.md); a razão para usar `/api` no build está em [Decisões](../decisoes.md).
+
 ## Dados e limites desta versão
 
 Usuários, grupos, permissões, tatuagens e passos são persistidos em `backend/database.sqlite3`, um arquivo SQLite local que não deve ser enviado ao Git e precisa de rotina de backup. A inicialização migra contas existentes para os grupos correspondentes e o esquema migra automaticamente senhas da estrutura legada para hashes. As contas de demonstração usam senhas conhecidas e não devem ser utilizadas como contas reais; ainda não há fluxo de cadastro, troca ou recuperação de senha na interface. Imagens são enviadas como data URL codificada em base64, com limite de 5 MB validado no navegador e na API. Não fazem parte do escopo pagamentos, orçamento ou notificações.
