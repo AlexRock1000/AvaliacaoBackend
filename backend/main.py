@@ -28,3 +28,8 @@ if endereco_frontend:
 aplicativo.include_router(roteador_autenticacao)
 aplicativo.include_router(roteador_usuarios)
 aplicativo.include_router(roteador_tatuagens)
+
+
+@aplicativo.get("/health")
+def health():
+    return {"status": "ok"}

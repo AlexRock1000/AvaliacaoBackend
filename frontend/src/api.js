@@ -1,5 +1,5 @@
-// Mantém em um só lugar o endereço local da API usada durante o desenvolvimento.
-export const ENDERECO_API = import.meta.env.DEV ? "" : "http://localhost:8000";
+// O endereço da API vem do .env.development ou do .env.production.
+export const URL_DA_API = import.meta.env.VITE_URL_DA_API ?? "";
 
 function obterToken() {
   return localStorage.getItem("tinta_negra_token") || "";
@@ -21,7 +21,7 @@ function montarOpcoesAutenticadas(opcoes = {}) {
 
 // Confere o status HTTP antes de entregar os dados para a tela.
 export function pedirApi(caminho, opcoes = {}) {
-  return fetch(`${ENDERECO_API}${caminho}`, montarOpcoesAutenticadas(opcoes)).then(async (resposta) => {
+  return fetch(`${URL_DA_API}${caminho}`, montarOpcoesAutenticadas(opcoes)).then(async (resposta) => {
     if (resposta.ok) {
       return resposta.json();
     }
