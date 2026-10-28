@@ -3,7 +3,7 @@ import sqlite3
 import tempfile
 from pathlib import Path
 
-from banco import _preparar_tabela_usuarios
+from migrar_sqlite_postgresql import _preparar_tabela_usuarios_sqlite
 from seguranca import hashear_senha, verificar_senha
 
 
@@ -43,7 +43,7 @@ class TestSegurancaSenhas(unittest.TestCase):
                 "INSERT INTO usuarios VALUES (1, 'Bruna', 'cliente', 'bruna', 'bruna123')"
             )
 
-            _preparar_tabela_usuarios(conexao)
+            _preparar_tabela_usuarios_sqlite(conexao)
 
             usuario = conexao.execute(
                 "SELECT senha_hash FROM usuarios WHERE username = 'bruna'"
@@ -77,7 +77,7 @@ class TestSegurancaSenhas(unittest.TestCase):
                 (hashear_senha("senha-teste"),),
             )
 
-            _preparar_tabela_usuarios(conexao)
+            _preparar_tabela_usuarios_sqlite(conexao)
 
             usuario = conexao.execute(
                 "SELECT email FROM usuarios WHERE username = 'vitor'"

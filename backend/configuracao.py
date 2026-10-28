@@ -9,4 +9,5 @@ def obter_configuracao():
     return {
         "endereco_frontend": os.getenv("ENDERECO_FRONTEND"),
         "chave_do_token": os.getenv("CHAVE_DO_TOKEN") or os.getenv("SECRET_KEY"),
+        "database_url": os.getenv("DATABASE_URL"),
     }

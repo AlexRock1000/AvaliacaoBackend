@@ -9,9 +9,7 @@ class _TatuagensCache(list):
     def clear(self):
         conexao = conectar()
         try:
-            conexao.execute("DELETE FROM passos")
-            conexao.execute("DELETE FROM tatuagens")
-            conexao.execute("DELETE FROM sqlite_sequence WHERE name IN ('tatuagens', 'passos')")
+            conexao.execute("TRUNCATE TABLE passos, tatuagens RESTART IDENTITY CASCADE")
             conexao.commit()
         finally:
             conexao.close()
@@ -85,7 +83,7 @@ def listar_tatuagens():
         tatuagens = []
         for linha in linhas:
             passos = conexao.execute(
-                "SELECT * FROM passos WHERE tatuagem_id = ? ORDER BY id ASC",
+                "SELECT * FROM passos WHERE tatuagem_id = %s ORDER BY id ASC",
                 (linha["id"],),
             ).fetchall()
             tatuagens.append(_normalizar_tatuagem(linha, [_normalizar_passo(passo) for passo in passos]))
@@ -98,13 +96,13 @@ def buscar_tatuagem_por_id(tatuagem_id):
     conexao = conectar()
     try:
         linha = conexao.execute(
-            "SELECT * FROM tatuagens WHERE id = ?",
+            "SELECT * FROM tatuagens WHERE id = %s",
             (int(tatuagem_id),),
         ).fetchone()
         if linha is None:
             return None
         passos = conexao.execute(
-            "SELECT * FROM passos WHERE tatuagem_id = ? ORDER BY id ASC",
+            "SELECT * FROM passos WHERE tatuagem_id = %s ORDER BY id ASC",
             (linha["id"],),
         ).fetchall()
         return _normalizar_tatuagem(linha, [_normalizar_passo(passo) for passo in passos])
@@ -118,7 +116,8 @@ def adicionar_tatuagem(dados):
         cursor = conexao.execute(
             """
             INSERT INTO tatuagens (ideia, local_corpo, tamanho, cliente_id, etapa, imagem_referencia)
-            VALUES (?, ?, ?, ?, ?, ?)
+            VALUES (%s, %s, %s, %s, %s, %s)
+            RETURNING id
             """,
             (
                 dados["ideia"],
@@ -129,8 +128,8 @@ def adicionar_tatuagem(dados):
                 dados.get("imagem_referencia"),
             ),
         )
+        tatuagem_id = cursor.fetchone()["id"]
         conexao.commit()
-        tatuagem_id = cursor.lastrowid
         tatuagem = buscar_tatuagem_por_id(tatuagem_id)
         _sincronizar_cache()
         return tatuagem
@@ -144,8 +143,8 @@ def atualizar_pedido(tatuagem_id, dados):
         conexao.execute(
             """
             UPDATE tatuagens
-            SET ideia = ?, local_corpo = ?, tamanho = ?, imagem_referencia = ?
-            WHERE id = ?
+            SET ideia = %s, local_corpo = %s, tamanho = %s, imagem_referencia = %s
+            WHERE id = %s
             """,
             (
                 dados.get("ideia"),
@@ -178,7 +177,8 @@ def adicionar_passo(tatuagem_id, dados):
             """
             INSERT INTO passos (
                 tatuagem_id, tipo, data, horario, duracao_horas, observacao, imagem, situacao
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+            RETURNING id
             """,
             (
                 tatuagem_id,
@@ -191,9 +191,9 @@ def adicionar_passo(tatuagem_id, dados):
                 serializado.get("situacao") or ("agendada" if serializado["tipo"] in ("sessao", "retoque_combinado") else None),
             ),
         )
+        passo_id = cursor.fetchone()["id"]
         conexao.commit()
-        passo_id = cursor.lastrowid
-        passo = conexao.execute("SELECT * FROM passos WHERE id = ?", (passo_id,)).fetchone()
+        passo = conexao.execute("SELECT * FROM passos WHERE id = %s", (passo_id,)).fetchone()
         resultado = _normalizar_passo(passo)
         _sincronizar_cache()
         return resultado
@@ -205,7 +205,7 @@ def atualizar_etapa(tatuagem_id, etapa):
     conexao = conectar()
     try:
         conexao.execute(
-            "UPDATE tatuagens SET etapa = ? WHERE id = ?",
+            "UPDATE tatuagens SET etapa = %s WHERE id = %s",
             (etapa, tatuagem_id),
         )
         conexao.commit()
@@ -218,7 +218,7 @@ def atualizar_situacao_passo(passo_id, situacao):
     conexao = conectar()
     try:
         conexao.execute(
-            "UPDATE passos SET situacao = ? WHERE id = ?",
+            "UPDATE passos SET situacao = %s WHERE id = %s",
             (situacao, passo_id),
         )
         conexao.commit()
@@ -232,12 +232,12 @@ def atualizar_situacao_passo_com_obs(passo_id, situacao, observacao=None):
     try:
         if observacao is None:
             conexao.execute(
-                "UPDATE passos SET situacao = ? WHERE id = ?",
+                "UPDATE passos SET situacao = %s WHERE id = %s",
                 (situacao, passo_id),
             )
         else:
             conexao.execute(
-                "UPDATE passos SET situacao = ?, observacao = ? WHERE id = ?",
+                "UPDATE passos SET situacao = %s, observacao = %s WHERE id = %s",
                 (situacao, observacao, passo_id),
             )
         conexao.commit()

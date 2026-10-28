@@ -15,7 +15,7 @@ def listar_permissoes_usuario(usuario_id: int) -> set[str]:
               ON grupo_permissoes.grupo_id = usuario_grupos.grupo_id
             JOIN permissoes
               ON permissoes.id = grupo_permissoes.permissao_id
-            WHERE usuario_grupos.usuario_id = ?
+            WHERE usuario_grupos.usuario_id = %s
             """,
             (int(usuario_id),),
         ).fetchall()

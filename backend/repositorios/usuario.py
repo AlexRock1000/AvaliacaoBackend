@@ -1,4 +1,4 @@
-import sqlite3
+import psycopg
 
 from banco import conectar, inicializar_banco
 from modelos.usuario import Usuario, usuario_da_linha
@@ -24,7 +24,7 @@ def buscar_usuario_por_id(usuario_id) -> dict | None:
     try:
         # GRUPOS E PERMISSÕES: /me recebe a associação atual persistida da conta.
         linha = conexao.execute(
-            _CONSULTA_USUARIO_COM_GRUPO + " WHERE usuarios.id = ?",
+            _CONSULTA_USUARIO_COM_GRUPO + " WHERE usuarios.id = %s",
             (int(usuario_id),),
         ).fetchone()
         usuario = usuario_da_linha(linha)
@@ -39,7 +39,7 @@ def buscar_por_email(email: str) -> Usuario | None:
     try:
         # GRUPOS E PERMISSÕES: o login também carrega o grupo para uso do serviço.
         linha = conexao.execute(
-            _CONSULTA_USUARIO_COM_GRUPO + " WHERE usuarios.email = ? COLLATE NOCASE",
+            _CONSULTA_USUARIO_COM_GRUPO + " WHERE LOWER(usuarios.email) = %s",
             (email.strip().lower(),),
         ).fetchone()
         return usuario_da_linha(linha)
@@ -53,7 +53,7 @@ def buscar_por_username(username: str) -> Usuario | None:
     try:
         # GRUPOS E PERMISSÕES: a busca por username mantém a mesma associação do login por e-mail.
         linha = conexao.execute(
-            _CONSULTA_USUARIO_COM_GRUPO + " WHERE usuarios.username = ? COLLATE NOCASE",
+            _CONSULTA_USUARIO_COM_GRUPO + " WHERE LOWER(usuarios.username) = %s",
             (username.strip().lower(),),
         ).fetchone()
         return usuario_da_linha(linha)
@@ -67,7 +67,7 @@ def salvar(usuario: Usuario) -> Usuario:
     try:
         # GRUPOS E PERMISSÕES: só permite salvar se houver grupo correspondente à persona.
         grupo = conexao.execute(
-            "SELECT id FROM grupos WHERE codigo = ?", (usuario.tipo,)
+            "SELECT id FROM grupos WHERE codigo = %s", (usuario.tipo,)
         ).fetchone()
         if grupo is None:
             raise ValueError("Não existe grupo cadastrado para esta persona.")
@@ -75,25 +75,27 @@ def salvar(usuario: Usuario) -> Usuario:
         cursor = conexao.execute(
             """
             INSERT INTO usuarios (nome, tipo, username, email, senha_hash)
-            VALUES (?, ?, ?, ?, ?)
+            VALUES (%s, %s, %s, %s, %s)
+            RETURNING id
             """,
             (usuario.nome, usuario.tipo, usuario.username, usuario.email, usuario.senha_hash),
         )
         # GRUPOS E PERMISSÕES: vínculo único garante que cada conta pertença a um grupo.
+        usuario_id = cursor.fetchone()["id"]
         conexao.execute(
-            "INSERT INTO usuario_grupos (usuario_id, grupo_id) VALUES (?, ?)",
-            (cursor.lastrowid, grupo["id"]),
+            "INSERT INTO usuario_grupos (usuario_id, grupo_id) VALUES (%s, %s)",
+            (usuario_id, grupo["id"]),
         )
         conexao.commit()
         linha = conexao.execute(
-            _CONSULTA_USUARIO_COM_GRUPO + " WHERE usuarios.id = ?",
-            (cursor.lastrowid,),
+            _CONSULTA_USUARIO_COM_GRUPO + " WHERE usuarios.id = %s",
+            (usuario_id,),
         ).fetchone()
         salvo = usuario_da_linha(linha)
         if salvo is None:
             raise RuntimeError("Não foi possível recuperar o usuário salvo.")
         return salvo
-    except sqlite3.IntegrityError as erro:
+    except psycopg.IntegrityError as erro:
         conexao.rollback()
         raise ValueError("Este e-mail já está cadastrado.") from erro
     finally:

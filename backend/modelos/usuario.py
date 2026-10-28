@@ -38,7 +38,7 @@ class Usuario:
 
 
 def usuario_da_linha(linha) -> Usuario | None:
-    """Converte uma linha SQLite no modelo de domínio interno."""
+    """Converte uma linha PostgreSQL no modelo de domínio interno."""
     if linha is None:
         return None
     colunas = set(linha.keys())
