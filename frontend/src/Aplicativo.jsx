@@ -1083,8 +1083,8 @@ function TelaFicha({ tatuagem, aoVoltar, aoSalvar, nomeRetorno = "agenda" }) {
 
 function TelaLogin({ aoEntrar }) {
   const [modoCadastro, definirModoCadastro] = useState(false);
-  const [username, definirUsername] = useState("bruna");
-  const [password, definirPassword] = useState("bruna123");
+  const [username, definirUsername] = useState("");
+  const [password, definirPassword] = useState("");
   const [nome, definirNome] = useState("");
   const [email, definirEmail] = useState("");
   const [senhaCadastro, definirSenhaCadastro] = useState("");
@@ -1202,7 +1202,7 @@ function TelaLogin({ aoEntrar }) {
         {modoCadastro ? <>
           <label htmlFor="confirmar-senha">Confirme sua senha</label>
           <input id="confirmar-senha" type={senhaVisivel ? "text" : "password"} autoComplete="new-password" value={confirmarSenha} onChange={(evento) => definirConfirmarSenha(evento.target.value)} minLength="8" maxLength="128" required placeholder="Digite a senha novamente" />
-        </> : <small className="ajuda-campo">Demonstração: Bruna / bruna123 ou Vitor / vitor123</small>}
+        </> : <small className="ajuda-campo">Use seu e-mail ou usuário cadastrado.</small>}
 
         {erro && <p className="aviso aviso-erro" role="alert">{erro}</p>}
 
