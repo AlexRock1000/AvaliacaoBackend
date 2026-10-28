@@ -67,7 +67,7 @@ O layout se adapta a celular e computador. O fluxo de login utiliza as contas de
 
 ## Ambientes e publicação
 
-No desenvolvimento, o Vite entrega a tela em `localhost:5173` e encaminha as chamadas relativas à API local na porta 8000. O frontend centraliza a URL da API em `frontend/src/api.js`; no build, a base `/api` mantém tela e API na mesma origem. O build foi servido localmente pelo Caddy em `http://localhost:8080`, com login e consultas dos dois perfis demonstrativos conferidos. Esse Caddy atende HTTP para o teste de integração; não há publicação de produção configurada.
+No desenvolvimento, o Vite entrega a tela em `localhost:5173` e encaminha as chamadas relativas à API local na porta 8000. O frontend centraliza a URL da API em `frontend/src/api.js`; no build, a base `/api` mantém tela e API na mesma origem. O `frontend/Dockerfile` tem duas etapas: Node 22 gera o build e a imagem final do Caddy recebe os arquivos estáticos e o `Caddyfile` da aula. A imagem foi construída e iniciada em `http://localhost:8080`; a tela respondeu e o caminho `/api/health` alcançou a API. O login e as consultas dos dois perfis demonstrativos foram conferidos antes no Caddy anterior. Esse Caddy atende HTTP para o teste de integração; não há publicação de produção configurada.
 
 A arquitetura de produção continua sendo uma proposta: um servidor web receberia HTTPS e encaminharia `/api` à API interna. O banco implementado neste checkout é SQLite em arquivo, não MySQL. O diagrama, as diferenças entre ambientes e os limites dessa proposta estão em [Infraestrutura](../.Docs/infra.md); a razão para usar `/api` no build está em [Decisões](../decisoes.md).
 

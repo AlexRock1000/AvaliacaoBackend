@@ -63,24 +63,14 @@ cd backend
 .venv\Scripts\python.exe -m uvicorn main:aplicativo --host 0.0.0.0 --reload
 ```
 
-Confira `http://127.0.0.1:8000/health`; a resposta esperada é `{"status":"ok"}`. Em outro terminal, gere os arquivos estáticos:
+Confira `http://127.0.0.1:8000/health`; a resposta esperada é `{"status":"ok"}`. O `frontend/Dockerfile` executa `npm ci` e `npm run build` em uma etapa temporária com Node 22. A imagem final contém o Caddy, os arquivos de `dist/` e o `Caddyfile`; não precisa montar a pasta `dist` do computador. Com a API ainda rodando, na raiz do repositório construa e execute a imagem:
 
 ```powershell
-cd frontend
-npm.cmd run build
-cd ..
+docker build -f frontend/Dockerfile -t tinta-negra .
+docker run --rm -d --name tinta-negra-web -p 8080:80 tinta-negra
 ```
 
-Na raiz do repositório, sirva `frontend/dist` pelo Caddy:
-
-```powershell
-docker run --rm -p 8080:80 `
-  -v ./Caddyfile:/etc/caddy/Caddyfile `
-  -v ./frontend/dist:/srv `
-  caddy:2
-```
-
-Abra `http://localhost:8080`. A tela e os pedidos `/api/...` usam a mesma origem; o Caddy remove `/api` ao encaminhar o pedido para a API na porta 8000 do computador host. A configuração atual é um teste local em HTTP, não uma publicação de produção com HTTPS. Pare o contêiner com `Ctrl+C`.
+Abra `http://localhost:8080`. A tela e os pedidos `/api/...` usam a mesma origem; o Caddy remove `/api` ao encaminhar o pedido para a API na porta 8000 do computador host. A configuração atual é um teste local em HTTP, não uma publicação de produção com HTTPS. Para parar a instância em segundo plano, execute `docker stop tinta-negra-web`; se ela já estiver rodando, pare-a antes de repetir o comando.
 
 ## Funcionalidades implementadas
 
