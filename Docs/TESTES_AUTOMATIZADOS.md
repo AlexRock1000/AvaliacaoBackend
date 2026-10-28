@@ -2,7 +2,7 @@
 
 ## Backend
 
-Os testes usam `unittest` e exercitam serviços e rotas com o banco SQLite local. Cada teste limpa as tabelas de tatuagens e passos antes e depois da execução; os usuários de demonstração permanecem no banco e contas criadas pelos testes são removidas.
+Os testes usam `unittest` e exercitam serviços e rotas com o PostgreSQL configurado em `DATABASE_URL`. Cada teste limpa as tabelas de tatuagens e passos antes e depois da execução; os usuários de demonstração permanecem no banco e contas criadas pelos testes são removidas.
 
 Os cenários cobertos são:
 
@@ -48,6 +48,6 @@ Inicie o backend e acesse `http://localhost:8000/docs`. A documentação interat
 
 ## Verificação integrada com Docker Compose
 
-O frontend não tem testes automatizados de interface. `docker compose up --build -d` construiu e iniciou os serviços `web` e `api`; `GET /` respondeu HTTP 200 e `GET /api/health` retornou `{"status":"ok"}`. O caminho do banco SQLite está em volume persistente. Essa execução local atende HTTP e não representa uma publicação HTTPS.
+O frontend não tem testes automatizados de interface. `docker compose up --build -d` constrói e inicia `web`, `api` e `db`; `GET /` e `GET /api/health` podem ser usados para conferir a execução local. Os dados do PostgreSQL ficam no volume `postgres_data`. Essa execução local atende HTTP e não representa uma publicação HTTPS.
 
 Para repetir a verificação, siga [Executar com Docker Compose](../README.md#executar-com-docker-compose). Durante o teste no navegador, a aba Rede deve mostrar chamadas a `localhost:8080/api/...`; o Caddy encaminha essas rotas ao serviço `api:8000` pela rede interna do Compose. O login e as consultas dos dois perfis foram conferidos na execução manual anterior com Caddy; não foram repetidos após esta mudança para Compose.

@@ -1,4 +1,4 @@
-"""Consultas de autorização dos grupos persistidos no banco local."""
+"""Consultas de autorização dos grupos persistidos no PostgreSQL."""
 
 from banco import conectar
 

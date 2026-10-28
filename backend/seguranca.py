@@ -113,7 +113,7 @@ def obter_usuario_atual(
     return usuario
 
 
-# GRUPOS E PERMISSÕES: as verificações consultam os vínculos persistidos no SQLite.
+# GRUPOS E PERMISSÕES: as verificações consultam os vínculos persistidos no PostgreSQL.
 def usuario_tem_permissao(usuario: dict, codigo_permissao: str) -> bool:
     """Informa se o grupo atual da conta recebeu a permissão solicitada."""
     usuario_id = usuario.get("id")

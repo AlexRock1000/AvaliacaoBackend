@@ -78,7 +78,8 @@ def _copiar_tabela(conexao_destino, nome, colunas, valores):
         f"INSERT INTO {nome} ({campos}) VALUES ({placeholders}) "
         "ON CONFLICT DO NOTHING"
     )
-    conexao_destino.executemany(consulta, valores)
+    with conexao_destino.cursor() as cursor:
+        cursor.executemany(consulta, valores)
     return len(valores)
 
 
@@ -122,9 +123,13 @@ def migrar_sqlite_para_postgresql(caminho_sqlite=CAMINHO_SQLITE_PADRAO):
 
         with tempfile.TemporaryDirectory(prefix="tinta-negra-migracao-") as diretorio:
             copia_sqlite = Path(diretorio) / "origem.sqlite3"
-            with sqlite3.connect(caminho_sqlite) as origem:
-                with sqlite3.connect(copia_sqlite) as copia:
-                    origem.backup(copia)
+            origem = sqlite3.connect(caminho_sqlite)
+            copia = sqlite3.connect(copia_sqlite)
+            try:
+                origem.backup(copia)
+            finally:
+                copia.close()
+                origem.close()
 
             conexao_sqlite = sqlite3.connect(copia_sqlite)
             conexao_sqlite.row_factory = sqlite3.Row

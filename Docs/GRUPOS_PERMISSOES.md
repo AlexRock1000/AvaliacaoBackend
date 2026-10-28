@@ -2,7 +2,7 @@
 
 ## Como funciona
 
-O backend tem um grupo para cada persona: `cliente` e `tatuador`. Cada conta recebe exatamente um grupo. A autorização lê as permissões do grupo no SQLite, enquanto o campo `tipo` continua na resposta da API para manter compatibilidade com o frontend.
+O backend tem um grupo para cada persona: `cliente` e `tatuador`. Cada conta recebe exatamente um grupo. A autorização lê as permissões do grupo no PostgreSQL, enquanto o campo `tipo` continua na resposta da API para manter compatibilidade com o frontend.
 
 As tabelas de autorização são:
 
@@ -30,6 +30,6 @@ As rotas públicas `POST /usuarios` e `POST /login` não exigem sessão; `POST /
 
 ## Onde ajustar
 
-`backend/permissoes.py` contém o catálogo de códigos e a matriz inicial das permissões de cada grupo. Altere essa matriz para conceder ou remover operações; ao iniciar o backend, `backend/banco.py` sincroniza os vínculos no SQLite. Os blocos relacionados no código estão marcados com o comentário `GRUPOS E PERMISSÕES`.
+`backend/permissoes.py` contém o catálogo de códigos e a matriz inicial das permissões de cada grupo. Altere essa matriz para conceder ou remover operações; ao iniciar o backend, `backend/banco.py` sincroniza os vínculos no PostgreSQL. Os blocos relacionados no código estão marcados com o comentário `GRUPOS E PERMISSÕES`.
 
 `backend/seguranca.py` contém as dependências e verificações reutilizáveis. `backend/rotas/tatuagens.py` declara a permissão necessária para cada operação; o cadastro aplica a associação em `backend/repositorios/usuario.py`.

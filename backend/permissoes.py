@@ -15,7 +15,7 @@ PERMISSAO_ATUALIZAR_SESSAO = "sessoes:atualizar_situacao"
 PERMISSAO_AGENDAR_RETOQUE = "retoques:atualizar_agendamento"
 PERMISSAO_CADASTRAR_TATUADOR = "contas:cadastrar_tatuador"
 
-# GRUPOS E PERMISSÕES: descrições usadas para cadastrar o catálogo no SQLite.
+# GRUPOS E PERMISSÕES: descrições usadas para cadastrar o catálogo no PostgreSQL.
 PERMISSOES_CADASTRO = {
     PERMISSAO_CONSULTAR_PROPRIA_CONTA: "Consultar a própria identidade autenticada.",
     PERMISSAO_CONSULTAR_HORARIOS: "Consultar horários disponíveis na agenda.",

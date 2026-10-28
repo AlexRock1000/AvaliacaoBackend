@@ -168,6 +168,11 @@ def _semear_contas_demo(conexao):
         ("Vitor", "tatuador", "vitor", "vitor@tintanegra.local", "vitor123"),
     )
     for nome, tipo, username, email, senha in contas_demo:
+        existente = conexao.execute(
+            "SELECT 1 FROM usuarios WHERE username = %s", (username,)
+        ).fetchone()
+        if existente is not None:
+            continue
         conexao.execute(
             """
             INSERT INTO usuarios (nome, tipo, username, email, senha_hash)

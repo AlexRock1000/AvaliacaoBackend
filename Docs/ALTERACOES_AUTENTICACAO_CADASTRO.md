@@ -2,7 +2,7 @@
 
 ## Objetivo
 
-Esta alteração organiza o cadastro e a autenticação do backend em camadas explícitas, adiciona cadastro de clientes por e-mail e atualiza a tabela SQLite sem perder os usuários existentes. A aplicação continua usando o domínio de tatuagens; não foi criada uma entidade genérica de tarefas.
+Esta alteração organiza o cadastro e a autenticação do backend em camadas explícitas e adiciona cadastro de clientes por e-mail. Os dados agora são armazenados no PostgreSQL; o script `backend/migrar_sqlite_postgresql.py` copia a base SQLite anterior sem alterar o arquivo de origem. A aplicação continua usando o domínio de tatuagens; não foi criada uma entidade genérica de tarefas.
 
 ## Arquitetura e arquivos
 
@@ -10,7 +10,7 @@ Esta alteração organiza o cadastro e a autenticação do backend em camadas ex
 - [../backend/seguranca.py](../backend/seguranca.py): reúne PBKDF2 com salt aleatório, verificação de senha, geração/validação de JWT, dependência bearer e verificações de perfil/dono do pedido. Substitui a lógica anteriormente separada entre `autenticacao.py` e `seguranca_senhas.py`.
 - [../backend/modelos/usuario.py](../backend/modelos/usuario.py): modelo interno com `email` e `senha_hash`; `para_publico()` remove campos de autenticação antes de devolver um usuário.
 - [../backend/esquemas/usuario.py](../backend/esquemas/usuario.py): valida nome, e-mail e senha de cadastro e define a resposta OAuth2 e os campos públicos do usuário.
-- [../backend/repositorios/usuario.py](../backend/repositorios/usuario.py): implementa busca por ID, username e e-mail, além de `salvar()` no SQLite.
+- [../backend/repositorios/usuario.py](../backend/repositorios/usuario.py): implementa busca por ID, username e e-mail, além de `salvar()` no PostgreSQL.
 - [../backend/servicos/usuario.py](../backend/servicos/usuario.py): concentra cadastro, autenticação e resolução do usuário atual; as contas cadastradas recebem sempre o perfil `cliente`.
 - [../backend/rotas/autenticacao.py](../backend/rotas/autenticacao.py): fornece login e consulta da identidade autenticada.
 - [../backend/rotas/usuarios.py](../backend/rotas/usuarios.py): fornece o endpoint de cadastro.
@@ -18,7 +18,7 @@ Esta alteração organiza o cadastro e a autenticação do backend em camadas ex
 - [../backend/configuracao.py](../backend/configuracao.py) e [../backend/.env.exemplo](../backend/.env.exemplo): leem `CHAVE_DO_TOKEN`; `SECRET_KEY` continua disponível como alias para compatibilidade.
 - [../backend/banco.py](../backend/banco.py): cria o esquema atual e migra usuários legados.
 - [../backend/requirements.txt](../backend/requirements.txt): declara `python-multipart` para ler o formulário OAuth2 e `httpx2` para o `TestClient`.
-- [../.gitignore](../.gitignore): exclui `.env`, banco SQLite e arquivos auxiliares locais do versionamento.
+- [../.gitignore](../.gitignore): exclui `.env`, banco SQLite legado e arquivos auxiliares locais do versionamento.
 
 ## Banco e migração
 
@@ -50,7 +50,7 @@ O `.env` é ignorado pelo Git e não deve ser publicado; confirme com `git statu
 
 Os tokens contêm somente `sub` (ID do usuário) e `exp` (expiração), são assinados com HS256 e vencem após 60 minutos. O backend carrega o usuário atual pelo `sub` a cada requisição protegida.
 
-O `.env` local foi removido do índice do Git sem apagar a cópia de trabalho. O `.gitignore` também exclui o banco SQLite e seus arquivos auxiliares; esses arquivos permanecem locais e devem ser incluídos em uma política de backup, não em commits.
+O `.env` local foi removido do índice do Git sem apagar a cópia de trabalho. O `.gitignore` também exclui o banco SQLite legado e seus arquivos auxiliares. O banco PostgreSQL persiste no volume Docker `postgres_data`; faça cópias de segurança desse volume conforme a política do ambiente.
 
 ## API de usuários
 

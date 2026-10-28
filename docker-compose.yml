@@ -22,7 +22,7 @@ services:
       dockerfile: Dockerfile
     image: tinta-negra-api
     env_file:
-      - .env
+      - ./backend/.env
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-tinta_negra}:${POSTGRES_PASSWORD:-tinta_negra_dev}@db:5432/${POSTGRES_DB:-tinta_negra}
     expose:

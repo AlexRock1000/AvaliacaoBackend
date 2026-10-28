@@ -23,6 +23,10 @@ cd backend
 python -m venv .venv
 .venv\Scripts\python.exe -m pip install -r requirements.txt
 if (-not (Test-Path .env)) { Copy-Item .env.exemplo .env }
+cd ..
+if (-not (Test-Path .env)) { Copy-Item .env.exemplo .env }
+docker compose up -d db
+cd backend
 ```
 
 O `requirements.txt` já inclui `PyJWT`; também é possível instalá-lo diretamente. Para gerar uma chave hexadecimal aleatória de 64 caracteres, rode na pasta `backend`:
@@ -32,7 +36,7 @@ O `requirements.txt` já inclui `PyJWT`; também é possível instalá-lo direta
 .venv\Scripts\python.exe -c "import secrets; print(secrets.token_hex(32))"
 ```
 
-Copie o resultado para `CHAVE_DO_TOKEN=` em `backend/.env`, junto com `ENDERECO_FRONTEND=http://localhost:5173`. Em `backend/.env.exemplo`, mantenha a linha `CHAVE_DO_TOKEN=` sem valor. `configuracao.py` lê essa variável; `SECRET_KEY` continua aceita como alias. O `.env` local é ignorado pelo Git, então `git status` não deve listá-lo. Nunca copie a chave para o exemplo, logs ou documentação. Ao trocar a chave, reinicie a API e faça login novamente: os tokens emitidos com a chave anterior deixam de valer.
+Copie o resultado para `CHAVE_DO_TOKEN=` em `backend/.env`, junto com `ENDERECO_FRONTEND=http://localhost:5173`. `DATABASE_URL` aponta para o PostgreSQL local iniciado pelo Compose; se alterar os dados de conexão em `.env`, atualize também essa URL. Em `backend/.env.exemplo`, mantenha a chave do token vazia. `configuracao.py` lê essas variáveis; `SECRET_KEY` continua aceita como alias. Os arquivos `.env` locais são ignorados pelo Git. Nunca copie a chave para o exemplo, logs ou documentação. Ao trocar a chave, reinicie a API e faça login novamente: os tokens emitidos com a chave anterior deixam de valer.
 
 ```powershell
 .venv\Scripts\python.exe -m uvicorn main:aplicativo --reload
@@ -54,9 +58,20 @@ Abra `http://localhost:5173`. O seletor no cabeçalho alterna entre os perfis Br
 
 ## Executar com Docker Compose
 
-O Compose reúne dois serviços: `web` (Caddy com a tela) e `api` (FastAPI). O banco continua sendo SQLite, armazenado em um volume persistente; portanto não há um serviço de banco separado. O frontend centraliza a URL da API em `frontend/src/api.js`: no build, `/api` mantém tela e API na mesma origem, e o Caddy encaminha essa rota para `api:8000` na rede interna do Compose. Veja [decisoes.md](decisoes.md) e [o plano de infraestrutura](.Docs/infra.md).
+O Compose reúne três serviços: `web` (Caddy com a tela), `api` (FastAPI) e `db` (PostgreSQL). O banco persiste no volume `postgres_data`; a porta 5432 fica disponível apenas no loopback do computador para permitir executar a API diretamente durante o desenvolvimento. O frontend centraliza a URL da API em `frontend/src/api.js`: no build, `/api` mantém tela e API na mesma origem, e o Caddy encaminha essa rota para `api:8000` na rede interna do Compose. Veja [decisoes.md](decisoes.md) e [o plano de infraestrutura](.Docs/infra.md).
 
-O `.env` da raiz contém a chave de assinatura usada pela API e é ignorado pelo Git. Se ainda não existir, copie `.env.exemplo` para `.env` e preencha `CHAVE_DO_TOKEN` com uma chave forte; não compartilhe esse arquivo. O Compose passa `DATABASE_PATH` para o volume SQLite.
+O `.env` da raiz contém as credenciais locais do PostgreSQL; copie `.env.exemplo` para criá-lo e troque a senha de desenvolvimento antes de qualquer uso fora do computador local. A chave JWT e as configurações da API ficam em `backend/.env`, criado a partir de `backend/.env.exemplo`. O Compose passa esse arquivo à API e monta `DATABASE_URL` com o endereço interno do banco.
+
+Para preservar os dados atuais do arquivo SQLite, inicie somente o banco e execute a migração antes de iniciar a API:
+
+```powershell
+docker compose up -d db
+cd backend
+.venv\Scripts\python.exe -m migrar_sqlite_postgresql
+cd ..
+```
+
+O comando copia usuários, tatuagens e passos para um PostgreSQL vazio, mantém as senhas e os IDs existentes e não altera o arquivo SQLite original. Depois, suba a aplicação normalmente. Se preferir começar sem os dados antigos, pule a migração.
 
 ```powershell
 docker compose up --build -d
@@ -64,7 +79,7 @@ docker compose up --build -d
 
 Abra `http://localhost:8080`. Para conferir a API, acesse `http://localhost:8080/api/health`; a resposta esperada é `{"status":"ok"}`. O Caddyfile é montado no contêiner e encaminha `/api` ao serviço `api` pela rede interna. A imagem do frontend usa Node 22 somente na etapa de build e Caddy na imagem final.
 
-Para parar os serviços sem apagar os dados do SQLite, execute `docker compose down`. O volume do banco só é removido com `docker compose down -v`. Se um contêiner Caddy antigo já ocupar a porta 8080, pare-o antes de subir o Compose. Esta configuração atende HTTP local; não representa uma publicação HTTPS de produção.
+Para parar os serviços sem apagar os dados do PostgreSQL, execute `docker compose down`. O volume do banco só é removido com `docker compose down -v`. Se um contêiner Caddy antigo já ocupar a porta 8080, pare-o antes de subir o Compose. Esta configuração atende HTTP local; não representa uma publicação HTTPS de produção.
 
 ## Funcionalidades implementadas
 
@@ -83,7 +98,7 @@ Para parar os serviços sem apagar os dados do SQLite, execute `docker compose d
 - `permissoes.py`: declara os códigos de permissão e a matriz inicial dos grupos `cliente` e `tatuador`.
 - `modelos/usuario.py`: representa o registro interno do usuário (`email` e `senha_hash`) e produz sua versão pública sem credenciais.
 - `esquemas/usuario.py`: valida entrada do cadastro/login e define os dados de usuário que podem sair pela API.
-- `repositorios/usuario.py`: consulta usuários por ID, username e e-mail e persiste novos registros no SQLite.
+- `repositorios/usuario.py`: consulta usuários por ID, username e e-mail e persiste novos registros no PostgreSQL.
 - `repositorios/grupo.py`: consulta as permissões efetivas do grupo associado a uma conta.
 - `servicos/usuario.py`: implementa cadastro de cliente e autenticação sem permitir autoatribuição do perfil de tatuador.
 - `rotas/autenticacao.py`: expõe `/login` e `/me`; `rotas/usuarios.py` expõe `POST /usuarios`.
@@ -91,6 +106,6 @@ Para parar os serviços sem apagar os dados do SQLite, execute `docker compose d
 
 ## Dados e organização
 
-Os dados de usuários, grupos, permissões, tatuagens e passos ficam no banco SQLite local `backend/database.sqlite3` e persistem após reiniciar a API. A inicialização migra usuários legados, associa cada conta ao grupo correspondente e preenche e-mail de demonstração ou converte senhas para hashes quando necessário. O arquivo do banco é local e ignorado pelo Git; planeje backups antes de usar os dados em produção. Imagens são enviadas como data URL codificada em base64 e limitadas a 5 MB por arquivo. As contas Bruna (`bruna` / `bruna123`) e Vitor (`vitor` / `vitor123`) são credenciais demonstrativas e devem ser alteradas ou removidas antes de qualquer implantação real. Para consultar a matriz aplicada e como alterá-la, veja [Grupos e permissões](Docs/GRUPOS_PERMISSOES.md).
+Usuários, grupos, permissões, tatuagens e passos são armazenados no PostgreSQL e persistem no volume `postgres_data`. A inicialização cria o esquema e as contas demonstrativas quando necessário. Para importar a base SQLite existente, use o comando de migração acima; o arquivo original permanece local como cópia de segurança. Imagens são enviadas como data URL codificada em base64 e limitadas a 5 MB por arquivo. As contas Bruna (`bruna` / `bruna123`) e Vitor (`vitor` / `vitor123`) são credenciais demonstrativas e devem ser alteradas ou removidas antes de qualquer implantação real. Para consultar a matriz aplicada e como alterá-la, veja [Grupos e permissões](Docs/GRUPOS_PERMISSOES.md).
 
 Para executar os testes automatizados, consulte [TESTES_AUTOMATIZADOS.md](Docs/TESTES_AUTOMATIZADOS.md). Para detalhes da reorganização de usuários e autenticação, consulte [ALTERACOES_AUTENTICACAO_CADASTRO.md](Docs/ALTERACOES_AUTENTICACAO_CADASTRO.md).
