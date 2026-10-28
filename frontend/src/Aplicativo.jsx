@@ -1082,11 +1082,28 @@ function TelaFicha({ tatuagem, aoVoltar, aoSalvar, nomeRetorno = "agenda" }) {
 }
 
 function TelaLogin({ aoEntrar }) {
+  const [modoCadastro, definirModoCadastro] = useState(false);
   const [username, definirUsername] = useState("bruna");
   const [password, definirPassword] = useState("bruna123");
+  const [nome, definirNome] = useState("");
+  const [email, definirEmail] = useState("");
+  const [senhaCadastro, definirSenhaCadastro] = useState("");
+  const [confirmarSenha, definirConfirmarSenha] = useState("");
   const [senhaVisivel, definirSenhaVisivel] = useState(false);
   const [carregando, definirCarregando] = useState(false);
   const [erro, definirErro] = useState("");
+
+  async function abrirSessao(identificador, senha) {
+    const dadosToken = await pedirApi("/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({ username: identificador, password: senha }),
+    });
+    localStorage.setItem("tinta_negra_token", dadosToken.access_token);
+    const usuarioAtual = await pedirApi("/me");
+    localStorage.setItem("tinta_negra_usuario", JSON.stringify(usuarioAtual));
+    aoEntrar(usuarioAtual);
+  }
 
   async function entrar(evento) {
     evento.preventDefault();
@@ -1094,15 +1111,7 @@ function TelaLogin({ aoEntrar }) {
     definirCarregando(true);
 
     try {
-      const dadosToken = await pedirApi("/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: new URLSearchParams({ username, password }),
-      });
-      localStorage.setItem("tinta_negra_token", dadosToken.access_token);
-      const usuarioAtual = await pedirApi("/me");
-      localStorage.setItem("tinta_negra_usuario", JSON.stringify(usuarioAtual));
-      aoEntrar(usuarioAtual);
+      await abrirSessao(username, password);
     } catch (erroApi) {
       localStorage.removeItem("tinta_negra_token");
       localStorage.removeItem("tinta_negra_usuario");
@@ -1112,20 +1121,58 @@ function TelaLogin({ aoEntrar }) {
     }
   }
 
+  async function cadastrar(evento) {
+    evento.preventDefault();
+    definirErro("");
+    if (senhaCadastro !== confirmarSenha) {
+      definirErro("As senhas não coincidem.");
+      return;
+    }
+
+    definirCarregando(true);
+    try {
+      await pedirApi("/usuarios", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ nome, email, senha: senhaCadastro }),
+      });
+      await abrirSessao(email, senhaCadastro);
+    } catch (erroApi) {
+      localStorage.removeItem("tinta_negra_token");
+      localStorage.removeItem("tinta_negra_usuario");
+      definirErro(erroApi.message || "Não foi possível criar sua conta.");
+    } finally {
+      definirCarregando(false);
+    }
+  }
+
+  function alternarModoCadastro() {
+    definirErro("");
+    definirModoCadastro((modoAtual) => !modoAtual);
+  }
+
   return (
     <section className="painel-formulario" style={{ maxWidth: 420, margin: "80px auto" }}>
       <div className="titulo-secao">
-        <span className="sobretitulo">ACESSO</span>
-        <h2>Entrar no estúdio.</h2>
-        <p>Faça login para acessar a sua área de trabalho no sistema.</p>
+        <span className="sobretitulo">{modoCadastro ? "NOVA CONTA" : "ACESSO"}</span>
+        <h2>{modoCadastro ? "Crie sua conta." : "Entrar no estúdio."}</h2>
+        <p>{modoCadastro ? "Cadastre-se como cliente para acompanhar seus pedidos e sessões." : "Faça login para acessar a sua área de trabalho no sistema."}</p>
       </div>
-      <form onSubmit={entrar} className="formulario">
-        <label htmlFor="username">Usuário</label>
-        <input id="username" value={username} onChange={(evento) => definirUsername(evento.target.value)} placeholder="bruna ou vitor" required />
+      <form onSubmit={modoCadastro ? cadastrar : entrar} className="formulario">
+        {modoCadastro ? <>
+          <label htmlFor="nome-cadastro">Nome</label>
+          <input id="nome-cadastro" autoComplete="name" value={nome} onChange={(evento) => definirNome(evento.target.value)} minLength="2" maxLength="100" required placeholder="Seu nome completo" />
 
-        <label htmlFor="password">Senha</label>
+          <label htmlFor="email-cadastro">E-mail</label>
+          <input id="email-cadastro" type="email" autoComplete="email" value={email} onChange={(evento) => definirEmail(evento.target.value)} maxLength="254" required placeholder="voce@exemplo.com" />
+        </> : <>
+          <label htmlFor="username">Usuário ou e-mail</label>
+          <input id="username" autoComplete="username" value={username} onChange={(evento) => definirUsername(evento.target.value)} placeholder="Seu usuário ou e-mail" required />
+        </>}
+
+        <label htmlFor="password">Senha{modoCadastro ? " (mínimo de 8 caracteres)" : ""}</label>
         <div className="campo-senha">
-          <input id="password" type={senhaVisivel ? "text" : "password"} value={password} onChange={(evento) => definirPassword(evento.target.value)} placeholder="Digite sua senha" required />
+          <input id="password" type={senhaVisivel ? "text" : "password"} autoComplete={modoCadastro ? "new-password" : "current-password"} value={modoCadastro ? senhaCadastro : password} onChange={(evento) => (modoCadastro ? definirSenhaCadastro(evento.target.value) : definirPassword(evento.target.value))} minLength={modoCadastro ? "8" : undefined} maxLength={modoCadastro ? "128" : undefined} placeholder={modoCadastro ? "Crie uma senha" : "Digite sua senha"} required />
           <button
             className="botao-visualizar-senha"
             type="button"
@@ -1152,13 +1199,20 @@ function TelaLogin({ aoEntrar }) {
           </button>
         </div>
 
-        <small className="ajuda-campo">Demonstração: Bruna / bruna123 ou Vitor / vitor123</small>
+        {modoCadastro ? <>
+          <label htmlFor="confirmar-senha">Confirme sua senha</label>
+          <input id="confirmar-senha" type={senhaVisivel ? "text" : "password"} autoComplete="new-password" value={confirmarSenha} onChange={(evento) => definirConfirmarSenha(evento.target.value)} minLength="8" maxLength="128" required placeholder="Digite a senha novamente" />
+        </> : <small className="ajuda-campo">Demonstração: Bruna / bruna123 ou Vitor / vitor123</small>}
 
         {erro && <p className="aviso aviso-erro" role="alert">{erro}</p>}
 
         <button className="botao botao-escuro" disabled={carregando}>
-          {carregando ? "Entrando…" : "Entrar"}<span aria-hidden="true">↗</span>
+          {carregando ? (modoCadastro ? "Criando conta…" : "Entrando…") : modoCadastro ? "Criar conta" : "Entrar"}<span aria-hidden="true">↗</span>
         </button>
+        <p className="alternar-autenticacao">
+          {modoCadastro ? "Já tem uma conta?" : "Ainda não tem conta?"}{" "}
+          <button type="button" onClick={alternarModoCadastro} disabled={carregando}>{modoCadastro ? "Entrar" : "Cadastre-se"}</button>
+        </p>
       </form>
     </section>
   );

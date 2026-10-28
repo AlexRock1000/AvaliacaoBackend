@@ -666,6 +666,9 @@ button.cartao-tatuagem { width: 100%; cursor: pointer; }
 .erro-campo { display: block; font-size: 14px; line-height: 1.4; }
 .ajuda-campo { color: var(--pedra); }
 .erro-campo { color: #9b3028; font-weight: 700; }
+.alternar-autenticacao { margin: 0; color: var(--pedra); font-size: 14px; text-align: center; }
+.alternar-autenticacao button { padding: 0; border: 0; background: transparent; color: var(--ferrugem); font-weight: 700; text-decoration: underline; }
+.alternar-autenticacao button:disabled { cursor: wait; opacity: .65; }
 
 @media (max-width: 680px) {
   .modo-cliente .dados-perfil,
