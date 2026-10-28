@@ -14,3 +14,13 @@ INFO:     127.0.0.1:51667 - "POST /login HTTP/1.1" 200 OK
 INFO:     127.0.0.1:51669 - "GET /me HTTP/1.1" 200 OK
 INFO:     127.0.0.1:51674 - "GET /tatuagens?cliente_id=3 HTTP/1.1" 200 OK
 INFO:     127.0.0.1:51675 - "GET /tatuagens?cliente_id=3 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51765 - "POST /login HTTP/1.1" 401 Unauthorized
+INFO:     127.0.0.1:51768 - "POST /login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51770 - "GET /me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51774 - "GET /tatuagens HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51775 - "GET /tatuagens HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51776 - "GET /tatuagens HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51778 - "GET /tatuagens HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51780 - "GET /tatuagens HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51782 - "GET /tatuagens HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51912 - "GET /health HTTP/1.1" 200 OK

@@ -24,8 +24,9 @@ Na inicialização, o banco cria as tabelas e associa contas existentes com base
 | Aprovar desenho ou solicitar ajustes | Sim | Não |
 | Registrar desenho, sessão e demais passos | Não | Sim |
 | Atualizar situação de sessão e agendar retoque | Não | Sim |
+| Criar contas para outros tatuadores | Não | Sim |
 
-As rotas públicas `POST /usuarios` e `POST /login` não exigem sessão. As demais rotas protegidas verificam a permissão do grupo. A checagem de propriedade continua aplicada às tatuagens e aos seus passos.
+As rotas públicas `POST /usuarios` e `POST /login` não exigem sessão; `POST /usuarios` sempre cria um cliente. A rota `POST /usuarios/tatuadores` exige uma sessão com a permissão `contas:cadastrar_tatuador`, atribuída ao grupo tatuador. As demais rotas protegidas verificam a permissão do grupo. A checagem de propriedade continua aplicada às tatuagens e aos seus passos.
 
 ## Onde ajustar
 

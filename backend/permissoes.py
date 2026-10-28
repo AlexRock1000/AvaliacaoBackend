@@ -13,6 +13,7 @@ PERMISSAO_REGISTRAR_PASSO = "passos:registrar"
 PERMISSAO_DECIDIR_DESENHO = "passos:decidir_desenho"
 PERMISSAO_ATUALIZAR_SESSAO = "sessoes:atualizar_situacao"
 PERMISSAO_AGENDAR_RETOQUE = "retoques:atualizar_agendamento"
+PERMISSAO_CADASTRAR_TATUADOR = "contas:cadastrar_tatuador"
 
 # GRUPOS E PERMISSÕES: descrições usadas para cadastrar o catálogo no SQLite.
 PERMISSOES_CADASTRO = {
@@ -28,6 +29,7 @@ PERMISSOES_CADASTRO = {
     PERMISSAO_DECIDIR_DESENHO: "Aprovar o desenho ou solicitar ajustes.",
     PERMISSAO_ATUALIZAR_SESSAO: "Atualizar a situação de uma sessão.",
     PERMISSAO_AGENDAR_RETOQUE: "Ajustar o agendamento de um retoque.",
+    PERMISSAO_CADASTRAR_TATUADOR: "Criar contas para outros tatuadores do estúdio.",
 }
 
 # GRUPOS E PERMISSÕES: cada persona recebe um grupo e somente as permissões listadas.
@@ -57,6 +59,7 @@ GRUPOS_CADASTRO = {
             PERMISSAO_REGISTRAR_PASSO,
             PERMISSAO_ATUALIZAR_SESSAO,
             PERMISSAO_AGENDAR_RETOQUE,
+            PERMISSAO_CADASTRAR_TATUADOR,
         ),
     },
 }

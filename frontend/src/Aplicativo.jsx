@@ -644,7 +644,7 @@ function TelaProjetos({ atualizacao, aoAbrirFicha }) {
 }
 
 // Resume os projetos do estúdio e encaminha os atalhos para as telas correspondentes.
-function TelaVisaoGeral({ atualizacao, aoVerAgenda, aoAbrirFicha, aoRegistrarPasso, aoAtualizar }) {
+function TelaVisaoGeral({ atualizacao, aoVerAgenda, aoAbrirFicha, aoRegistrarPasso, aoAtualizar, aoCadastrarTatuador }) {
   const [tatuagens, definirTatuagens] = useState([]);
   const [erro, definirErro] = useState("");
 
@@ -668,6 +668,7 @@ function TelaVisaoGeral({ atualizacao, aoVerAgenda, aoAbrirFicha, aoRegistrarPas
           <div className="acoes-banner">
             <button className="botao botao-contorno" onClick={aoVerAgenda}>Ver agenda <span aria-hidden="true">→</span></button>
             <button className="botao botao-ember" onClick={() => aoRegistrarPasso(pendentes)}>＋ Registrar passo</button>
+            <button className="botao botao-contorno" onClick={aoCadastrarTatuador}>＋ Novo tatuador</button>
           </div>
         </div>
         <span className="banner-selo" aria-hidden="true">TN<br />✳</span>
@@ -1081,6 +1082,74 @@ function TelaFicha({ tatuagem, aoVoltar, aoSalvar, nomeRetorno = "agenda" }) {
   );
 }
 
+function TelaCadastroTatuador({ aoVoltar }) {
+  const [nome, definirNome] = useState("");
+  const [email, definirEmail] = useState("");
+  const [senha, definirSenha] = useState("");
+  const [confirmarSenha, definirConfirmarSenha] = useState("");
+  const [salvando, definirSalvando] = useState(false);
+  const [erro, definirErro] = useState("");
+  const [mensagem, definirMensagem] = useState("");
+
+  async function cadastrar(evento) {
+    evento.preventDefault();
+    definirErro("");
+    definirMensagem("");
+    if (senha !== confirmarSenha) {
+      definirErro("As senhas não coincidem.");
+      return;
+    }
+
+    definirSalvando(true);
+    try {
+      await pedirApi("/usuarios/tatuadores", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ nome, email, senha }),
+      });
+      definirNome("");
+      definirEmail("");
+      definirSenha("");
+      definirConfirmarSenha("");
+      definirMensagem("Conta criada. O tatuador já pode entrar com esse e-mail e senha.");
+    } catch (erroApi) {
+      definirErro(erroApi.message || "Não foi possível criar a conta de tatuador.");
+    } finally {
+      definirSalvando(false);
+    }
+  }
+
+  return (
+    <section className="painel-formulario">
+      <button className="voltar" type="button" onClick={aoVoltar}>← Voltar à visão geral</button>
+      <div className="titulo-secao">
+        <span className="sobretitulo">EQUIPE DO ESTÚDIO</span>
+        <h2>Cadastrar tatuador.</h2>
+        <p>Crie um acesso para outra pessoa da equipe. A nova conta terá o perfil de tatuador.</p>
+      </div>
+      <form onSubmit={cadastrar} className="formulario">
+        <label htmlFor="nome-tatuador">Nome</label>
+        <input id="nome-tatuador" autoComplete="name" value={nome} onChange={(evento) => definirNome(evento.target.value)} minLength="2" maxLength="100" required placeholder="Nome do tatuador" />
+
+        <label htmlFor="email-tatuador">E-mail</label>
+        <input id="email-tatuador" type="email" autoComplete="email" value={email} onChange={(evento) => definirEmail(evento.target.value)} maxLength="254" required placeholder="tatuador@exemplo.com" />
+
+        <label htmlFor="senha-tatuador">Senha (mínimo de 8 caracteres)</label>
+        <input id="senha-tatuador" type="password" autoComplete="new-password" value={senha} onChange={(evento) => definirSenha(evento.target.value)} minLength="8" maxLength="128" required placeholder="Crie uma senha" />
+
+        <label htmlFor="confirmar-senha-tatuador">Confirme a senha</label>
+        <input id="confirmar-senha-tatuador" type="password" autoComplete="new-password" value={confirmarSenha} onChange={(evento) => definirConfirmarSenha(evento.target.value)} minLength="8" maxLength="128" required placeholder="Digite a senha novamente" />
+
+        {erro && <p className="aviso aviso-erro" role="alert">{erro}</p>}
+        {mensagem && <p className="aviso aviso-sucesso" role="status">{mensagem}</p>}
+        <button className="botao botao-escuro" disabled={salvando}>
+          {salvando ? "Criando conta…" : "Criar conta de tatuador"}<span aria-hidden="true">↗</span>
+        </button>
+      </form>
+    </section>
+  );
+}
+
 function TelaLogin({ aoEntrar }) {
   const [modoCadastro, definirModoCadastro] = useState(false);
   const [username, definirUsername] = useState("");
@@ -1351,6 +1420,12 @@ export default function Aplicativo() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
+  function abrirCadastroTatuador() {
+    definirFicha(null);
+    definirTela("cadastro-tatuador");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
   function registrarProximoPasso(pendentes) {
     if (pendentes.length > 0) {
       definirTelaAnteriorFicha("visao-geral");
@@ -1410,8 +1485,9 @@ export default function Aplicativo() {
           <img className="banner-ornamento" src="/imagens/arabesco.png" alt="" />
           <div className="banner-conteudo"><span className="sobretitulo">SUA JORNADA NA PELE</span><h1>Histórias que ficam.</h1><p>Acompanhe cada traço, cada sessão e tudo o que vem depois.</p><button className="botao botao-ember" onClick={abrirPedidoCliente}><span aria-hidden="true">＋</span> Pedir tatuagem</button></div>
         </section>}
-        {tela === "visao-geral" && <TelaVisaoGeral atualizacao={atualizacao} aoVerAgenda={abrirAgenda} aoAbrirFicha={abrirFicha} aoRegistrarPasso={registrarProximoPasso} aoAtualizar={() => definirAtualizacao((valor) => valor + 1)} />}
+        {tela === "visao-geral" && <TelaVisaoGeral atualizacao={atualizacao} aoVerAgenda={abrirAgenda} aoAbrirFicha={abrirFicha} aoRegistrarPasso={registrarProximoPasso} aoAtualizar={() => definirAtualizacao((valor) => valor + 1)} aoCadastrarTatuador={abrirCadastroTatuador} />}
         <div className="coluna-conteudo">
+          {tela === "cadastro-tatuador" && perfil.tipo === "tatuador" && <TelaCadastroTatuador aoVoltar={abrirVisaoGeral} />}
           {tela === "pedir" && <TelaPedir perfil={perfil} aoVoltar={abrirMinhasTatuagens} aoCriar={concluirPedido} />}
           {tela === "minhas" && <TelaMinhasTatuagens key={atualizacao} perfil={perfil} aoAbrirHistorico={abrirHistoricoCliente} />}
           {tela === "historico-cliente" && projetoCliente && <TelaHistoricoCliente key={projetoCliente.id} perfil={perfil} tatuagem={projetoCliente} aoVoltar={abrirMinhasTatuagens} />}

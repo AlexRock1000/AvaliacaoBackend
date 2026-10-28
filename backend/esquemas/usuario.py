@@ -20,6 +20,10 @@ class CadastroUsuarioEntrada(BaseModel):
         return email
 
 
+class CadastroTatuadorEntrada(CadastroUsuarioEntrada):
+    """Valida os dados para criar uma conta de tatuador por uma rota protegida."""
+
+
 # GRUPOS E PERMISSÕES: forma pública da associação usuário-grupo.
 class GrupoUsuarioSaida(BaseModel):
     id: int
