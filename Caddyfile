@@ -1,8 +1,8 @@
-# atende na porta 80, sem domínio e sem HTTPS
+# atende na porta 80 dentro da rede do Compose, sem domínio e sem HTTPS
 :80 {
     # handle_path tira o /api: /api/tarefas chega como /tarefas
     handle_path /api/* {
-        reverse_proxy host.docker.internal:8000
+        reverse_proxy api:8000
     }
     # o resto são os arquivos do build do React
     handle {

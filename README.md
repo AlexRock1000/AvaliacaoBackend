@@ -52,25 +52,19 @@ npm.cmd run dev
 
 Abra `http://localhost:5173`. O seletor no cabeçalho alterna entre os perfis Bruna e Vitor.
 
-## Build e teste integrado com Caddy
+## Executar com Docker Compose
 
-O frontend centraliza a URL da API em `frontend/src/api.js`. No desenvolvimento, a URL relativa passa pelo proxy do Vite até a API local. O build de produção usa `/api`, para que o navegador envie as chamadas à mesma origem que serviu a tela. Veja [decisoes.md](decisoes.md) para o motivo e [o plano de infraestrutura](.Docs/infra.md) para o diagrama completo.
+O Compose reúne dois serviços: `web` (Caddy com a tela) e `api` (FastAPI). O banco continua sendo SQLite, armazenado em um volume persistente; portanto não há um serviço de banco separado. O frontend centraliza a URL da API em `frontend/src/api.js`: no build, `/api` mantém tela e API na mesma origem, e o Caddy encaminha essa rota para `api:8000` na rede interna do Compose. Veja [decisoes.md](decisoes.md) e [o plano de infraestrutura](.Docs/infra.md).
 
-Para testar o build integrado localmente, mantenha a API rodando em outro terminal. Como o Caddy será executado em um contêiner, inicie a API aceitando conexões da rede local do Docker:
-
-```powershell
-cd backend
-.venv\Scripts\python.exe -m uvicorn main:aplicativo --host 0.0.0.0 --reload
-```
-
-Confira `http://127.0.0.1:8000/health`; a resposta esperada é `{"status":"ok"}`. O `frontend/Dockerfile` executa `npm ci` e `npm run build` em uma etapa temporária com Node 22. A imagem final contém o Caddy, os arquivos de `dist/` e o `Caddyfile`; não precisa montar a pasta `dist` do computador. Com a API ainda rodando, na raiz do repositório construa e execute a imagem:
+O `.env` da raiz contém a chave de assinatura usada pela API e é ignorado pelo Git. Se ainda não existir, copie `.env.exemplo` para `.env` e preencha `CHAVE_DO_TOKEN` com uma chave forte; não compartilhe esse arquivo. O Compose passa `DATABASE_PATH` para o volume SQLite.
 
 ```powershell
-docker build -f frontend/Dockerfile -t tinta-negra .
-docker run --rm -d --name tinta-negra-web -p 8080:80 tinta-negra
+docker compose up --build -d
 ```
 
-Abra `http://localhost:8080`. A tela e os pedidos `/api/...` usam a mesma origem; o Caddy remove `/api` ao encaminhar o pedido para a API na porta 8000 do computador host. A configuração atual é um teste local em HTTP, não uma publicação de produção com HTTPS. Para parar a instância em segundo plano, execute `docker stop tinta-negra-web`; se ela já estiver rodando, pare-a antes de repetir o comando.
+Abra `http://localhost:8080`. Para conferir a API, acesse `http://localhost:8080/api/health`; a resposta esperada é `{"status":"ok"}`. O Caddyfile é montado no contêiner e encaminha `/api` ao serviço `api` pela rede interna. A imagem do frontend usa Node 22 somente na etapa de build e Caddy na imagem final.
+
+Para parar os serviços sem apagar os dados do SQLite, execute `docker compose down`. O volume do banco só é removido com `docker compose down -v`. Se um contêiner Caddy antigo já ocupar a porta 8080, pare-o antes de subir o Compose. Esta configuração atende HTTP local; não representa uma publicação HTTPS de produção.
 
 ## Funcionalidades implementadas
 

@@ -6,7 +6,7 @@ from permissoes import GRUPOS_CADASTRO, PERMISSOES_CADASTRO
 
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
-DB_PATH = os.path.join(ROOT, "database.sqlite3")
+DB_PATH = os.environ.get("DATABASE_PATH", os.path.join(ROOT, "database.sqlite3"))
 
 
 def conectar():

@@ -8,6 +8,7 @@ frontend/node_modules/
 frontend/dist/
 
 # O endereço de cada máquina fica no arquivo local de ambiente.
+.env
 backend/.env
 backend/database.sqlite3
 backend/database.sqlite3-shm

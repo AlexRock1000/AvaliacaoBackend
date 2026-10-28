@@ -46,10 +46,8 @@ npm.cmd run build
 
 Inicie o backend e acesse `http://localhost:8000/docs`. A documentação interativa permite conferir as rotas de tatuagens, passos, horários e atualização de situação.
 
-## Verificação integrada do build
+## Verificação integrada com Docker Compose
 
-O frontend não tem testes automatizados de interface. A validação manual mais recente do fluxo integrado gerou o build com `npm.cmd run build`, serviu `frontend/dist` pelo Caddy em `http://localhost:8080` e confirmou login e consultas pelos dois perfis demonstrativos. No JavaScript gerado, a base das chamadas é `/api`; o navegador usa o mesmo host e a mesma porta da tela. Essa execução local não representa uma publicação HTTPS e ocorreu antes da adição do Dockerfile multi-stage.
+O frontend não tem testes automatizados de interface. `docker compose up --build -d` construiu e iniciou os serviços `web` e `api`; `GET /` respondeu HTTP 200 e `GET /api/health` retornou `{"status":"ok"}`. O caminho do banco SQLite está em volume persistente. Essa execução local atende HTTP e não representa uma publicação HTTPS.
 
-Para verificar a imagem definida em `frontend/Dockerfile`, siga a seção [Build e teste integrado com Caddy](../README.md#build-e-teste-integrado-com-caddy). Mantenha a API acessível ao contêiner na porta 8000 e confira também `http://127.0.0.1:8000/health`, que deve responder `{"status":"ok"}`. Durante o teste no navegador, a aba Rede deve mostrar chamadas para `localhost:8080/api/...`; o Caddy encaminha essas rotas à API.
-
-A imagem multi-stage foi construída com `docker build -f frontend/Dockerfile -t tinta-negra .` e iniciada em `localhost:8080`. Na imagem nova, `GET /` respondeu HTTP 200 e `GET /api/health` retornou `{"status":"ok"}`. Login e consultas dos dois perfis foram confirmados antes no Caddy com build montado; esses fluxos não foram repetidos após a troca para a imagem multi-stage.
+Para repetir a verificação, siga [Executar com Docker Compose](../README.md#executar-com-docker-compose). Durante o teste no navegador, a aba Rede deve mostrar chamadas a `localhost:8080/api/...`; o Caddy encaminha essas rotas ao serviço `api:8000` pela rede interna do Compose. O login e as consultas dos dois perfis foram conferidos na execução manual anterior com Caddy; não foram repetidos após esta mudança para Compose.
