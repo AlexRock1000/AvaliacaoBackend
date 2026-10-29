@@ -61,6 +61,12 @@ Não encontrei um desenho anterior de infraestrutura da IA no repositório. Conf
 | Configuração e segredo | `backend/.env` local fornece `ENDERECO_FRONTEND` e `CHAVE_DO_TOKEN`; o `.env` não deve ir ao Git. | Configurações e chave próprias do ambiente, fornecidas ao servidor sem publicar o segredo. Hospedagem e mecanismo de configuração ainda não escolhidos. |
 | CORS | A API libera a origem exata definida por `ENDERECO_FRONTEND`, se a variável estiver preenchida. | Se tela e API usarem a mesma origem HTTPS, o navegador não precisa de CORS. Se forem origens diferentes, configurar a origem pública exata em `ENDERECO_FRONTEND`; domínio ainda indefinido. |
 
+## Uso do Supabase no desenvolvimento
+
+O Supabase substitui o PostgreSQL local como banco remoto; ele não hospeda automaticamente esta API FastAPI. A API e o frontend continuam rodando no computador durante o desenvolvimento, e `DATABASE_URL` em `backend/.env` deve receber a URI PostgreSQL copiada em **Connect** no painel do projeto. A senha permanece somente no arquivo local ignorado pelo Git. A URL do exemplo fica vazia e a aplicação não escolhe silenciosamente `localhost` quando a conexão não está configurada.
+
+Para criar o esquema inicial, executar `python criar_tabelas.py` e depois `alembic stamp head` dentro de `backend/`. A criação não cadastra perfis de demonstração; os perfis são cadastrados pela API em `/docs`. O baseline Alembic marca o esquema instalado por esse script, sem recriar nem apagar tabelas.
+
 ## Caminho do login e máquina de cada etapa
 
 1. **Bruna ou Vitor preenche usuário e senha** no navegador do próprio aparelho. O React roda nesse navegador; em desenvolvimento, a pessoa está no computador que também roda os servidores locais.

@@ -16,35 +16,38 @@ Aplicação para acompanhar pedidos, desenhos, sessões e retoques em um estúdi
 
 ## Rodar o backend
 
-No PowerShell, a partir da raiz:
+### Usando Supabase
 
 ```powershell
 cd backend
-python -m venv .venv
+if (-not (Test-Path .env)) { Copy-Item .env.exemplo .env }
 .venv\Scripts\python.exe -m pip install -r requirements.txt
-if (-not (Test-Path .env)) { Copy-Item .env.exemplo .env }
-cd ..
-if (-not (Test-Path .env)) { Copy-Item .env.exemplo .env }
-docker compose up -d db
-cd backend
 ```
 
-O `requirements.txt` já inclui `PyJWT`; também é possível instalá-lo diretamente. Para gerar uma chave hexadecimal aleatória de 64 caracteres, rode na pasta `backend`:
+No painel do Supabase, abra **Connect** e copie a URI PostgreSQL do projeto. Prefira a URI do pooler recomendada pelo painel quando a conexão direta não estiver disponível na sua rede. Preencha `DATABASE_URL` em `backend/.env` com essa URI; não inclua a senha em arquivos versionados, mensagens ou logs. Preencha também `ENDERECO_FRONTEND=http://localhost:5173` e defina `CHAVE_DO_TOKEN` com uma chave aleatória. Para gerar a chave, rode na pasta `backend`:
 
 ```powershell
-.venv\Scripts\python.exe -m pip install PyJWT
 .venv\Scripts\python.exe -c "import secrets; print(secrets.token_hex(32))"
 ```
 
-Copie o resultado para `CHAVE_DO_TOKEN=` em `backend/.env`, junto com `ENDERECO_FRONTEND=http://localhost:5173`. `DATABASE_URL` aponta para o PostgreSQL local iniciado pelo Compose; se alterar os dados de conexão em `.env`, atualize também essa URL. Em `backend/.env.exemplo`, mantenha a chave do token vazia. `configuracao.py` lê essas variáveis; `SECRET_KEY` continua aceita como alias. Os arquivos `.env` locais são ignorados pelo Git. Nunca copie a chave para o exemplo, logs ou documentação. Ao trocar a chave, reinicie a API e faça login novamente: os tokens emitidos com a chave anterior deixam de valer.
+Com o ambiente virtual ativado e o terminal dentro de `backend/`, crie as tabelas e registre o baseline Alembic:
 
 ```powershell
-.venv\Scripts\python.exe -m uvicorn main:aplicativo --reload
+.\.venv\Scripts\Activate.ps1
+python criar_tabelas.py
+alembic stamp head
+fastapi dev main.py
 ```
 
-A API fica em `http://localhost:8000`; a documentação interativa fica em `http://localhost:8000/docs`.
+O comando `criar_tabelas.py` cria o esquema sem contas de demonstração. Execute `alembic stamp head` somente se a criação terminar sem erro. O baseline registra no Alembic o esquema atual, criado pelo script; novas mudanças no esquema devem ser migrations em `backend/migracoes/versions/`. A API roda localmente em `http://localhost:8000`; use `/docs` para cadastrar os perfis e testar cada login. O backend conecta ao PostgreSQL do Supabase; o navegador e a API continuam em execução local.
 
 A camada de banco usa SQLAlchemy com o driver `psycopg2-binary`. O `NullPool` evita manter um pool local de conexões, deixando esse gerenciamento para o pooler do PostgreSQL, como o Supabase.
+
+`backend/.env` é local e ignorado pelo Git; mantenha a senha apenas nesse arquivo. `backend/.env.exemplo` deixa a URL e a chave vazias. `configuracao.py` lê essas variáveis; `SECRET_KEY` continua aceita como alias de `CHAVE_DO_TOKEN`. Ao trocar a chave, reinicie a API e faça login novamente: tokens emitidos com a chave anterior deixam de valer.
+
+### Usando PostgreSQL local com Docker Compose
+
+Se preferir o banco local, copie também o `.env.exemplo` da raiz para `.env` e inicie o serviço `db` com `docker compose up -d db`. Configure `DATABASE_URL` em `backend/.env` com os dados do PostgreSQL local, em vez da URI do Supabase. A inicialização da API cria o esquema local automaticamente.
 
 ## Rodar o frontend
 
