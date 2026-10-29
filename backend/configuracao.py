@@ -18,6 +18,10 @@ class Configuracao:
 def obter_configuracao() -> Configuracao:
     """Lê as configurações locais usadas pela API e pela conexão do banco."""
     url_do_banco = os.getenv("DATABASE_URL", "").strip()
+    if url_do_banco.startswith("postgresql://"):
+        url_do_banco = url_do_banco.replace(
+            "postgresql://", "postgresql+psycopg2://", 1
+        )
 
     return Configuracao(
         endereco_frontend=os.getenv("ENDERECO_FRONTEND"),

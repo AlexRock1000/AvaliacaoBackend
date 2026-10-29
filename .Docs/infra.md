@@ -65,7 +65,7 @@ Não encontrei um desenho anterior de infraestrutura da IA no repositório. Conf
 
 O Supabase substitui o PostgreSQL local como banco remoto; ele não hospeda automaticamente esta API FastAPI. A API e o frontend continuam rodando no computador durante o desenvolvimento, e `DATABASE_URL` em `backend/.env` deve receber a URI PostgreSQL copiada em **Connect** no painel do projeto. A senha permanece somente no arquivo local ignorado pelo Git. A URL do exemplo fica vazia e a aplicação não escolhe silenciosamente `localhost` quando a conexão não está configurada.
 
-Para criar o esquema inicial, executar `python criar_tabelas.py` e depois `alembic stamp head` dentro de `backend/`. A criação não cadastra perfis de demonstração; os perfis são cadastrados pela API em `/docs`. O baseline Alembic marca o esquema instalado por esse script, sem recriar nem apagar tabelas.
+Para criar o esquema inicial, executar `python criar_tabelas.py`, `alembic stamp 0001_esquema_inicial` e `alembic upgrade head` dentro de `backend/`. O baseline Alembic marca o esquema instalado pelo script sem recriar nem apagar tabelas; a migration seguinte ativa RLS em `grupos`, `permissoes`, `grupo_permissoes`, `usuarios`, `usuario_grupos`, `tatuagens`, `passos` e `alembic_version`. Sem políticas, os papéis comuns da Data API do Supabase não acessam essas linhas. A API deste projeto conecta como `postgres`, que passa por fora do RLS, e mantém seu controle de acesso. A criação não cadastra perfis de demonstração; os perfis são cadastrados pela API em `/docs`.
 
 ## Caminho do login e máquina de cada etapa
 

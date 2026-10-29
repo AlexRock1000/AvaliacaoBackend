@@ -35,11 +35,12 @@ Com o ambiente virtual ativado e o terminal dentro de `backend/`, crie as tabela
 ```powershell
 .\.venv\Scripts\Activate.ps1
 python criar_tabelas.py
-alembic stamp head
+alembic stamp 0001_esquema_inicial
+alembic upgrade head
 fastapi dev main.py
 ```
 
-O comando `criar_tabelas.py` cria o esquema sem contas de demonstração. Execute `alembic stamp head` somente se a criação terminar sem erro. O baseline registra no Alembic o esquema atual, criado pelo script; novas mudanças no esquema devem ser migrations em `backend/migracoes/versions/`. A API roda localmente em `http://localhost:8000`; use `/docs` para cadastrar os perfis e testar cada login. O backend conecta ao PostgreSQL do Supabase; o navegador e a API continuam em execução local.
+O comando `criar_tabelas.py` cria o esquema sem contas de demonstração. Execute os comandos do Alembic somente se a criação terminar sem erro: `stamp 0001_esquema_inicial` registra o esquema existente, e `upgrade head` aplica as migrations seguintes, incluindo a ativação do RLS nas tabelas do projeto e em `alembic_version`. Sem políticas, a Data API do Supabase não terá acesso às linhas com papéis comuns. A conexão da aplicação com o usuário `postgres` passa por fora do RLS; as permissões e regras de negócio continuam aplicadas pela API. Novas mudanças no esquema devem ser migrations em `backend/migracoes/versions/`. A API roda localmente em `http://localhost:8000`; use `/docs` para cadastrar os perfis e testar cada login. O backend conecta ao PostgreSQL do Supabase; o navegador e a API continuam em execução local.
 
 A camada de banco usa SQLAlchemy com o driver `psycopg2-binary`. O `NullPool` evita manter um pool local de conexões, deixando esse gerenciamento para o pooler do PostgreSQL, como o Supabase.
 
