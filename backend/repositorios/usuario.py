@@ -1,4 +1,4 @@
-import psycopg
+from sqlalchemy.exc import IntegrityError
 
 from banco import conectar, inicializar_banco
 from modelos.usuario import Usuario, usuario_da_linha
@@ -95,7 +95,7 @@ def salvar(usuario: Usuario) -> Usuario:
         if salvo is None:
             raise RuntimeError("Não foi possível recuperar o usuário salvo.")
         return salvo
-    except psycopg.IntegrityError as erro:
+    except IntegrityError as erro:
         conexao.rollback()
         raise ValueError("Este e-mail já está cadastrado.") from erro
     finally:

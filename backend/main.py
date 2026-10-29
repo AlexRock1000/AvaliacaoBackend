@@ -12,7 +12,7 @@ from seguranca import validar_chave_token
 aplicativo = FastAPI(title="Tinta Negra Tattoo Studio")
 configuracao = obter_configuracao()
 validar_chave_token()
-endereco_frontend = configuracao["endereco_frontend"]
+endereco_frontend = configuracao.endereco_frontend
 
 # Só registra o CORS quando o endereço foi preenchido no arquivo de ambiente.
 if endereco_frontend:

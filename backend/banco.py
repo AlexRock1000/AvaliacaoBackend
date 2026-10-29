@@ -1,30 +1,89 @@
 import os
+import re
+from contextlib import contextmanager
 
-import psycopg
-from dotenv import load_dotenv
-from psycopg.rows import dict_row
+from sqlalchemy import create_engine, text
+from sqlalchemy.pool import NullPool
 
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
-load_dotenv(os.path.join(ROOT, ".env"))
 
+from configuracao import obter_configuracao
 from permissoes import GRUPOS_CADASTRO, PERMISSOES_CADASTRO
 from seguranca import hashear_senha
 
 
-def obter_database_url() -> str:
-    """Retorna a URL PostgreSQL configurada para este ambiente."""
-    database_url = os.environ.get("DATABASE_URL", "").strip()
-    if not database_url:
-        raise RuntimeError(
-            "Configure DATABASE_URL para conectar o backend ao PostgreSQL."
-        )
-    return database_url
+configuracao = obter_configuracao()
+engine = (
+    create_engine(configuracao.url_do_banco, poolclass=NullPool)
+    if configuracao.url_do_banco
+    else None
+)
+
+
+def _preparar_parametros(consulta, parametros=None):
+    """Converte os parâmetros posicionais legados para o formato nomeado do SQLAlchemy."""
+    if isinstance(parametros, dict):
+        return consulta, parametros
+
+    valores = tuple(parametros or ())
+    indice = 0
+
+    def substituir(_):
+        nonlocal indice
+        nome = f"p{indice}"
+        indice += 1
+        return f":{nome}"
+
+    consulta = re.sub(r"%s", substituir, consulta)
+    return consulta, {f"p{i}": valor for i, valor in enumerate(valores)}
+
+
+class ConexaoPostgreSQL:
+    """Adapta as chamadas do repositório para uma conexão SQLAlchemy 2.x."""
+
+    def __init__(self, conexao):
+        self._conexao = conexao
+
+    def execute(self, consulta, parametros=None):
+        consulta, parametros = _preparar_parametros(consulta, parametros)
+        resultado = self._conexao.execute(text(consulta), parametros)
+        return resultado.mappings() if resultado.returns_rows else resultado
+
+    def executemany(self, consulta, sequencias):
+        sequencias = list(sequencias)
+        if not sequencias:
+            return None
+        consulta_sqlalchemy, _ = _preparar_parametros(consulta, sequencias[0])
+        parametros = [
+            _preparar_parametros(consulta, valores)[1] for valores in sequencias
+        ]
+        return self._conexao.execute(text(consulta_sqlalchemy), parametros)
+
+    @contextmanager
+    def transaction(self):
+        with self._conexao.begin():
+            yield self
+
+    def commit(self):
+        self._conexao.commit()
+
+    def rollback(self):
+        self._conexao.rollback()
+
+    def close(self):
+        self._conexao.close()
 
 
 def conectar():
-    """Abre uma conexão PostgreSQL com linhas acessíveis pelo nome da coluna."""
-    return psycopg.connect(obter_database_url(), row_factory=dict_row)
+    """Abre uma conexão sem manter pool local, deixando o pooler remoto gerenciá-la."""
+    global engine
+    if engine is None:
+        configuracao = obter_configuracao()
+        if not configuracao.url_do_banco:
+            raise RuntimeError("Configure DATABASE_URL para conectar o backend ao PostgreSQL.")
+        engine = create_engine(configuracao.url_do_banco, poolclass=NullPool)
+    return ConexaoPostgreSQL(engine.connect())
 
 
 def _preparar_catalogo_autorizacao(conexao):

@@ -16,7 +16,7 @@ ITERACOES_HASH = 600_000
 TAMANHO_SALT = 16
 ALGORITMO_TOKEN = "HS256"
 _CONFIGURACAO = obter_configuracao()
-_SEGREDO_TOKEN = _CONFIGURACAO.get("chave_do_token")
+_SEGREDO_TOKEN = _CONFIGURACAO.chave_do_token
 
 
 def validar_chave_token():

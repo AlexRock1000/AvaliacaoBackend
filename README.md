@@ -44,6 +44,8 @@ Copie o resultado para `CHAVE_DO_TOKEN=` em `backend/.env`, junto com `ENDERECO_
 
 A API fica em `http://localhost:8000`; a documentação interativa fica em `http://localhost:8000/docs`.
 
+A camada de banco usa SQLAlchemy com o driver `psycopg2-binary`. O `NullPool` evita manter um pool local de conexões, deixando esse gerenciamento para o pooler do PostgreSQL, como o Supabase.
+
 ## Rodar o frontend
 
 Em outro terminal, a partir da raiz:

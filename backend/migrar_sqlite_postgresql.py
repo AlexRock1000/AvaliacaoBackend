@@ -78,8 +78,7 @@ def _copiar_tabela(conexao_destino, nome, colunas, valores):
         f"INSERT INTO {nome} ({campos}) VALUES ({placeholders}) "
         "ON CONFLICT DO NOTHING"
     )
-    with conexao_destino.cursor() as cursor:
-        cursor.executemany(consulta, valores)
+    conexao_destino.executemany(consulta, valores)
     return len(valores)
 
 
