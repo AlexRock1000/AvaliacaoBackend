@@ -9,3 +9,7 @@ O navegador vê tela e API na mesma origem, então não precisa de CORS entre el
 No desenvolvimento, `.env.development` deixa `VITE_URL_DA_API` vazio: a tela usa caminhos relativos e o proxy do Vite encaminha as rotas ao FastAPI local. O destino `127.0.0.1:8000` em `vite.config.js` é usado pelo processo do Vite, não pelo navegador.
 
 A aplicação lê essa configuração por `frontend/src/api.js`, que centraliza a base usada pelas chamadas da interface. O build foi conferido depois da troca: o JavaScript gerado usa `/api` e não inclui `localhost` ou `127.0.0.1` como destino das chamadas da interface. O destino loopback continua apenas no proxy de desenvolvimento do Vite.
+
+## Deploy independente na Vercel
+
+O deploy separado mantém `VITE_URL_DA_API` como URL HTTPS absoluta do backend Vercel, definida nas variáveis de build do projeto frontend. Essa variável de ambiente prevalece sobre `frontend/.env.production`, que continua como `/api` para o deploy local via Docker/Caddy. O backend expõe o mesmo FastAPI por `backend/app.py` para o runtime Python Vercel; no projeto backend, `ENDERECO_FRONTEND` deve ser a origem HTTPS exata do frontend para CORS. Segredos e `DATABASE_URL` são variáveis exclusivas do backend.

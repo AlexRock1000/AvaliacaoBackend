@@ -50,6 +50,27 @@ A camada de banco usa SQLAlchemy com o driver `psycopg2-binary`. O `NullPool` ev
 
 Se preferir o banco local, copie também o `.env.exemplo` da raiz para `.env` e inicie o serviço `db` com `docker compose up -d db`. Configure `DATABASE_URL` em `backend/.env` com os dados do PostgreSQL local, em vez da URI do Supabase. A inicialização da API cria o esquema local automaticamente.
 
+## Publicar frontend e backend separadamente na Vercel
+
+Crie **dois projetos Vercel** ligados ao mesmo repositório, com diretórios raiz diferentes:
+
+| Projeto | Root Directory | Configuração |
+| --- | --- | --- |
+| Frontend | `frontend` | Vite; `frontend/vercel.json` define `npm run build` e `dist`. |
+| Backend | `backend` | FastAPI; o runtime Python detecta `backend/app.py` e a instância ASGI `app`. Dependências vêm de `backend/requirements.txt`; `.python-version` seleciona Python 3.13. |
+
+No projeto do backend, configure estas variáveis em **Settings → Environment Variables**:
+
+- `DATABASE_URL`: URI PostgreSQL do Supabase.
+- `CHAVE_DO_TOKEN`: chave aleatória para assinar os tokens.
+- `ENDERECO_FRONTEND`: origem exata do frontend publicado, por exemplo `https://meu-frontend.vercel.app`, sem barra no final.
+
+No projeto do frontend, configure `VITE_URL_DA_API` com a URL HTTPS pública do backend Vercel, sem barra final, por exemplo `https://minha-api.vercel.app`. Essa variável é incorporada ao bundle durante o build; defina-a nos ambientes Vercel em que o frontend será compilado. O `.env.production` local continua com `/api` para Docker/Caddy; a variável do ambiente de build da Vercel deve sobrescrevê-lo.
+
+Faça o primeiro deploy do backend, copie sua URL pública para `VITE_URL_DA_API` no projeto frontend e faça o deploy do frontend. Em seguida, copie a origem pública do frontend para `ENDERECO_FRONTEND` no backend e redeploye-o. Se testar Preview Deployments, configure também a origem de preview correspondente para o backend; o CORS aceita somente a origem exata configurada. Teste `https://<url-do-backend>/health`, depois o login e as chamadas do frontend.
+
+O deploy é separado: a tela chama o backend diretamente entre duas origens HTTPS, protegido por CORS e pelo token da API. Não use a URL do Supabase no frontend; `DATABASE_URL` e `CHAVE_DO_TOKEN` ficam somente nas variáveis do projeto backend. O arquivo `backend/app.py` apenas exporta a aplicação existente para o runtime e não inicializa outro servidor local.
+
 ## Rodar o frontend
 
 Em outro terminal, a partir da raiz:
