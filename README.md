@@ -4,6 +4,7 @@ Aplicação para acompanhar pedidos, desenhos, sessões e retoques em um estúdi
 
 ## Documentos e referências
 
+- [Apresentação do projeto](apresentacao.html): personas, jornada e funcionalidades.
 - [Cartilha original](Docs/CARTILHA.md): referência inicial do projeto.
 - [Briefing atualizado](Docs/BRIEFING.md): escopo implementado nesta versão.
 - [Registro das alterações de cadastro e autenticação](Docs/ALTERACOES_AUTENTICACAO_CADASTRO.md): estrutura, migration, endpoints e testes.
