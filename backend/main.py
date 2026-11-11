@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from configuracao import obter_configuracao
 from rotas.autenticacao import roteador as roteador_autenticacao
+from rotas.ia import roteador as roteador_ia
 from rotas.tatuagens import roteador as roteador_tatuagens
 from rotas.usuarios import roteador as roteador_usuarios
 from seguranca import validar_chave_token
@@ -26,6 +27,7 @@ if endereco_frontend:
     )
 
 aplicativo.include_router(roteador_autenticacao)
+aplicativo.include_router(roteador_ia)
 aplicativo.include_router(roteador_usuarios)
 aplicativo.include_router(roteador_tatuagens)
 

@@ -1,7 +1,7 @@
 # Funcionalidade de IA: sugestão de priorização de projetos
 
-**Status:** planejada  
-**Provedor previsto:** Claude via API  
+**Status:** integração inicial implementada
+**Provedores:** Google Gemini, Anthropic Claude e OpenAI, com fallback nessa ordem
 **Validação manual do prompt:** pendente
 
 ## Problema e oportunidade
@@ -18,14 +18,18 @@ Bruna e Vitor poderão consultar uma lista ordenada sugerida por IA, acompanhada
 
 - **Papel:** apoiar Bruna e Vitor na revisão da ordem de atenção dos projetos.
 - **Entrada por projeto:** código fictício, etapa atual, histórico recente, próxima ação pendente e compromissos ou prazos.
-- **Ferramentas:** nenhuma ferramenta é exposta ao modelo. Na integração prevista, o backend enviará os dados à API do Claude; o modelo não consultará diretamente o banco nem a agenda.
+- **Ferramentas:** nenhuma ferramenta é exposta ao modelo; `backend/ia/ferramentas.py` registra essa decisão. O backend envia os dados ao provedor configurado, que não consulta diretamente o banco nem a agenda.
 - **Acesso:** o backend deve enviar apenas projetos que a pessoa tenha permissão para consultar; o prompt não substitui o controle de acesso do serviço.
 - **Limites:** usar somente sinais explícitos nos dados, sem inventar fatos, regras, pesos ou prazos. A resposta é sugestão para revisão humana, sem gravação automática.
 - **Falha ou ausência de resposta:** a pessoa continua a tarefa pelas listas, filtros e agenda existentes. A IA não deve bloquear o fluxo.
 
 ### Modelo de execução previsto
 
-Uma única chamada ao Claude recebe a instrução abaixo e os dados enviados pelo backend. Isso atende ao escopo atual porque há uma tarefa e uma resposta para revisão humana. Não se propõem agentes com ferramentas nem vários agentes: não há, até aqui, fontes que o modelo precise consultar diretamente ou responsabilidades independentes que justifiquem dividir o trabalho.
+Uma chamada ao provedor disponível recebe a instrução abaixo e os dados enviados pelo backend. O Google é tentado primeiro, seguido de Anthropic e OpenAI quando a chave está configurada e uma chamada anterior falha. A rota `POST /ia/sugestao-prioridade` usa os projetos no escopo de acesso da pessoa autenticada. O modelo não consulta diretamente o banco nem a agenda; a resposta é uma recomendação para revisão humana.
+
+As chaves são `GOOGLE_API_KEY`, `ANTHROPIC_API_KEY` e `OPENAI_API_KEY`, configuradas em `backend/.env` (veja `backend/.env.exemplo`). A resposta da IA não é gravada. Se nenhum provedor estiver configurado ou todos falharem, a rota responde HTTP 503; listas vazias não geram chamadas externas.
+
+O contexto enviado contém código fictício, etapa, até três eventos recentes e compromissos agendados. Ideia, imagem, observações e identificador do cliente não são enviados. A próxima ação pendente permanece vazia porque esse dado não é armazenado separadamente no sistema.
 
 ## Prompt para teste manual
 
