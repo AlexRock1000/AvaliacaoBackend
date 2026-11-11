@@ -3,6 +3,7 @@ from datetime import date, time
 from types import SimpleNamespace
 from unittest.mock import patch
 
+from ia.ferramentas import FERRAMENTAS, dias_ate
 from ia import modelos
 from ia.sugestao import gerar_sugestao
 from servicos.ia import preparar_projetos_para_sugestao
@@ -137,3 +138,19 @@ class TestDadosParaSugestao(unittest.TestCase):
 
         obter_resposta.assert_not_called()
         self.assertIn("Não há projetos", resposta)
+
+
+class TestFerramentasIA(unittest.TestCase):
+    # Confirma que a tool conta dias corridos e informa prazos vencidos como negativos.
+    def test_dias_ate_prazo_futuro_e_vencido(self):
+        hoje = date(2026, 11, 10)
+        with patch("ia.ferramentas.date") as data_falsa:
+            data_falsa.today.return_value = hoje
+            data_falsa.fromisoformat.side_effect = date.fromisoformat
+
+            self.assertEqual(dias_ate("2026-11-15"), 5)
+            self.assertEqual(dias_ate("2026-11-08"), -2)
+
+    # Mantém no catálogo somente as funções selecionadas para esta funcionalidade.
+    def test_catalogo_contem_dias_ate(self):
+        self.assertEqual(FERRAMENTAS, [dias_ate])
