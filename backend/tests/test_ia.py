@@ -32,6 +32,27 @@ class TestFallbackIA(unittest.TestCase):
             ["google", "anthropic"],
         )
 
+    # Expõe o provedor e o modelo que atenderam sem mudar o texto usado pela rota.
+    def test_resposta_detalhada_informa_provedor_modelo_e_texto(self):
+        configuracao = SimpleNamespace(
+            chave_google="chave-google",
+            chave_anthropic=None,
+            chave_openai=None,
+        )
+        with (
+            patch.object(modelos, "obter_configuracao", return_value=configuracao),
+            patch.object(
+                modelos,
+                "_chamar_provedor",
+                return_value="Olá!",
+            ),
+        ):
+            resposta = modelos.obter_resposta_detalhada("instrução", "entrada")
+
+        self.assertEqual(resposta.provider, "Google")
+        self.assertEqual(resposta.model, "gemini-3.8-flash")
+        self.assertEqual(resposta.text, "Olá!")
+
     # Confirma que a cadeia alcança o último provedor antes de declarar indisponibilidade.
     def test_tenta_openai_quando_google_e_anthropic_falham(self):
         configuracao = SimpleNamespace(

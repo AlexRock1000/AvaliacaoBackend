@@ -1,5 +1,5 @@
 import json
-from typing import Any
+from dataclasses import dataclass
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
@@ -8,7 +8,7 @@ from configuracao import obter_configuracao
 
 ORDEM_PROVEDORES = ("google", "anthropic", "openai")
 MODELOS = {
-    "google": "gemini-2.5-flash",
+    "google": "gemini-3.8-flash",
     "anthropic": "claude-haiku-4-5",
     "openai": "gpt-4o-mini",
 }
@@ -23,10 +23,15 @@ class ErroProvedoresIA(RuntimeError):
     """Informa que nenhum dos provedores configurados conseguiu responder."""
 
 
+@dataclass(frozen=True)
+class RespostaModelo:
+    provider: str
+    model: str
+    text: str
+
+
 # Envia um pedido JSON à API sem incluir credenciais no endereço da requisição.
-def _solicitar_json(
-    url: str, cabecalhos: dict[str, str], dados: dict[str, Any]
-) -> dict[str, Any]:
+def _solicitar_json(url: str, cabecalhos: dict, dados: dict) -> dict:
     corpo = json.dumps(dados, ensure_ascii=False).encode("utf-8")
     requisicao = Request(
         url,
@@ -42,7 +47,7 @@ def _solicitar_json(
 
 
 # Converte a resposta de cada API para texto, recusando formatos incompletos.
-def _extrair_texto(provedor: str, resposta: dict[str, Any]) -> str:
+def _extrair_texto(provedor: str, resposta: dict) -> str:
     if provedor == "google":
         partes = resposta["candidates"][0]["content"]["parts"]
         texto = "\n".join(parte["text"] for parte in partes if "text" in parte)
@@ -96,10 +101,10 @@ def _chamar_provedor(provedor: str, chave: str, instrucao: str, entrada: str) ->
     return _extrair_texto(provedor, resposta)
 
 
-# Tenta os provedores configurados na ordem escolhida e só retorna uma resposta válida.
-def obter_resposta(instrucao: str, entrada: str) -> str:
+# Tenta os provedores configurados e informa qual deles produziu a resposta.
+def obter_resposta_detalhada(instrucao: str, entrada: str) -> RespostaModelo:
     configuracao = obter_configuracao()
-    chaves: dict[str, str | None] = {
+    chaves = {
         "google": configuracao.chave_google,
         "anthropic": configuracao.chave_anthropic,
         "openai": configuracao.chave_openai,
@@ -115,11 +120,15 @@ def obter_resposta(instrucao: str, entrada: str) -> str:
 
     falhas = []
     for provedor in provedores_configurados:
-        chave = chaves[provedor]
-        if chave is None:
-            continue
         try:
-            return _chamar_provedor(provedor, chave, instrucao, entrada)
+            texto = _chamar_provedor(
+                provedor, chaves[provedor], instrucao, entrada
+            )
+            return RespostaModelo(
+                provider=NOMES_PROVEDORES[provedor],
+                model=MODELOS[provedor],
+                text=texto,
+            )
         except (
             HTTPError,
             URLError,
@@ -139,3 +148,8 @@ def obter_resposta(instrucao: str, entrada: str) -> str:
     raise ErroProvedoresIA(
         "Nenhum provedor de IA respondeu com sucesso: " + "; ".join(falhas)
     )
+
+
+# Preserva a interface simples usada pela funcionalidade de sugestão da API.
+def obter_resposta(instrucao: str, entrada: str) -> str:
+    return obter_resposta_detalhada(instrucao, entrada).text
