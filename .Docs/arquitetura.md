@@ -13,7 +13,7 @@ Todo o código específico da integração com IA fica em `backend/ia/`:
 
 ```mermaid
 flowchart LR
-  tela["Tela React — Projetos / Minhas tatuagens"]
+  tela["Botão flutuante React — qualquer tela autenticada"]
   rota["POST /ia/sugestao-prioridade"]
   permissao["Autenticação e escopo de acesso"]
   tatuagens["Serviço de tatuagens — leitura"]

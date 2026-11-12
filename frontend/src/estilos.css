@@ -129,16 +129,22 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
 .modo-cliente .estado { color: var(--pedra); }
 .estado-vazio { padding: 25px; border: 1px dashed var(--linha); border-radius: 18px; }
 
-/* Mantém a sugestão visivelmente separada das ações que registram dados. */
-.painel-sugestao { margin: 0 0 22px; padding: 20px; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 12px 20px; border: 1px solid var(--linha); border-radius: 18px; background: rgb(22 18 15 / 78%); color: var(--creme); }
-.painel-sugestao .sobretitulo { color: var(--brasa); }
-.painel-sugestao h3 { margin: 6px 0 0; font: 700 25px/1.1 'Cormorant Garamond', Georgia, serif; }
-.painel-sugestao p { margin: 8px 0 0; color: var(--fumaca); font-size: 14px; line-height: 1.55; }
-.painel-sugestao .estado { grid-column: 1 / -1; padding: 0; }
-.painel-sugestao .aviso { grid-column: 1 / -1; }
-.resultado-sugestao { grid-column: 1 / -1; max-height: 420px; margin: 0; padding: 16px; overflow: auto; border: 1px solid var(--linha); border-radius: 12px; background: rgb(0 0 0 / 18%); color: var(--creme); font: inherit; font-size: 14px; line-height: 1.65; white-space: pre-wrap; overflow-wrap: anywhere; }
-.modo-cliente .painel-sugestao { border-color: rgb(22 18 15 / 12%); background: var(--papel); color: var(--tinta); }
-.modo-cliente .painel-sugestao p { color: var(--pedra); }
+/* Fixar o acesso do agente no canto sem depender da tela ou do conteúdo aberto. */
+.agente-flutuante { position: fixed; z-index: 45; right: 24px; bottom: 24px; display: flex; flex-direction: column; align-items: flex-end; gap: 12px; }
+.botao-agente-flutuante { min-height: 54px; padding: 0 20px; display: inline-flex; align-items: center; justify-content: center; gap: 9px; border: 1px solid rgb(217 137 70 / 65%); border-radius: 999px; background: var(--brasa); color: var(--tinta); box-shadow: 0 8px 28px rgb(0 0 0 / 28%); font-size: 14px; font-weight: 700; }
+.botao-agente-flutuante > span:first-child { font-size: 20px; }
+.botao-agente-flutuante:hover { background: var(--brasa-clara); }
+.janela-agente { width: min(390px, calc(100vw - 32px)); max-height: min(72vh, 640px); padding: 20px; overflow: auto; border: 1px solid var(--linha); border-radius: 20px; background: var(--carvao); color: var(--creme); box-shadow: 0 16px 48px rgb(0 0 0 / 38%); }
+.cabecalho-agente { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+.cabecalho-agente .sobretitulo { color: var(--brasa); }
+.cabecalho-agente h2 { margin: 5px 0 0; font: 700 26px/1.1 'Cormorant Garamond', Georgia, serif; }
+.fechar-agente { width: 36px; height: 36px; flex: 0 0 36px; border: 1px solid var(--linha); border-radius: 50%; background: transparent; color: inherit; font-size: 24px; line-height: 1; }
+.descricao-agente { margin: 14px 0; color: var(--fumaca); font-size: 14px; line-height: 1.55; }
+.janela-agente .estado { padding: 12px 0 0; }
+.janela-agente .aviso { margin-top: 12px; }
+.resultado-sugestao { max-height: 340px; margin: 14px 0 0; padding: 14px; overflow: auto; border: 1px solid var(--linha); border-radius: 12px; background: rgb(0 0 0 / 18%); color: var(--creme); font: inherit; font-size: 14px; line-height: 1.65; white-space: pre-wrap; overflow-wrap: anywhere; }
+.modo-cliente .janela-agente { border-color: rgb(22 18 15 / 12%); background: var(--papel); color: var(--tinta); }
+.modo-cliente .descricao-agente { color: var(--pedra); }
 .modo-cliente .resultado-sugestao { border-color: rgb(22 18 15 / 12%); background: var(--creme); color: var(--tinta); }
 
 /* Cartões e histórico da cliente usam a divisão creme e carvão do Figma. */
@@ -235,8 +241,9 @@ button.cartao-tatuagem { width: 100%; cursor: pointer; }
   .banner-conteudo h1 { font-size: clamp(43px, 12vw, 58px); }
   .banner-conteudo p { max-width: 400px; font-size: 14px; }
   .banner-selo { width: 50px; height: 50px; flex-basis: 50px; margin-left: 8px; font-size: 14px; }
-  .painel-sugestao { grid-template-columns: minmax(0, 1fr); }
-  .painel-sugestao .botao { justify-self: start; }
+  .agente-flutuante { right: 16px; bottom: calc(78px + env(safe-area-inset-bottom)); }
+  .botao-agente-flutuante { min-height: 50px; padding: 0 16px; }
+  .janela-agente { max-height: min(65vh, 560px); padding: 17px; }
   .cabecalho-projetos { align-items: flex-start; flex-direction: column; gap: 7px; }
 .cabecalho-projetos p { font-size: 14px; }
   .grade-cliente { grid-template-columns: 1fr; gap: 15px; }

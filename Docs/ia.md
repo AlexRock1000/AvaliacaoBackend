@@ -29,7 +29,7 @@ O backend usa o Jangada para falar com os provedores. O Gemini é o principal, o
 
 A rota `POST /ia/sugestao-prioridade` mantém o controle de acesso existente, busca os projetos no escopo da pessoa autenticada e chama somente a função do pacote `backend/ia/`. Não grava a resposta. Se os provedores não conseguirem responder, a rota retorna HTTP 503 com “Sugestão indisponível agora.”; listas vazias não geram chamadas externas.
 
-Na interface, o painel de sugestão aparece em “Minhas tatuagens” para Bruna e em “Projetos” para Vitor. A tela apresenta espera, erro e resultado. A pessoa deve conferir a recomendação e usar os fluxos existentes para registrar qualquer ação; a sugestão nunca é salva automaticamente.
+Na interface autenticada, um botão flutuante permite abrir o agente em qualquer tela de Bruna ou Vitor. O painel apresenta espera, erro e resultado. A pessoa deve conferir a recomendação e usar os fluxos existentes para registrar qualquer ação; a sugestão nunca é salva automaticamente.
 
 O contexto enviado contém código de projeto, etapa, até três eventos recentes e compromissos agendados. Ideia, imagem, observações e identificador do cliente não são enviados. A próxima ação pendente permanece vazia porque esse dado não é armazenado separadamente no sistema.
 
@@ -38,7 +38,7 @@ O contexto enviado contém código de projeto, etapa, até três eventos recente
 1. **Separar a integração de IA:** manter `backend/ia/__init__.py`, `modelos.py`, `ferramentas.py` e `sugestao.py`; centralizar os provedores e o `with_fallback` em `modelos.py`. Testar a ordem Gemini → OpenRouter → Claude com testes sem chamadas externas.
 2. **Disponibilizar a ferramenta escolhida:** registrar apenas `dias_ate` em `ferramentas.py` e validar datas `DD-MM-AAAA`, com até três chamadas em cada execução. Testar datas futuras, vencidas e formato inválido.
 3. **Ligar a rota:** manter `POST /ia/sugestao-prioridade` protegida, delegar o processamento a `ia/sugestao.py`, não persistir a resposta e responder 503 com mensagem simples quando os provedores falharem. Testar resposta de sucesso e falha com dependências simuladas.
-4. **Integrar a interface:** oferecer o botão, o estado de espera, a mensagem de erro e a exibição da resposta nas telas “Minhas tatuagens” e “Projetos”. Conferir que a pessoa revise antes de usar os fluxos existentes para gravar qualquer ação.
+4. **Integrar a interface:** oferecer o botão flutuante de acesso em qualquer tela autenticada, além dos estados de espera, erro e exibição da resposta. Conferir que a pessoa revise antes de usar os fluxos existentes para gravar qualquer ação.
 5. **Verificar o fallback manualmente:** executar `backend/testar_fallback.py --testar-primeira-reserva` com o nome de modelo Gemini inválido usado exclusivamente no teste; conferir se o OpenRouter respondeu. Esse modo não inclui o Claude, para evitar acionar o provedor pago. A execução real depende das configurações locais e pode consumir cota do OpenRouter.
 6. **Validar as entregas locais:** executar `python -m unittest discover -s tests -p test_ia.py` na pasta `backend/` e `npm run build` na pasta `frontend/`. Manter pendentes os testes manuais de prompt até registrar os resultados observados.
 
@@ -154,4 +154,4 @@ Que desenho combina com o signo de escorpião?
 
 ## Situação da implementação
 
-O backend e o painel nas telas de Bruna e Vitor estão implementados. A suíte focada de IA (13 testes) e o build do frontend passaram. Permanecem pendentes a conferência manual do fallback com credenciais locais e a validação do prompt no uso real. A atualização do briefing e do roadmap fica para etapas futuras.
+O backend e o botão flutuante de acesso ao agente em todas as telas autenticadas estão implementados. A suíte focada de IA (13 testes) e o build do frontend passaram. Permanecem pendentes a conferência manual do fallback com credenciais locais e a validação do prompt no uso real. A atualização do briefing e do roadmap fica para etapas futuras.

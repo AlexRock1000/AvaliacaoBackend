@@ -245,9 +245,9 @@ function TelaPedir({ perfil, aoCriar, aoAtualizar, tatuagem = null, aoVoltar }) 
   );
 }
 
-// Carrega os projetos da cliente; o cartão encaminha para a tela separada de histórico.
-// Permitir pedir e revisar uma sugestão sem gravar o texto retornado pela IA.
+// Disponibilizar o agente em todas as telas autenticadas sem gravar sua resposta.
 function PainelSugestaoPrioridade() {
+  const [aberto, definirAberto] = useState(false);
   const [carregandoSugestao, definirCarregandoSugestao] = useState(false);
   const [erroSugestao, definirErroSugestao] = useState("");
   const [sugestao, definirSugestao] = useState("");
@@ -268,19 +268,34 @@ function PainelSugestaoPrioridade() {
   }
 
   return (
-    <section className="painel-sugestao" aria-labelledby="titulo-sugestao-prioridade">
-      <div>
-        <span className="sobretitulo">APOIO À DECISÃO</span>
-        <h3 id="titulo-sugestao-prioridade">Sugestão de prioridade</h3>
-        <p>A sugestão não será salva. Confira o resultado e registre qualquer ação pelo fluxo normal do projeto.</p>
-      </div>
-      <button className="botao botao-ember" type="button" disabled={carregandoSugestao} onClick={solicitarSugestao}>
-        {carregandoSugestao ? "Preparando sugestão…" : "Gerar sugestão"}
+    <aside className="agente-flutuante">
+      {aberto && <section id="painel-agente-prioridade" className="janela-agente" aria-labelledby="titulo-agente-prioridade">
+        <header className="cabecalho-agente">
+          <div>
+            <span className="sobretitulo">APOIO À DECISÃO</span>
+            <h2 id="titulo-agente-prioridade">Agente de IA</h2>
+          </div>
+          <button className="fechar-agente" type="button" aria-label="Fechar agente de IA" onClick={() => definirAberto(false)}>×</button>
+        </header>
+        <p className="descricao-agente">Gerar uma sugestão de prioridade para os projetos. A resposta não será salva; conferir antes de registrar qualquer ação.</p>
+        <button className="botao botao-ember" type="button" disabled={carregandoSugestao} onClick={solicitarSugestao}>
+          {carregandoSugestao ? "Preparando sugestão…" : "Gerar sugestão"}
+        </button>
+        {carregandoSugestao && <p className="estado" role="status">A IA está analisando os projetos. Isso pode levar alguns instantes.</p>}
+        {erroSugestao && <p className="aviso aviso-erro" role="alert">{erroSugestao}</p>}
+        {sugestao && <pre className="resultado-sugestao" aria-live="polite">{sugestao}</pre>}
+      </section>}
+      <button
+        className="botao-agente-flutuante"
+        type="button"
+        aria-expanded={aberto}
+        aria-controls="painel-agente-prioridade"
+        onClick={() => definirAberto((valor) => !valor)}
+      >
+        <span aria-hidden="true">✦</span>
+        <span>{aberto ? "Fechar agente" : "Agente IA"}</span>
       </button>
-      {carregandoSugestao && <p className="estado" role="status">A IA está analisando os projetos. Isso pode levar alguns instantes.</p>}
-      {erroSugestao && <p className="aviso aviso-erro" role="alert">{erroSugestao}</p>}
-      {sugestao && <pre className="resultado-sugestao" aria-live="polite">{sugestao}</pre>}
-    </section>
+    </aside>
   );
 }
 
@@ -329,7 +344,6 @@ function TelaMinhasTatuagens({ perfil, aoAbrirHistorico }) {
         <div><span className="sobretitulo">ACOMPANHE CADA HISTÓRIA</span><h2>Minhas tatuagens.</h2></div>
         <p>Do primeiro traço até o último retoque.</p>
       </div>
-      <PainelSugestaoPrioridade />
       <div className="grade-cliente">
         <div className="lista-projetos">
           <h3>Seus projetos</h3>
@@ -656,7 +670,6 @@ function TelaProjetos({ atualizacao, aoAbrirFicha }) {
         <h2>Todos os projetos.</h2>
         <p>Organizados por etapa, do pedido à finalização.</p>
       </header>
-      <PainelSugestaoPrioridade />
       {carregando && <p className="estado">Carregando projetos…</p>}
       {erro && <p className="aviso aviso-erro" role="alert">{erro}</p>}
       {!carregando && !erro && tatuagens.length === 0 && <p className="estado estado-vazio">Ainda não há projetos cadastrados. Os novos pedidos aparecerão aqui.</p>}
@@ -1572,6 +1585,7 @@ export default function Aplicativo() {
         <button className={tela === "pedir" ? "ativo" : ""} onClick={abrirPedidoCliente}>＋ <span>Novo pedido</span></button>
       </nav>}
       <footer className="rodape"><span>UM PASSO DE CADA VEZ.</span><span>TINTA NEGRA · TATTOO STUDIO</span></footer>
+      <PainelSugestaoPrioridade />
     </div>
   );
 }
