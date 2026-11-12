@@ -224,6 +224,85 @@ class TestAgenteIA(unittest.TestCase):
         historico = solicitar.call_args_list[1].args[2]["messages"]
         self.assertEqual(historico[-1]["content"], '{"result": 5}')
 
+    def test_processa_chamada_de_ferramenta_anthropic(self):
+        configuracao = SimpleNamespace(
+            chave_google=None,
+            chave_anthropic="chave-anthropic",
+            chave_openai=None,
+        )
+        respostas = [
+            {
+                "content": [
+                    {
+                        "type": "tool_use",
+                        "id": "toolu-1",
+                        "name": "dias_ate",
+                        "input": {"prazo": "15-11-2026"},
+                    }
+                ]
+            },
+            {"content": [{"type": "text", "text": "Faltam 5 dias."}]},
+        ]
+        with (
+            patch.object(modelos, "obter_configuracao", return_value=configuracao),
+            patch.object(modelos, "_solicitar_json", side_effect=respostas) as solicitar,
+            patch("ia.ferramentas.date") as data_falsa,
+        ):
+            data_falsa.today.return_value = date(2026, 11, 10)
+            resultado = modelos.obter_resposta_com_ferramentas(
+                "instrução", "entrada"
+            )
+
+        self.assertEqual(resultado.text, "Faltam 5 dias.")
+        resultado_ferramenta = solicitar.call_args_list[1].args[2]["messages"][-2]
+        self.assertEqual(resultado_ferramenta["content"][0]["tool_use_id"], "toolu-1")
+
+    def test_processa_chamada_de_ferramenta_google(self):
+        configuracao = SimpleNamespace(
+            chave_google="chave-google",
+            chave_anthropic=None,
+            chave_openai=None,
+        )
+        respostas = [
+            {
+                "candidates": [
+                    {
+                        "content": {
+                            "parts": [
+                                {
+                                    "functionCall": {
+                                        "name": "dias_ate",
+                                        "args": {"prazo": "15-11-2026"},
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                ]
+            },
+            {
+                "candidates": [
+                    {"content": {"parts": [{"text": "Faltam 5 dias."}]}}
+                ]
+            },
+        ]
+        with (
+            patch.object(modelos, "obter_configuracao", return_value=configuracao),
+            patch.object(modelos, "_solicitar_json", side_effect=respostas) as solicitar,
+            patch("ia.ferramentas.date") as data_falsa,
+        ):
+            data_falsa.today.return_value = date(2026, 11, 10)
+            resultado = modelos.obter_resposta_com_ferramentas(
+                "instrução", "entrada"
+            )
+
+        self.assertEqual(resultado.text, "Faltam 5 dias.")
+        conteudos = solicitar.call_args_list[1].args[2]["contents"]
+        self.assertEqual(
+            conteudos[-2]["parts"][0]["functionResponse"]["response"]["result"],
+            5,
+        )
+
     def test_limita_chamadas_de_ferramentas(self):
         chamada = {
             "id": "call-1",
