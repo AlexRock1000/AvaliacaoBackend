@@ -237,16 +237,27 @@ class TestAgenteIA(unittest.TestCase):
                         "role": "assistant",
                         "content": None,
                         "tool_calls": [
-                            chamada
-                        ] * (modelos.MAX_CHAMADAS_FERRAMENTAS + 1),
+                            {
+                                "id": f"call-{indice}",
+                                "function": {
+                                    "name": "dias_ate",
+                                    "arguments": '{"prazo":"15-11-2026"}',
+                                },
+                            }
+                            for indice in range(
+                                modelos.MAX_CHAMADAS_FERRAMENTAS + 1
+                            )
+                        ],
                     }
                 }
             ]
         }
+        orcamento = [modelos.MAX_CHAMADAS_FERRAMENTAS]
         with self.assertRaisesRegex(ValueError, "limite de chamadas"):
             modelos._processar_turno_com_ferramentas(
                 "openai",
                 resposta,
                 [],
-                modelos.MAX_CHAMADAS_FERRAMENTAS,
+                orcamento,
             )
+        self.assertEqual(orcamento, [modelos.MAX_CHAMADAS_FERRAMENTAS])

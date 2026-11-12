@@ -189,6 +189,11 @@ def _executar_chamada_ferramenta(chamada: dict, orcamento: list[int]) -> int | s
         return f"Erro da ferramenta: {erro}"
 
 
+def _validar_limite_ferramentas(chamadas: list[dict], orcamento: list[int]) -> None:
+    if len(chamadas) > orcamento[0]:
+        raise ValueError("O limite de chamadas de ferramentas foi atingido.")
+
+
 def _processar_turno_com_ferramentas(
     provedor: str,
     resposta: dict,
@@ -205,6 +210,7 @@ def _processar_turno_com_ferramentas(
             for parte in partes
             if "functionCall" in parte
         ]
+        _validar_limite_ferramentas(chamadas, orcamento)
         historico.append({"role": "model", "parts": partes})
         resultados = [
             {
@@ -217,7 +223,7 @@ def _processar_turno_com_ferramentas(
                     },
                 }
             }
-            for indice, chamada in enumerate(chamadas)
+            for chamada in chamadas
         ]
         if resultados:
             historico.append({"role": "user", "parts": resultados})
@@ -233,6 +239,7 @@ def _processar_turno_com_ferramentas(
             for bloco in blocos
             if bloco.get("type") == "tool_use"
         ]
+        _validar_limite_ferramentas(chamadas, orcamento)
         historico.append({"role": "assistant", "content": blocos})
         resultados = [
             {
@@ -247,7 +254,7 @@ def _processar_turno_com_ferramentas(
                     ensure_ascii=False,
                 ),
             }
-            for indice, chamada in enumerate(chamadas)
+            for chamada in chamadas
         ]
         if resultados:
             historico.append({"role": "user", "content": resultados})
@@ -264,8 +271,9 @@ def _processar_turno_com_ferramentas(
             }
             for chamada in mensagem.get("tool_calls", [])
         ]
+        _validar_limite_ferramentas(chamadas, orcamento)
         historico.append(mensagem)
-        for indice, chamada in enumerate(chamadas):
+        for chamada in chamadas:
             resultado = _executar_chamada_ferramenta(
                 chamada, orcamento
             )
