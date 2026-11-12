@@ -18,14 +18,14 @@ Bruna e Vitor poderão consultar uma lista ordenada sugerida por IA, acompanhada
 
 - **Papel:** apoiar Bruna e Vitor na revisão da ordem de atenção dos projetos.
 - **Entrada por projeto:** código fictício, etapa atual, histórico recente, próxima ação pendente e compromissos ou prazos.
-- **Ferramentas:** `backend/ia/ferramentas.py` define `dias_ate`, listada em `FERRAMENTAS`. A integração atual ainda não envia tools ao provedor; o modelo não consulta diretamente o banco nem a agenda.
+- **Ferramentas:** `backend/ia/ferramentas.py` define `dias_ate`, listada em `FERRAMENTAS` e disponibilizada aos provedores. Ela calcula dias corridos até uma data explícita no formato `DD-MM-AAAA`; são permitidas no máximo três chamadas por sugestão. O modelo não consulta diretamente o banco nem a agenda.
 - **Acesso:** o backend deve enviar apenas projetos que a pessoa tenha permissão para consultar; o prompt não substitui o controle de acesso do serviço.
 - **Limites:** usar somente sinais explícitos nos dados, sem inventar fatos, regras, pesos ou prazos. A resposta é sugestão para revisão humana, sem gravação automática.
 - **Falha ou ausência de resposta:** a pessoa continua a tarefa pelas listas, filtros e agenda existentes. A IA não deve bloquear o fluxo.
 
-### Modelo de execução previsto
+### Modelo de execução implementado
 
-Uma chamada ao provedor disponível recebe a instrução abaixo e os dados enviados pelo backend. O Google é tentado primeiro, seguido de Anthropic e OpenAI quando a chave está configurada e uma chamada anterior falha. A rota `POST /ia/sugestao-prioridade` usa os projetos no escopo de acesso da pessoa autenticada. O modelo não consulta diretamente o banco nem a agenda; a resposta é uma recomendação para revisão humana.
+O backend envia a instrução e os dados preparados ao provedor disponível e executa somente a ferramenta `dias_ate` quando solicitada pelo modelo. Cada resultado é devolvido ao modelo para que ele conclua a resposta, com limite de três chamadas de ferramenta por sugestão. O Google é tentado primeiro, seguido de Anthropic e OpenAI quando a chave está configurada e uma chamada anterior falha. A rota `POST /ia/sugestao-prioridade` busca os projetos no escopo de acesso da pessoa autenticada e prepara o contexto enviado. O modelo não consulta diretamente o banco nem a agenda; a resposta é uma recomendação para revisão humana.
 
 As chaves são `GOOGLE_API_KEY`, `ANTHROPIC_API_KEY` e `OPENAI_API_KEY`, configuradas em `backend/.env` (veja `backend/.env.exemplo`). A resposta da IA não é gravada. Se nenhum provedor estiver configurado ou todos falharem, a rota responde HTTP 503; listas vazias não geram chamadas externas.
 
@@ -139,10 +139,9 @@ Que desenho combina com o signo de escorpião?
 
 ## Pontos ainda não definidos
 
-- ? A tela específica onde a lista será exibida.
-- ? A forma de selecionar e montar os projetos que cada pessoa autorizada verá no payload.
+- ? A tela específica onde a lista será exibida e como a pessoa usuária acionará a sugestão.
 - ? Os resultados dos três testes manuais.
 
-## Fora do escopo desta etapa
+## Situação da implementação
 
-Não houve alteração de código nem implementação da integração. A atualização do briefing e do roadmap fica para etapas futuras.
+O backend já implementa a integração inicial, incluindo a rota, o controle de acesso aos projetos enviados e o fallback entre provedores. A exibição e o acionamento pela interface ainda não estão definidos; os testes manuais do prompt também permanecem pendentes. A atualização do briefing e do roadmap fica para etapas futuras.

@@ -1,7 +1,7 @@
 import json
 from typing import Any
 
-from ia.modelos import obter_resposta
+from ia.modelos import obter_resposta_com_ferramentas
 
 
 INSTRUCAO_SUGESTAO = """Você é um assistente de apoio à priorização de projetos de tatuagem usado por Bruna e Vitor.
@@ -13,7 +13,7 @@ ENTRADA
 Você recebe uma lista de projetos com código, etapa atual, histórico recente, próxima ação pendente e compromissos ou prazos. Não solicite nomes, contatos ou outros dados pessoais.
 
 LIMITES
-Não invente fatos, prazos, etapas, ações, responsáveis ou critérios de prioridade. Não atribua notas ou pesos. Se os sinais forem insuficientes ou não permitirem comparar projetos, diga isso claramente e identifique quais projetos não têm ordem determinável. Você não tem ferramentas, não consulta outros sistemas e não altera dados. Não decida mudanças no processo; as regras da Cartilha são aplicadas pelo serviço.
+Não invente fatos, prazos, etapas, ações, responsáveis ou critérios de prioridade. Não atribua notas ou pesos. Se os sinais forem insuficientes ou não permitirem comparar projetos, diga isso claramente e identifique quais projetos não têm ordem determinável. Você pode usar somente a ferramenta dias_ate para calcular dias corridos até uma data explícita, convertida para DD-MM-AAAA. Não consulte outros sistemas nem altere dados. Não decida mudanças no processo; as regras da Cartilha são aplicadas pelo serviço.
 
 FORMATO DA RESPOSTA
 1. Informe “Sugestão de ordem” ou “Dados insuficientes para ordenar”.
@@ -31,4 +31,4 @@ def gerar_sugestao(projetos: list[dict[str, Any]]) -> str:
         return "Não há projetos disponíveis para sugerir uma ordem de atenção."
 
     entrada = json.dumps({"projetos": projetos}, ensure_ascii=False)
-    return obter_resposta(INSTRUCAO_SUGESTAO, entrada)
+    return obter_resposta_com_ferramentas(INSTRUCAO_SUGESTAO, entrada).text
