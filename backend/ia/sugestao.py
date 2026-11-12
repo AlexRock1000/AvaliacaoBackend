@@ -1,10 +1,12 @@
 import json
 from typing import Any
 
+from ia.ferramentas import FERRAMENTAS
 from ia.modelos import obter_resposta_com_ferramentas
 
 
-INSTRUCAO_SUGESTAO = """Você é um assistente de apoio à priorização de projetos de tatuagem usado por Bruna e Vitor.
+# Definir as regras de priorização para a resposta ser uma sugestão revisável.
+INSTRUCAO = """Você é um assistente de apoio à priorização de projetos de tatuagem usado por Bruna e Vitor.
 
 TAREFA
 Produza uma sugestão de ordem de atenção para os projetos recebidos. Baseie-se somente nos dados fornecidos: etapa atual, histórico recente, próxima ação pendente e compromissos ou prazos explícitos. A ordem é uma recomendação para uma pessoa revisar.
@@ -31,4 +33,4 @@ def gerar_sugestao(projetos: list[dict[str, Any]]) -> str:
         return "Não há projetos disponíveis para sugerir uma ordem de atenção."
 
     entrada = json.dumps({"projetos": projetos}, ensure_ascii=False)
-    return obter_resposta_com_ferramentas(INSTRUCAO_SUGESTAO, entrada).text
+    return obter_resposta_com_ferramentas(INSTRUCAO, entrada, FERRAMENTAS).text

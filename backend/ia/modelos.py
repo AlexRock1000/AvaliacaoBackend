@@ -1,12 +1,16 @@
 import os
 from dataclasses import dataclass
+from typing import Any, Callable
 
 # Evita uma segunda leitura automática do .env pelo Jangada; a aplicação centraliza
 # o carregamento das configurações em configuracao.py.
 os.environ.setdefault("JANGADA_NO_DOTENV", "1")
 
 from configuracao import Configuracao, obter_configuracao
-from jangada_ai import LLM, errors
+from jangada_ai import Agent, LLM, errors
+
+
+MAX_CHAMADAS_FERRAMENTAS = 3
 
 
 # Centraliza os identificadores dos modelos usados nesta cadeia de fallback.
@@ -67,11 +71,45 @@ def obter_resposta_detalhada(instrucao: str, entrada: str) -> RespostaModelo:
     )
 
 
-# Manter o contrato antigo até o próximo passo ligar as ferramentas pelo Agent.
+# Executar o ciclo síncrono do Agent com as ferramentas permitidas e limite de uso.
 def obter_resposta_com_ferramentas(
-    instrucao: str, entrada: str
-) -> RespostaModelo:
-    return obter_resposta_detalhada(instrucao, entrada)
+    instrucao: str,
+    entrada: str,
+    ferramentas: list[Callable[..., Any]],
+) -> Any:
+    configuracao = obter_configuracao()
+    _, _, _, llm = criar_provedores(configuracao)
+    chamadas = 0
+
+    # Bloquear chamadas além da cota local sem executar ferramentas adicionais.
+    def limitar_chamadas(chamada: Any) -> bool:
+        nonlocal chamadas
+        if chamadas >= MAX_CHAMADAS_FERRAMENTAS:
+            return False
+        chamadas += 1
+        return True
+
+    agente = Agent(
+        llm,
+        role="assistente de apoio à priorização de projetos de tatuagem",
+        goal=instrucao,
+        tools=ferramentas,
+        on_tool_call=limitar_chamadas,
+        max_iterations=MAX_CHAMADAS_FERRAMENTAS + 1,
+    )
+    try:
+        resposta = agente.run(entrada)
+    except errors.LLMError as erro:
+        raise ErroProvedoresIA(
+            "Nenhum provedor de IA conseguiu responder."
+        ) from erro
+    if resposta.stopped_by_limit:
+        raise ErroProvedoresIA(
+            "O agente não concluiu a resposta dentro do limite de etapas."
+        )
+    if not resposta.text.strip():
+        raise ErroProvedoresIA("O agente retornou uma resposta vazia.")
+    return resposta
 
 
 # Preservar a interface simples usada pela função de sugestão atual.

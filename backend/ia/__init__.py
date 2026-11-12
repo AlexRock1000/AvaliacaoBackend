@@ -1,0 +1,1 @@
+# Agrupar neste pacote os provedores, ferramentas e funcionalidades de IA.

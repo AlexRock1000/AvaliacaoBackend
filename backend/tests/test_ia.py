@@ -4,7 +4,7 @@ from types import SimpleNamespace
 from unittest.mock import Mock, patch
 
 from ia import modelos
-from ia.ferramentas import FERRAMENTAS, dias_ate, executar_ferramenta
+from ia.ferramentas import FERRAMENTAS, dias_ate
 from ia.sugestao import gerar_sugestao
 from servicos.ia import preparar_projetos_para_sugestao
 
@@ -47,34 +47,86 @@ class TestFallbackIA(unittest.TestCase):
         fallback.assert_called_once_with(openrouter, claude)
 
     # Encaminhar a entrada e a instrução ao Jangada e devolver o texto recebido.
-    def test_obter_resposta_usa_llm_com_instrucoes(self):
-        resposta_modelo = SimpleNamespace(
+    def test_cria_agente_com_instrucao_tools_e_limite(self):
+        resultado_agente = SimpleNamespace(
             text="Sugestão fictícia.",
-            provider="OpenRouter",
-            model="openrouter/free",
+            stopped_by_limit=False,
         )
-        llm = SimpleNamespace(
-            complete=Mock(return_value=resposta_modelo)
-        )
-        configuracao = SimpleNamespace(
-            chave_do_gemini="gemini-ficticia",
-            chave_do_openrouter="openrouter-ficticia",
-            chave_do_claude="claude-ficticia",
-        )
+        agente = Mock()
+        agente.run.return_value = resultado_agente
         with (
-            patch.object(modelos, "obter_configuracao", return_value=configuracao),
+            patch.object(
+                modelos,
+                "obter_configuracao",
+                return_value=SimpleNamespace(
+                    chave_do_gemini="gemini-ficticia",
+                    chave_do_openrouter="openrouter-ficticia",
+                    chave_do_claude="claude-ficticia",
+                ),
+            ),
             patch.object(
                 modelos,
                 "criar_provedores",
-                return_value=(None, None, None, llm),
+                return_value=(None, None, None, Mock()),
+            ),
+            patch.object(modelos, "Agent", return_value=agente) as criar_agente,
+        ):
+            resposta = modelos.obter_resposta_com_ferramentas(
+                "instrução fictícia",
+                "entrada fictícia",
+                FERRAMENTAS,
+            )
+
+        self.assertIs(resposta, resultado_agente)
+        criar_agente.assert_called_once()
+        self.assertEqual(criar_agente.call_args.kwargs["goal"], "instrução fictícia")
+        self.assertEqual(criar_agente.call_args.kwargs["tools"], FERRAMENTAS)
+        self.assertEqual(
+            criar_agente.call_args.kwargs["max_iterations"],
+            modelos.MAX_CHAMADAS_FERRAMENTAS + 1,
+        )
+        agente.run.assert_called_once_with("entrada fictícia")
+        permitir_chamada = criar_agente.call_args.kwargs["on_tool_call"]
+        self.assertTrue(
+            all(
+                permitir_chamada(SimpleNamespace())
+                for _ in range(modelos.MAX_CHAMADAS_FERRAMENTAS)
+            )
+        )
+        self.assertFalse(permitir_chamada(SimpleNamespace()))
+
+    # Não aceitar uma resposta parcial se o Agent atingir o limite de iterações.
+    def test_limite_de_iteracoes_vira_erro_explicito(self):
+        agente = Mock()
+        agente.run.return_value = SimpleNamespace(
+            text="Resposta parcial fictícia.",
+            stopped_by_limit=True,
+        )
+        with (
+            patch.object(
+                modelos,
+                "obter_configuracao",
+                return_value=SimpleNamespace(
+                    chave_do_gemini="gemini-ficticia",
+                    chave_do_openrouter="openrouter-ficticia",
+                    chave_do_claude="claude-ficticia",
+                ),
+            ),
+            patch.object(
+                modelos,
+                "criar_provedores",
+                return_value=(None, None, None, Mock()),
+            ),
+            patch.object(modelos, "Agent", return_value=agente),
+            self.assertRaisesRegex(
+                modelos.ErroProvedoresIA, "não concluiu a resposta"
             ),
         ):
-            texto = modelos.obter_resposta("instrução fictícia", "entrada fictícia")
-
-        self.assertEqual(texto, "Sugestão fictícia.")
-        llm.complete.assert_called_once_with(
-            "entrada fictícia", system="instrução fictícia"
-        )
+            modelos.obter_resposta_com_ferramentas(
+                "instrução fictícia",
+                "entrada fictícia",
+                FERRAMENTAS,
+            )
 
     # Expor o provider e o modelo que responderam para o teste manual de fallback.
     def test_resposta_detalhada_informa_provedor_e_modelo(self):
@@ -109,6 +161,18 @@ class TestFallbackIA(unittest.TestCase):
         self.assertEqual(resposta.provider, "OpenRouter")
         self.assertEqual(resposta.model, "openrouter/free")
         self.assertEqual(resposta.text, "Resposta fictícia.")
+
+    # Confirmar que o Jangada consegue gerar o esquema da tool Python escolhida.
+    def test_jangada_aceita_tool_de_calculo(self):
+        agente = modelos.Agent(
+            Mock(),
+            role="assistente fictício",
+            goal="Calcular um prazo fictício.",
+            tools=FERRAMENTAS,
+            max_iterations=4,
+        )
+
+        self.assertEqual([ferramenta.name for ferramenta in agente._tools], ["dias_ate"])
 
 
 class TestDadosParaSugestao(unittest.TestCase):
@@ -159,6 +223,27 @@ class TestDadosParaSugestao(unittest.TestCase):
         obter_resposta.assert_not_called()
         self.assertIn("Não há projetos", resposta)
 
+    # Enviar somente o payload fictício e a tool aprovada ao Agent.
+    def test_gerar_sugestao_envia_entrada_e_tool(self):
+        projeto = {
+            "codigo": "P-TESTE",
+            "etapa_atual": "sessão agendada",
+            "historico_recente": [],
+            "proxima_acao_pendente": None,
+            "compromissos_prazos": ["15-11-2026"],
+        }
+        resposta = SimpleNamespace(text="Sugestão fictícia.")
+        with patch(
+            "ia.sugestao.obter_resposta_com_ferramentas",
+            return_value=resposta,
+        ) as chamar_agente:
+            sugestao = gerar_sugestao([projeto])
+
+        self.assertEqual(sugestao, "Sugestão fictícia.")
+        entrada = chamar_agente.call_args.args[1]
+        self.assertIn('"P-TESTE"', entrada)
+        self.assertEqual(chamar_agente.call_args.args[2], FERRAMENTAS)
+
 
 class TestFerramentasIA(unittest.TestCase):
     # Calcular dias corridos e representar datas vencidas com valores negativos.
@@ -174,15 +259,6 @@ class TestFerramentasIA(unittest.TestCase):
     def test_dias_ate_rejeita_formato_invalido(self):
         with self.assertRaises(ValueError):
             dias_ate("2026-11-15")
-
-    # Restringir a execução ao nome autorizado e aos argumentos esperados.
-    def test_ferramenta_rejeita_nome_e_argumentos_nao_autorizados(self):
-        with self.assertRaisesRegex(ValueError, "não está autorizada"):
-            executar_ferramenta("consultar_banco", {})
-        with self.assertRaisesRegex(ValueError, "exige somente prazo"):
-            executar_ferramenta(
-                "dias_ate", {"prazo": "15-11-2026", "extra": True}
-            )
 
     # Manter no catálogo somente a função selecionada para esta funcionalidade.
     def test_catalogo_contem_dias_ate(self):
