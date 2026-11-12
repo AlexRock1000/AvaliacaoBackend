@@ -1,105 +1,125 @@
 import unittest
 from datetime import date, time
 from types import SimpleNamespace
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
-from ia.ferramentas import FERRAMENTAS, dias_ate, executar_ferramenta
 from ia import modelos
+from ia.ferramentas import FERRAMENTAS, dias_ate, executar_ferramenta
 from ia.sugestao import gerar_sugestao
 from servicos.ia import preparar_projetos_para_sugestao
 
 
 class TestFallbackIA(unittest.TestCase):
-    # Confirma que indisponibilidade do provedor principal aciona o próximo configurado.
-    def test_tenta_google_antes_de_anthropic_e_openai(self):
+    # Confirmar os três provedores e a ordem do fallback sem chamadas externas.
+    def test_monta_gemini_openrouter_claude_com_fallback(self):
         configuracao = SimpleNamespace(
-            chave_google="chave-google",
-            chave_anthropic="chave-anthropic",
-            chave_openai="chave-openai",
+            chave_do_gemini="gemini-ficticia",
+            chave_do_openrouter="openrouter-ficticia",
+            chave_do_claude="claude-ficticia",
         )
+        gemini = SimpleNamespace()
+        openrouter = SimpleNamespace()
+        claude = SimpleNamespace()
+        llm = object()
         with (
-            patch.object(modelos, "obter_configuracao", return_value=configuracao),
             patch.object(
                 modelos,
-                "_chamar_provedor",
-                side_effect=[OSError(), "resposta alternativa"],
-            ) as chamar,
+                "LLM",
+                side_effect=[gemini, openrouter, claude],
+            ) as criar,
+            patch.object(gemini, "with_fallback", return_value=llm) as fallback,
         ):
-            resposta = modelos.obter_resposta("instrução", "entrada")
+            provedores = modelos.criar_provedores(configuracao)
 
-        self.assertEqual(resposta, "resposta alternativa")
+        self.assertEqual(provedores, (gemini, openrouter, claude, llm))
         self.assertEqual(
-            [chamada.args[0] for chamada in chamar.call_args_list],
-            ["google", "anthropic"],
+            [chamada.args for chamada in criar.call_args_list],
+            [
+                ("gemini", modelos.MODELO_GEMINI),
+                ("openrouter", modelos.MODELO_OPENROUTER),
+                ("anthropic", modelos.MODELO_CLAUDE),
+            ],
         )
+        self.assertEqual(
+            [chamada.kwargs["api_key"] for chamada in criar.call_args_list],
+            ["gemini-ficticia", "openrouter-ficticia", "claude-ficticia"],
+        )
+        fallback.assert_called_once_with(openrouter, claude)
 
-    # Expõe o provedor e o modelo que atenderam sem mudar o texto usado pela rota.
-    def test_resposta_detalhada_informa_provedor_modelo_e_texto(self):
+    # Encaminhar a entrada e a instrução ao Jangada e devolver o texto recebido.
+    def test_obter_resposta_usa_llm_com_instrucoes(self):
+        resposta_modelo = SimpleNamespace(
+            text="Sugestão fictícia.",
+            provider="OpenRouter",
+            model="openrouter/free",
+        )
+        llm = SimpleNamespace(
+            complete=Mock(return_value=resposta_modelo)
+        )
         configuracao = SimpleNamespace(
-            chave_google="chave-google",
-            chave_anthropic=None,
-            chave_openai=None,
+            chave_do_gemini="gemini-ficticia",
+            chave_do_openrouter="openrouter-ficticia",
+            chave_do_claude="claude-ficticia",
         )
         with (
             patch.object(modelos, "obter_configuracao", return_value=configuracao),
             patch.object(
                 modelos,
-                "_chamar_provedor",
-                return_value="Olá!",
+                "criar_provedores",
+                return_value=(None, None, None, llm),
             ),
         ):
-            resposta = modelos.obter_resposta_detalhada("instrução", "entrada")
+            texto = modelos.obter_resposta("instrução fictícia", "entrada fictícia")
 
-        self.assertEqual(resposta.provider, "Google")
-        self.assertEqual(resposta.model, "gemini-3.8-flash")
-        self.assertEqual(resposta.text, "Olá!")
+        self.assertEqual(texto, "Sugestão fictícia.")
+        llm.complete.assert_called_once_with(
+            "entrada fictícia", system="instrução fictícia"
+        )
 
-    # Confirma que a cadeia alcança o último provedor antes de declarar indisponibilidade.
-    def test_tenta_openai_quando_google_e_anthropic_falham(self):
-        configuracao = SimpleNamespace(
-            chave_google="chave-google",
-            chave_anthropic="chave-anthropic",
-            chave_openai="chave-openai",
+    # Expor o provider e o modelo que responderam para o teste manual de fallback.
+    def test_resposta_detalhada_informa_provedor_e_modelo(self):
+        resposta_modelo = SimpleNamespace(
+            text="Resposta fictícia.",
+            provider="OpenRouter",
+            model="openrouter/free",
+        )
+        llm = SimpleNamespace(
+            complete=Mock(return_value=resposta_modelo)
         )
         with (
-            patch.object(modelos, "obter_configuracao", return_value=configuracao),
             patch.object(
                 modelos,
-                "_chamar_provedor",
-                side_effect=[OSError(), OSError(), OSError()],
-            ) as chamar,
-            self.assertRaisesRegex(modelos.ErroProvedoresIA, "OpenAI"),
+                "obter_configuracao",
+                return_value=SimpleNamespace(
+                    chave_do_gemini="gemini-ficticia",
+                    chave_do_openrouter="openrouter-ficticia",
+                    chave_do_claude="claude-ficticia",
+                ),
+            ),
+            patch.object(
+                modelos,
+                "criar_provedores",
+                return_value=(None, None, None, llm),
+            ),
         ):
-            modelos.obter_resposta("instrução", "entrada")
+            resposta = modelos.obter_resposta_detalhada(
+                "instrução fictícia", "entrada fictícia"
+            )
 
-        self.assertEqual(
-            [chamada.args[0] for chamada in chamar.call_args_list],
-            ["google", "anthropic", "openai"],
-        )
-
-    # Evita mascarar a falta total de credenciais como uma resposta de sucesso.
-    def test_sem_chaves_informa_configuracao_ausente(self):
-        configuracao = SimpleNamespace(
-            chave_google=None,
-            chave_anthropic=None,
-            chave_openai=None,
-        )
-        with (
-            patch.object(modelos, "obter_configuracao", return_value=configuracao),
-            self.assertRaises(modelos.ErroProvedoresIA),
-        ):
-            modelos.obter_resposta("instrução", "entrada")
+        self.assertEqual(resposta.provider, "OpenRouter")
+        self.assertEqual(resposta.model, "openrouter/free")
+        self.assertEqual(resposta.text, "Resposta fictícia.")
 
 
 class TestDadosParaSugestao(unittest.TestCase):
-    # Limita o contexto enviado ao modelo e preserva apenas sinais relevantes à decisão.
+    # Limitar o contexto enviado ao modelo e excluir informações privadas do projeto.
     def test_prepara_eventos_sem_imagem_ideia_ou_dados_pessoais(self):
         tatuagens = [
             {
                 "id": 17,
                 "cliente_id": 99,
-                "ideia": "conteúdo privado",
-                "imagem_referencia": "imagem privada",
+                "ideia": "conteúdo privado fictício",
+                "imagem_referencia": "imagem privada fictícia",
                 "etapa": "em sessões",
                 "passos": [
                     {
@@ -108,7 +128,7 @@ class TestDadosParaSugestao(unittest.TestCase):
                         "data": date(2026, 11, 12),
                         "horario": time(14, 30),
                         "situacao": "agendada",
-                        "observacao": "nota privada",
+                        "observacao": "nota privada fictícia",
                     },
                 ],
             }
@@ -131,9 +151,9 @@ class TestDadosParaSugestao(unittest.TestCase):
             ],
         )
 
-    # Não envia chamadas à API quando não há projetos autorizados para sugerir.
+    # Evitar chamar o modelo quando não há projetos autorizados para sugerir.
     def test_lista_vazia_nao_consulta_provedores(self):
-        with patch("ia.sugestao.obter_resposta_com_ferramentas") as obter_resposta:
+        with patch("ia.sugestao.obter_resposta") as obter_resposta:
             resposta = gerar_sugestao([])
 
         obter_resposta.assert_not_called()
@@ -141,7 +161,7 @@ class TestDadosParaSugestao(unittest.TestCase):
 
 
 class TestFerramentasIA(unittest.TestCase):
-    # Confirma que a tool conta dias corridos e informa prazos vencidos como negativos.
+    # Calcular dias corridos e representar datas vencidas com valores negativos.
     def test_dias_ate_prazo_futuro_e_vencido(self):
         hoje = date(2026, 11, 10)
         with patch("ia.ferramentas.date") as data_falsa:
@@ -150,10 +170,12 @@ class TestFerramentasIA(unittest.TestCase):
             self.assertEqual(dias_ate("15-11-2026"), 5)
             self.assertEqual(dias_ate("08-11-2026"), -2)
 
+    # Recusar datas que não respeitam o formato acordado para a ferramenta.
     def test_dias_ate_rejeita_formato_invalido(self):
         with self.assertRaises(ValueError):
             dias_ate("2026-11-15")
 
+    # Restringir a execução ao nome autorizado e aos argumentos esperados.
     def test_ferramenta_rejeita_nome_e_argumentos_nao_autorizados(self):
         with self.assertRaisesRegex(ValueError, "não está autorizada"):
             executar_ferramenta("consultar_banco", {})
@@ -162,181 +184,6 @@ class TestFerramentasIA(unittest.TestCase):
                 "dias_ate", {"prazo": "15-11-2026", "extra": True}
             )
 
-    # Mantém no catálogo somente as funções selecionadas para esta funcionalidade.
+    # Manter no catálogo somente a função selecionada para esta funcionalidade.
     def test_catalogo_contem_dias_ate(self):
         self.assertEqual(FERRAMENTAS, [dias_ate])
-
-
-class TestAgenteIA(unittest.TestCase):
-    def test_processa_chamada_de_ferramenta_openai_e_retorno_final(self):
-        configuracao = SimpleNamespace(
-            chave_google=None,
-            chave_anthropic=None,
-            chave_openai="chave-openai",
-        )
-        respostas = [
-            {
-                "choices": [
-                    {
-                        "message": {
-                            "role": "assistant",
-                            "content": None,
-                            "tool_calls": [
-                                {
-                                    "id": "call-1",
-                                    "function": {
-                                        "name": "dias_ate",
-                                        "arguments": '{"prazo":"15-11-2026"}',
-                                    },
-                                }
-                            ],
-                        }
-                    }
-                ]
-            },
-            {
-                "choices": [
-                    {
-                        "message": {
-                            "role": "assistant",
-                            "content": "Faltam 5 dias.",
-                        }
-                    }
-                ]
-            },
-        ]
-        with (
-            patch.object(modelos, "obter_configuracao", return_value=configuracao),
-            patch.object(modelos, "_solicitar_json", side_effect=respostas) as solicitar,
-            patch("ia.ferramentas.date") as data_falsa,
-        ):
-            data_falsa.today.return_value = date(2026, 11, 10)
-            resultado = modelos.obter_resposta_com_ferramentas(
-                "instrução", "entrada"
-            )
-
-        self.assertEqual(resultado.text, "Faltam 5 dias.")
-        self.assertEqual(solicitar.call_count, 2)
-        self.assertEqual(
-            solicitar.call_args_list[0].args[1]["Authorization"],
-            "Bearer chave-openai",
-        )
-        historico = solicitar.call_args_list[1].args[2]["messages"]
-        self.assertEqual(historico[-1]["content"], '{"result": 5}')
-
-    def test_processa_chamada_de_ferramenta_anthropic(self):
-        configuracao = SimpleNamespace(
-            chave_google=None,
-            chave_anthropic="chave-anthropic",
-            chave_openai=None,
-        )
-        respostas = [
-            {
-                "content": [
-                    {
-                        "type": "tool_use",
-                        "id": "toolu-1",
-                        "name": "dias_ate",
-                        "input": {"prazo": "15-11-2026"},
-                    }
-                ]
-            },
-            {"content": [{"type": "text", "text": "Faltam 5 dias."}]},
-        ]
-        with (
-            patch.object(modelos, "obter_configuracao", return_value=configuracao),
-            patch.object(modelos, "_solicitar_json", side_effect=respostas) as solicitar,
-            patch("ia.ferramentas.date") as data_falsa,
-        ):
-            data_falsa.today.return_value = date(2026, 11, 10)
-            resultado = modelos.obter_resposta_com_ferramentas(
-                "instrução", "entrada"
-            )
-
-        self.assertEqual(resultado.text, "Faltam 5 dias.")
-        resultado_ferramenta = solicitar.call_args_list[1].args[2]["messages"][-2]
-        self.assertEqual(resultado_ferramenta["content"][0]["tool_use_id"], "toolu-1")
-
-    def test_processa_chamada_de_ferramenta_google(self):
-        configuracao = SimpleNamespace(
-            chave_google="chave-google",
-            chave_anthropic=None,
-            chave_openai=None,
-        )
-        respostas = [
-            {
-                "candidates": [
-                    {
-                        "content": {
-                            "parts": [
-                                {
-                                    "functionCall": {
-                                        "name": "dias_ate",
-                                        "args": {"prazo": "15-11-2026"},
-                                    }
-                                }
-                            ]
-                        }
-                    }
-                ]
-            },
-            {
-                "candidates": [
-                    {"content": {"parts": [{"text": "Faltam 5 dias."}]}}
-                ]
-            },
-        ]
-        with (
-            patch.object(modelos, "obter_configuracao", return_value=configuracao),
-            patch.object(modelos, "_solicitar_json", side_effect=respostas) as solicitar,
-            patch("ia.ferramentas.date") as data_falsa,
-        ):
-            data_falsa.today.return_value = date(2026, 11, 10)
-            resultado = modelos.obter_resposta_com_ferramentas(
-                "instrução", "entrada"
-            )
-
-        self.assertEqual(resultado.text, "Faltam 5 dias.")
-        conteudos = solicitar.call_args_list[1].args[2]["contents"]
-        self.assertEqual(
-            conteudos[-2]["parts"][0]["functionResponse"]["response"]["result"],
-            5,
-        )
-
-    def test_limita_chamadas_de_ferramentas(self):
-        chamada = {
-            "id": "call-1",
-            "name": "dias_ate",
-            "arguments": {"prazo": "15-11-2026"},
-        }
-        resposta = {
-            "choices": [
-                {
-                    "message": {
-                        "role": "assistant",
-                        "content": None,
-                        "tool_calls": [
-                            {
-                                "id": f"call-{indice}",
-                                "function": {
-                                    "name": "dias_ate",
-                                    "arguments": '{"prazo":"15-11-2026"}',
-                                },
-                            }
-                            for indice in range(
-                                modelos.MAX_CHAMADAS_FERRAMENTAS + 1
-                            )
-                        ],
-                    }
-                }
-            ]
-        }
-        orcamento = [modelos.MAX_CHAMADAS_FERRAMENTAS]
-        with self.assertRaisesRegex(ValueError, "limite de chamadas"):
-            modelos._processar_turno_com_ferramentas(
-                "openai",
-                resposta,
-                [],
-                orcamento,
-            )
-        self.assertEqual(orcamento, [modelos.MAX_CHAMADAS_FERRAMENTAS])

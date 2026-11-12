@@ -25,17 +25,17 @@ class TestConfiguracaoBanco(unittest.TestCase):
 
         self.assertEqual(configuracao.url_do_banco, url)
 
-    def test_le_chaves_dos_tres_provedores_de_ia(self):
+    def test_le_chaves_dos_provedores_planejados(self):
         with patch.dict(
             os.environ,
             {
-                "GOOGLE_API_KEY": "google-teste",
+                "GEMINI_API_KEY": "gemini-teste",
+                "OPENROUTER_API_KEY": "openrouter-teste",
                 "ANTHROPIC_API_KEY": "anthropic-teste",
-                "OPENAI_API_KEY": "openai-teste",
             },
         ):
             configuracao = obter_configuracao()
 
-        self.assertEqual(configuracao.chave_google, "google-teste")
-        self.assertEqual(configuracao.chave_anthropic, "anthropic-teste")
-        self.assertEqual(configuracao.chave_openai, "openai-teste")
+        self.assertEqual(configuracao.chave_do_gemini, "gemini-teste")
+        self.assertEqual(configuracao.chave_do_openrouter, "openrouter-teste")
+        self.assertEqual(configuracao.chave_do_claude, "anthropic-teste")
