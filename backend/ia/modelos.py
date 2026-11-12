@@ -50,20 +50,7 @@ def criar_provedores(configuracao: Configuracao) -> tuple[LLM, LLM, LLM, LLM]:
     return gemini, openrouter, claude, llm
 
 
-# Preserva a interface usada pela funcionalidade atual até ela passar a usar Agent.
-def obter_resposta(instrucao: str, entrada: str) -> str:
-    configuracao = obter_configuracao()
-    _, _, _, llm = criar_provedores(configuracao)
-    try:
-        resposta = llm.complete(entrada, system=instrucao)
-    except errors.LLMError as erro:
-        raise ErroProvedoresIA(
-            "Nenhum provedor de IA conseguiu responder."
-        ) from erro
-    return resposta.text
-
-
-# Expõe o provedor efetivamente utilizado sem mudar a resposta esperada pela rota.
+# Envia a entrada pelo Jangada e converte falhas normalizadas para o contrato da rota.
 def obter_resposta_detalhada(instrucao: str, entrada: str) -> RespostaModelo:
     configuracao = obter_configuracao()
     _, _, _, llm = criar_provedores(configuracao)
@@ -78,3 +65,15 @@ def obter_resposta_detalhada(instrucao: str, entrada: str) -> RespostaModelo:
         model=resposta.model,
         text=resposta.text,
     )
+
+
+# Manter o contrato antigo até o próximo passo ligar as ferramentas pelo Agent.
+def obter_resposta_com_ferramentas(
+    instrucao: str, entrada: str
+) -> RespostaModelo:
+    return obter_resposta_detalhada(instrucao, entrada)
+
+
+# Preservar a interface simples usada pela função de sugestão atual.
+def obter_resposta(instrucao: str, entrada: str) -> str:
+    return obter_resposta_detalhada(instrucao, entrada).text

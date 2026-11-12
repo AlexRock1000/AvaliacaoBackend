@@ -17,9 +17,9 @@ class TestFallbackIA(unittest.TestCase):
             chave_do_openrouter="openrouter-ficticia",
             chave_do_claude="claude-ficticia",
         )
-        gemini = SimpleNamespace()
-        openrouter = SimpleNamespace()
-        claude = SimpleNamespace()
+        gemini = Mock()
+        openrouter = Mock()
+        claude = Mock()
         llm = object()
         with (
             patch.object(
@@ -153,7 +153,7 @@ class TestDadosParaSugestao(unittest.TestCase):
 
     # Evitar chamar o modelo quando não há projetos autorizados para sugerir.
     def test_lista_vazia_nao_consulta_provedores(self):
-        with patch("ia.sugestao.obter_resposta") as obter_resposta:
+        with patch("ia.sugestao.obter_resposta_com_ferramentas") as obter_resposta:
             resposta = gerar_sugestao([])
 
         obter_resposta.assert_not_called()
