@@ -1,6 +1,7 @@
+import sys
 import unittest
 from datetime import date, time
-from types import SimpleNamespace
+from types import ModuleType, SimpleNamespace
 from unittest.mock import Mock, patch
 
 from ia import modelos
@@ -259,25 +260,37 @@ class TestFerramentasIA(unittest.TestCase):
 
 
 class TestRotaSugestaoIA(unittest.TestCase):
+    # Isolar o import da rota para não inicializar o repositório nem exigir banco real.
+    @classmethod
+    def setUpClass(cls):
+        servico_falso = ModuleType("servicos.tatuagem")
+        servico_falso.listar_tatuagens = Mock()
+        with patch.dict(sys.modules, {"servicos.tatuagem": servico_falso}):
+            from rotas import ia as rota_ia
+
+        cls.rota_ia = rota_ia
+
     # Garantir que a rota envia ao pacote de IA apenas os registros autorizados.
     def test_rota_devolve_sugestao_sem_persistir(self):
-        from rotas import ia as rota_ia
-
         tatuagens = [{"id": 123, "etapa": "pedida", "passos": []}]
         with (
-            patch.object(rota_ia, "usuario_tem_permissao", return_value=False),
             patch.object(
-                rota_ia.servico_tatuagem,
+                self.rota_ia,
+                "usuario_tem_permissao",
+                return_value=False,
+            ),
+            patch.object(
+                self.rota_ia.servico_tatuagem,
                 "listar_tatuagens",
                 return_value=tatuagens,
             ) as listar,
             patch.object(
-                rota_ia,
+                self.rota_ia,
                 "gerar_sugestao",
                 return_value="Sugestão fictícia.",
             ) as gerar,
         ):
-            resposta = rota_ia.sugerir_prioridade({"id": 77})
+            resposta = self.rota_ia.sugerir_prioridade({"id": 77})
 
         self.assertEqual(resposta, {"sugestao": "Sugestão fictícia."})
         listar.assert_called_once_with(cliente_id=77)
@@ -285,24 +298,28 @@ class TestRotaSugestaoIA(unittest.TestCase):
 
     # Traduzir falhas dos provedores em 503 sem expor detalhes técnicos.
     def test_rota_responde_503_quando_provedores_falham(self):
-        from fastapi import HTTPException
-        from rotas import ia as rota_ia
-
         with (
-            patch.object(rota_ia, "usuario_tem_permissao", return_value=False),
             patch.object(
-                rota_ia.servico_tatuagem,
+                self.rota_ia,
+                "usuario_tem_permissao",
+                return_value=False,
+            ),
+            patch.object(
+                self.rota_ia.servico_tatuagem,
                 "listar_tatuagens",
                 return_value=[{"id": 123, "etapa": "pedida", "passos": []}],
             ),
             patch.object(
-                rota_ia,
+                self.rota_ia,
                 "gerar_sugestao",
                 side_effect=modelos.ErroProvedoresIA("falha técnica fictícia"),
             ),
-            self.assertRaises(HTTPException) as erro,
         ):
-            rota_ia.sugerir_prioridade({"id": 77})
-
-        self.assertEqual(erro.exception.status_code, 503)
-        self.assertEqual(erro.exception.detail, "Sugestão indisponível agora.")
+            try:
+                self.rota_ia.sugerir_prioridade({"id": 77})
+            except Exception as erro:
+                self.assertEqual(type(erro).__name__, "HTTPException")
+                self.assertEqual(erro.status_code, 503)
+                self.assertEqual(erro.detail, "Sugestão indisponível agora.")
+            else:
+                self.fail("A rota deveria responder com HTTP 503.")
