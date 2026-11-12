@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 
 import { pedirApi } from "./api.js";
 
@@ -246,7 +247,7 @@ function TelaPedir({ perfil, aoCriar, aoAtualizar, tatuagem = null, aoVoltar }) 
 }
 
 // Disponibilizar o agente em todas as telas autenticadas sem gravar sua resposta.
-function PainelSugestaoPrioridade() {
+function PainelSugestaoPrioridade({ tipoPerfil }) {
   const [aberto, definirAberto] = useState(false);
   const [carregandoSugestao, definirCarregandoSugestao] = useState(false);
   const [erroSugestao, definirErroSugestao] = useState("");
@@ -267,8 +268,8 @@ function PainelSugestaoPrioridade() {
       .finally(() => definirCarregandoSugestao(false));
   }
 
-  return (
-    <aside className="agente-flutuante">
+  return createPortal(
+    <aside className={`agente-flutuante modo-${tipoPerfil}`}>
       {aberto && <section id="painel-agente-prioridade" className="janela-agente" aria-labelledby="titulo-agente-prioridade">
         <header className="cabecalho-agente">
           <div>
@@ -295,7 +296,8 @@ function PainelSugestaoPrioridade() {
         <span aria-hidden="true">✦</span>
         <span>{aberto ? "Fechar agente" : "Agente IA"}</span>
       </button>
-    </aside>
+    </aside>,
+    document.body,
   );
 }
 
@@ -1585,7 +1587,7 @@ export default function Aplicativo() {
         <button className={tela === "pedir" ? "ativo" : ""} onClick={abrirPedidoCliente}>＋ <span>Novo pedido</span></button>
       </nav>}
       <footer className="rodape"><span>UM PASSO DE CADA VEZ.</span><span>TINTA NEGRA · TATTOO STUDIO</span></footer>
-      <PainelSugestaoPrioridade />
+      <PainelSugestaoPrioridade tipoPerfil={perfil.tipo} />
     </div>
   );
 }
