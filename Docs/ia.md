@@ -1,8 +1,8 @@
 # Funcionalidade de IA: sugestão de priorização de projetos
 
-**Status:** integração inicial implementada
-**Provedores:** Google Gemini, Anthropic Claude e OpenAI, com fallback nessa ordem
-**Validação manual do prompt:** pendente
+**Status:** integração de backend e interface implementada
+**Provedores:** Gemini, OpenRouter gratuito e Claude, com fallback nessa ordem pelo Jangada
+**Validação manual do prompt e do fallback real:** pendente
 
 ## Problema e oportunidade
 
@@ -18,18 +18,33 @@ Bruna e Vitor poderão consultar uma lista ordenada sugerida por IA, acompanhada
 
 - **Papel:** apoiar Bruna e Vitor na revisão da ordem de atenção dos projetos.
 - **Entrada por projeto:** código fictício, etapa atual, histórico recente, próxima ação pendente e compromissos ou prazos.
-- **Ferramentas:** `backend/ia/ferramentas.py` define `dias_ate`, listada em `FERRAMENTAS` e disponibilizada aos provedores. Ela calcula dias corridos até uma data explícita no formato `DD-MM-AAAA`; são permitidas no máximo três chamadas por sugestão. O modelo não consulta diretamente o banco nem a agenda.
+- **Ferramentas:** `backend/ia/ferramentas.py` define `dias_ate`, listada em `FERRAMENTAS` e disponibilizada ao Agent do Jangada. Ela calcula dias corridos até uma data explícita no formato `DD-MM-AAAA`; são permitidas no máximo três chamadas por sugestão. O modelo não consulta diretamente o banco nem a agenda.
 - **Acesso:** o backend deve enviar apenas projetos que a pessoa tenha permissão para consultar; o prompt não substitui o controle de acesso do serviço.
 - **Limites:** usar somente sinais explícitos nos dados, sem inventar fatos, regras, pesos ou prazos. A resposta é sugestão para revisão humana, sem gravação automática.
 - **Falha ou ausência de resposta:** a pessoa continua a tarefa pelas listas, filtros e agenda existentes. A IA não deve bloquear o fluxo.
 
 ### Modelo de execução implementado
 
-O backend envia a instrução e os dados preparados ao provedor disponível e executa somente a ferramenta `dias_ate` quando solicitada pelo modelo. Cada resultado é devolvido ao modelo para que ele conclua a resposta, com limite de três chamadas de ferramenta por sugestão. O Google é tentado primeiro, seguido de Anthropic e OpenAI quando a chave está configurada e uma chamada anterior falha. A rota `POST /ia/sugestao-prioridade` busca os projetos no escopo de acesso da pessoa autenticada e prepara o contexto enviado. O modelo não consulta diretamente o banco nem a agenda; a resposta é uma recomendação para revisão humana.
+O backend usa o Jangada para falar com os provedores. O Gemini é o principal, o OpenRouter gratuito é a primeira reserva e o Claude é a terceira opção. O Agent recebe a instrução e os dados preparados e pode executar somente a ferramenta `dias_ate`, com limite de três chamadas por sugestão. O fallback encadeia os provedores nessa ordem quando uma chamada anterior falha.
 
-As chaves são `GOOGLE_API_KEY`, `ANTHROPIC_API_KEY` e `OPENAI_API_KEY`, configuradas em `backend/.env` (veja `backend/.env.exemplo`). A resposta da IA não é gravada. Se nenhum provedor estiver configurado ou todos falharem, a rota responde HTTP 503; listas vazias não geram chamadas externas.
+A rota `POST /ia/sugestao-prioridade` mantém o controle de acesso existente, busca os projetos no escopo da pessoa autenticada e chama somente a função do pacote `backend/ia/`. Não grava a resposta. Se os provedores não conseguirem responder, a rota retorna HTTP 503 com “Sugestão indisponível agora.”; listas vazias não geram chamadas externas.
 
-O contexto enviado contém código fictício, etapa, até três eventos recentes e compromissos agendados. Ideia, imagem, observações e identificador do cliente não são enviados. A próxima ação pendente permanece vazia porque esse dado não é armazenado separadamente no sistema.
+Na interface, o painel de sugestão aparece em “Minhas tatuagens” para Bruna e em “Projetos” para Vitor. A tela apresenta espera, erro e resultado. A pessoa deve conferir a recomendação e usar os fluxos existentes para registrar qualquer ação; a sugestão nunca é salva automaticamente.
+
+O contexto enviado contém código de projeto, etapa, até três eventos recentes e compromissos agendados. Ideia, imagem, observações e identificador do cliente não são enviados. A próxima ação pendente permanece vazia porque esse dado não é armazenado separadamente no sistema.
+
+### Plano de implementação e verificação
+
+1. **Separar a integração de IA:** manter `backend/ia/__init__.py`, `modelos.py`, `ferramentas.py` e `sugestao.py`; centralizar os provedores e o `with_fallback` em `modelos.py`. Testar a ordem Gemini → OpenRouter → Claude com testes sem chamadas externas.
+2. **Disponibilizar a ferramenta escolhida:** registrar apenas `dias_ate` em `ferramentas.py` e validar datas `DD-MM-AAAA`, com até três chamadas em cada execução. Testar datas futuras, vencidas e formato inválido.
+3. **Ligar a rota:** manter `POST /ia/sugestao-prioridade` protegida, delegar o processamento a `ia/sugestao.py`, não persistir a resposta e responder 503 com mensagem simples quando os provedores falharem. Testar resposta de sucesso e falha com dependências simuladas.
+4. **Integrar a interface:** oferecer o botão, o estado de espera, a mensagem de erro e a exibição da resposta nas telas “Minhas tatuagens” e “Projetos”. Conferir que a pessoa revise antes de usar os fluxos existentes para gravar qualquer ação.
+5. **Verificar o fallback manualmente:** executar `backend/testar_fallback.py --testar-primeira-reserva` com o nome de modelo Gemini inválido usado exclusivamente no teste; conferir se o OpenRouter respondeu. Esse modo não inclui o Claude, para evitar acionar o provedor pago. A execução real depende das configurações locais e pode consumir cota do OpenRouter.
+6. **Validar as entregas locais:** executar `python -m unittest discover -s tests -p test_ia.py` na pasta `backend/` e `npm run build` na pasta `frontend/`. Manter pendentes os testes manuais de prompt até registrar os resultados observados.
+
+**Ferramentas escolhidas:** somente `dias_ate`. A funcionalidade compara prazos explícitos e esta função calcula a diferença em dias sem consultar outro sistema, gravar dados ou realizar ações externas. Não incluir ferramentas prontas do Jangada nem busca web: não são necessárias para a comparação definida e aumentariam o escopo e/ou o uso de cota.
+
+Ver a estrutura e o fluxo do pacote em [arquitetura da IA](../.Docs/arquitetura.md).
 
 ## Prompt para teste manual
 
@@ -137,11 +152,6 @@ Que desenho combina com o signo de escorpião?
 
 **Resultados:** ainda não registrados. Um teste só será marcado como realizado quando os resultados do chat forem fornecidos para comparação.
 
-## Pontos ainda não definidos
-
-- ? A tela específica onde a lista será exibida e como a pessoa usuária acionará a sugestão.
-- ? Os resultados dos três testes manuais.
-
 ## Situação da implementação
 
-O backend já implementa a integração inicial, incluindo a rota, o controle de acesso aos projetos enviados e o fallback entre provedores. A exibição e o acionamento pela interface ainda não estão definidos; os testes manuais do prompt também permanecem pendentes. A atualização do briefing e do roadmap fica para etapas futuras.
+O backend e o painel nas telas de Bruna e Vitor estão implementados. A suíte focada de IA (13 testes) e o build do frontend passaram. Permanecem pendentes a conferência manual do fallback com credenciais locais e a validação do prompt no uso real. A atualização do briefing e do roadmap fica para etapas futuras.
