@@ -5,8 +5,7 @@ from unittest.mock import Mock, patch
 
 from ia import modelos
 from ia.ferramentas import FERRAMENTAS, dias_ate
-from ia.sugestao import gerar_sugestao
-from servicos.ia import preparar_projetos_para_sugestao
+from ia.sugestao import gerar_sugestao, preparar_projetos_para_sugestao
 
 
 class TestFallbackIA(unittest.TestCase):
@@ -225,23 +224,17 @@ class TestDadosParaSugestao(unittest.TestCase):
 
     # Enviar somente o payload fictício e a tool aprovada ao Agent.
     def test_gerar_sugestao_envia_entrada_e_tool(self):
-        projeto = {
-            "codigo": "P-TESTE",
-            "etapa_atual": "sessão agendada",
-            "historico_recente": [],
-            "proxima_acao_pendente": None,
-            "compromissos_prazos": ["15-11-2026"],
-        }
+        tatuagem = {"id": 123, "etapa": "sessão agendada", "passos": []}
         resposta = SimpleNamespace(text="Sugestão fictícia.")
         with patch(
             "ia.sugestao.obter_resposta_com_ferramentas",
             return_value=resposta,
         ) as chamar_agente:
-            sugestao = gerar_sugestao([projeto])
+            sugestao = gerar_sugestao([tatuagem])
 
         self.assertEqual(sugestao, "Sugestão fictícia.")
         entrada = chamar_agente.call_args.args[1]
-        self.assertIn('"P-TESTE"', entrada)
+        self.assertIn('"P-123"', entrada)
         self.assertEqual(chamar_agente.call_args.args[2], FERRAMENTAS)
 
 
@@ -263,3 +256,53 @@ class TestFerramentasIA(unittest.TestCase):
     # Manter no catálogo somente a função selecionada para esta funcionalidade.
     def test_catalogo_contem_dias_ate(self):
         self.assertEqual(FERRAMENTAS, [dias_ate])
+
+
+class TestRotaSugestaoIA(unittest.TestCase):
+    # Garantir que a rota envia ao pacote de IA apenas os registros autorizados.
+    def test_rota_devolve_sugestao_sem_persistir(self):
+        from rotas import ia as rota_ia
+
+        tatuagens = [{"id": 123, "etapa": "pedida", "passos": []}]
+        with (
+            patch.object(rota_ia, "usuario_tem_permissao", return_value=False),
+            patch.object(
+                rota_ia.servico_tatuagem,
+                "listar_tatuagens",
+                return_value=tatuagens,
+            ) as listar,
+            patch.object(
+                rota_ia,
+                "gerar_sugestao",
+                return_value="Sugestão fictícia.",
+            ) as gerar,
+        ):
+            resposta = rota_ia.sugerir_prioridade({"id": 77})
+
+        self.assertEqual(resposta, {"sugestao": "Sugestão fictícia."})
+        listar.assert_called_once_with(cliente_id=77)
+        gerar.assert_called_once_with(tatuagens)
+
+    # Traduzir falhas dos provedores em 503 sem expor detalhes técnicos.
+    def test_rota_responde_503_quando_provedores_falham(self):
+        from fastapi import HTTPException
+        from rotas import ia as rota_ia
+
+        with (
+            patch.object(rota_ia, "usuario_tem_permissao", return_value=False),
+            patch.object(
+                rota_ia.servico_tatuagem,
+                "listar_tatuagens",
+                return_value=[{"id": 123, "etapa": "pedida", "passos": []}],
+            ),
+            patch.object(
+                rota_ia,
+                "gerar_sugestao",
+                side_effect=modelos.ErroProvedoresIA("falha técnica fictícia"),
+            ),
+            self.assertRaises(HTTPException) as erro,
+        ):
+            rota_ia.sugerir_prioridade({"id": 77})
+
+        self.assertEqual(erro.exception.status_code, 503)
+        self.assertEqual(erro.exception.detail, "Sugestão indisponível agora.")

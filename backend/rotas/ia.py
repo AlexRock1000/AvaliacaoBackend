@@ -7,7 +7,6 @@ from permissoes import (
     PERMISSAO_LISTAR_TODAS_TATUAGENS,
 )
 from seguranca import exigir_permissao, usuario_tem_permissao
-from servicos import ia as servico_ia
 from servicos import tatuagem as servico_tatuagem
 
 
@@ -25,11 +24,10 @@ def sugerir_prioridade(
         else usuario["id"]
     )
     tatuagens = servico_tatuagem.listar_tatuagens(cliente_id=cliente_id)
-    projetos = servico_ia.preparar_projetos_para_sugestao(tatuagens)
     try:
-        return {"sugestao": gerar_sugestao(projetos)}
+        return {"sugestao": gerar_sugestao(tatuagens)}
     except ErroProvedoresIA as erro:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail=str(erro),
+            detail="Sugestão indisponível agora.",
         ) from erro
