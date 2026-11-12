@@ -246,6 +246,44 @@ function TelaPedir({ perfil, aoCriar, aoAtualizar, tatuagem = null, aoVoltar }) 
 }
 
 // Carrega os projetos da cliente; o cartão encaminha para a tela separada de histórico.
+// Permitir pedir e revisar uma sugestão sem gravar o texto retornado pela IA.
+function PainelSugestaoPrioridade() {
+  const [carregandoSugestao, definirCarregandoSugestao] = useState(false);
+  const [erroSugestao, definirErroSugestao] = useState("");
+  const [sugestao, definirSugestao] = useState("");
+
+  function solicitarSugestao() {
+    definirCarregandoSugestao(true);
+    definirErroSugestao("");
+    definirSugestao("");
+    pedirApi("/ia/sugestao-prioridade", { method: "POST" })
+      .then((resposta) => {
+        if (typeof resposta.sugestao !== "string" || !resposta.sugestao.trim()) {
+          throw new Error("A resposta da sugestão veio vazia ou em formato inválido.");
+        }
+        definirSugestao(resposta.sugestao);
+      })
+      .catch((erroApi) => definirErroSugestao(erroApi.message))
+      .finally(() => definirCarregandoSugestao(false));
+  }
+
+  return (
+    <section className="painel-sugestao" aria-labelledby="titulo-sugestao-prioridade">
+      <div>
+        <span className="sobretitulo">APOIO À DECISÃO</span>
+        <h3 id="titulo-sugestao-prioridade">Sugestão de prioridade</h3>
+        <p>A sugestão não será salva. Confira o resultado e registre qualquer ação pelo fluxo normal do projeto.</p>
+      </div>
+      <button className="botao botao-ember" type="button" disabled={carregandoSugestao} onClick={solicitarSugestao}>
+        {carregandoSugestao ? "Preparando sugestão…" : "Gerar sugestão"}
+      </button>
+      {carregandoSugestao && <p className="estado" role="status">A IA está analisando os projetos. Isso pode levar alguns instantes.</p>}
+      {erroSugestao && <p className="aviso aviso-erro" role="alert">{erroSugestao}</p>}
+      {sugestao && <pre className="resultado-sugestao" aria-live="polite">{sugestao}</pre>}
+    </section>
+  );
+}
+
 function TelaMinhasTatuagens({ perfil, aoAbrirHistorico }) {
   const [tatuagens, definirTatuagens] = useState([]);
   const [agendamentosPorTatuagem, definirAgendamentosPorTatuagem] = useState({});
@@ -291,6 +329,7 @@ function TelaMinhasTatuagens({ perfil, aoAbrirHistorico }) {
         <div><span className="sobretitulo">ACOMPANHE CADA HISTÓRIA</span><h2>Minhas tatuagens.</h2></div>
         <p>Do primeiro traço até o último retoque.</p>
       </div>
+      <PainelSugestaoPrioridade />
       <div className="grade-cliente">
         <div className="lista-projetos">
           <h3>Seus projetos</h3>
@@ -617,6 +656,7 @@ function TelaProjetos({ atualizacao, aoAbrirFicha }) {
         <h2>Todos os projetos.</h2>
         <p>Organizados por etapa, do pedido à finalização.</p>
       </header>
+      <PainelSugestaoPrioridade />
       {carregando && <p className="estado">Carregando projetos…</p>}
       {erro && <p className="aviso aviso-erro" role="alert">{erro}</p>}
       {!carregando && !erro && tatuagens.length === 0 && <p className="estado estado-vazio">Ainda não há projetos cadastrados. Os novos pedidos aparecerão aqui.</p>}
