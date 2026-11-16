@@ -88,59 +88,129 @@ def _formatar_horario(valor: time | str) -> str:
 
 # Converter listas comuns do modelo em frases naturais para exibição no chat.
 def _formatar_resposta_como_conversa(texto: str) -> str:
-    linhas = []
+    resposta = []
+    projetos_sem_ordem: list[str] = []
+    texto_limpo = []
     for linha in texto.splitlines():
         linha = re.sub(r"^\s{0,3}#{1,6}\s*", "", linha.strip())
         linha = re.sub(r"\*\*(.*?)\*\*|__(.*?)__", r"\1\2", linha)
-        linha = linha.replace("`", "")
+        linha = linha.replace("`", "").replace("*", "")
+        texto_limpo.append(linha)
+
+    def adicionar_motivo(motivo: str) -> None:
+        motivo = motivo.strip().lstrip(":—–- ").strip()
+        if not motivo:
+            return
+        motivo = motivo[0].lower() + motivo[1:]
+        if projetos_sem_ordem:
+            codigos = ", ".join(projetos_sem_ordem)
+            resposta.append(
+                f"Também não consigo comparar os projetos {codigos}, "
+                f"porque {motivo}"
+            )
+            projetos_sem_ordem.clear()
+        elif resposta:
+            resposta[-1] = f"{resposta[-1].rstrip('.')} — {motivo}"
+        else:
+            resposta.append(motivo[0].upper() + motivo[1:])
+
+    for linha in texto_limpo:
         if not linha or linha.rstrip(":").casefold() in {
             "sugestão de ordem",
+            "projetos ordenáveis",
+            "projetos não ordenáveis",
+            "projetos que não podem ser ordenados",
+            "observação geral",
             "ainda não dá para ordenar",
             "dados insuficientes para ordenar",
         }:
             continue
 
-        item = re.match(r"^(?:\d+[.)]|[-*+])\s+(.+)$", linha)
+        if re.match(
+            r"^(?:com base nos dados|os seguintes projetos|"
+            r"há limitações para|existem limitações para)",
+            linha,
+            re.IGNORECASE,
+        ):
+            continue
+
+        item = re.match(r"^(?:(\d+)[.)]|[-+])\s+(.+)$", linha)
         if item:
-            conteudo = item.group(1).strip()
-            codigo = re.search(r"\bP-\d+\b", conteudo)
-            if codigo:
-                justificativa = conteudo[codigo.end():].lstrip(" \t:—–-")
+            conteudo = item.group(2).strip()
+            motivo = re.match(r"(?:justificativa|motivo)\s*:\s*(.*)", conteudo, re.I)
+            if motivo:
+                adicionar_motivo(motivo.group(1))
+                continue
+
+            codigos = re.findall(r"\bP-\d+\b", conteudo)
+            if len(codigos) > 1:
+                projetos_sem_ordem.extend(
+                    codigo for codigo in codigos if codigo not in projetos_sem_ordem
+                )
+                continue
+
+            if codigos:
+                codigo = codigos[0]
+                justificativa = re.sub(r"\bP-\d+\b", "", conteudo, count=1)
+                justificativa = justificativa.lstrip(" \t:—–-")
                 justificativa = re.sub(
-                    r"^\([^)]*\)\s*", "", justificativa
+                    r"^(?:justificativa|motivo)\s*:\s*", "", justificativa, flags=re.I
+                )
+                justificativa = re.sub(r"^\([^)]*\)\s*", "", justificativa)
+                justificativa = re.sub(
+                    r"^possui\b", "tem", justificativa, flags=re.I
                 )
                 justificativa = re.sub(
-                    r"\bPossui\b", "tem", justificativa, count=1
+                    r"^etapa\b", "está na etapa", justificativa, flags=re.I
                 )
                 justificativa = re.sub(
-                    r"^Etapa\b", "está na etapa", justificativa
+                    r"^sem\b", "não tem", justificativa, flags=re.I
                 )
-                justificativa = re.sub(
-                    r"^Sem\b", "não tem", justificativa
+                inicio = (
+                    "Eu começaria pelo projeto"
+                    if not resposta
+                    else "Depois, eu olharia o projeto"
                 )
+                frase = f"{inicio} {codigo}"
                 if justificativa:
                     justificativa = justificativa[0].lower() + justificativa[1:]
-                    if len(linhas) == 0:
-                        linha = (
-                            f"Eu começaria pelo projeto {codigo.group()}, "
-                            f"porque {justificativa}"
-                        )
-                    else:
-                        linha = (
-                            f"Depois, eu olharia o projeto {codigo.group()}, "
-                            f"que {justificativa}"
-                        )
-                else:
-                    linha = f"Eu olharia o projeto {codigo.group()}."
-            else:
-                linha = conteudo
+                    conectivo = "porque" if not resposta else "que"
+                    frase += f", {conectivo} {justificativa}"
+                resposta.append(frase.rstrip(" .") + ".")
+                continue
 
-        linha = re.sub(
-            r"\b(\d{4})-(\d{2})-(\d{2})\b", r"\3-\2-\1", linha
-        )
-        linhas.append(linha)
+            if re.match(r"(?:justificativa|motivo)\s*:", conteudo, re.I):
+                adicionar_motivo(re.sub(
+                    r"^(?:justificativa|motivo)\s*:\s*", "", conteudo, flags=re.I
+                ))
+            elif projetos_sem_ordem:
+                adicionar_motivo(conteudo)
+            continue
 
-    return "\n".join(linhas)
+        if re.match(r"^(?:justificativa|motivo)\s*:", linha, re.I):
+            adicionar_motivo(re.sub(
+                r"^(?:justificativa|motivo)\s*:\s*", "", linha, flags=re.I
+            ))
+        elif projetos_sem_ordem:
+            adicionar_motivo(linha)
+
+    if projetos_sem_ordem:
+        codigos = ", ".join(projetos_sem_ordem)
+        resposta.append(f"Não consigo comparar os projetos {codigos} com os dados atuais.")
+    if not resposta:
+        resposta = [
+            linha for linha in texto_limpo
+            if linha and linha.rstrip(":").casefold() not in {
+                "sugestão de ordem",
+                "ainda não dá para ordenar",
+                "dados insuficientes para ordenar",
+            }
+        ]
+
+    return "\n".join(
+        re.sub(r"\b(\d{4})-(\d{2})-(\d{2})\b", r"\3-\2-\1", linha)
+        for linha in resposta
+    )
 
 
 # Impedir que uma resposta longa ultrapasse o limite mostrado no painel.

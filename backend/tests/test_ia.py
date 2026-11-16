@@ -290,6 +290,37 @@ class TestDadosParaSugestao(unittest.TestCase):
         self.assertNotIn("**", sugestao)
         self.assertNotIn("Sugestão de ordem:", sugestao)
 
+    def test_gerar_sugestao_converte_secoes_e_projetos_sem_ordem(self):
+        tatuagem = {"id": 123, "etapa": "pedida", "passos": []}
+        resposta = SimpleNamespace(
+            text=(
+                "**Sugestão de ordem**\n"
+                "Com base nos dados fornecidos, há limitações para alguns projetos.\n"
+                "### Projetos ordenáveis\n"
+                "1. **P-2**\n"
+                "- **Justificativa**: É o único projeto com um compromisso "
+                "explícito para 21/11/2026.\n"
+                "### Projetos não ordenáveis\n"
+                "- **P-10, P-9, P-8**\n"
+                "- **Motivo**: Todos estão na etapa pedida e não têm prazos."
+            )
+        )
+        with patch(
+            "ia.sugestao.obter_resposta_com_ferramentas",
+            return_value=resposta,
+        ):
+            sugestao = gerar_sugestao([tatuagem])
+
+        self.assertEqual(
+            sugestao,
+            "Eu começaria pelo projeto P-2 — é o único projeto com um "
+            "compromisso explícito para 21/11/2026.\n"
+            "Também não consigo comparar os projetos P-10, P-9, P-8, "
+            "porque todos estão na etapa pedida e não têm prazos.",
+        )
+        self.assertNotIn("###", sugestao)
+        self.assertNotIn("**", sugestao)
+
 
 class TestFerramentasIA(unittest.TestCase):
     # Calcular dias corridos e representar datas vencidas com valores negativos.
