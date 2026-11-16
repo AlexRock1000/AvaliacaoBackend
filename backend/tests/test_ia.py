@@ -264,6 +264,32 @@ class TestDadosParaSugestao(unittest.TestCase):
         self.assertEqual(len(linhas), 50)
         self.assertTrue(linhas[-1].startswith("… (resposta resumida"))
 
+    def test_gerar_sugestao_converte_lista_markdown_em_conversa(self):
+        tatuagem = {"id": 123, "etapa": "sessão agendada", "passos": []}
+        resposta = SimpleNamespace(
+            text=(
+                "Sugestão de ordem:\n"
+                "1. **P-2** – Possui compromisso explícito "
+                "(2026-11-21 às 10:00) que exige atenção.\n"
+                "2. **P-1** – Etapa “desenho aprovado” com histórico recente."
+            )
+        )
+        with patch(
+            "ia.sugestao.obter_resposta_com_ferramentas",
+            return_value=resposta,
+        ):
+            sugestao = gerar_sugestao([tatuagem])
+
+        self.assertEqual(
+            sugestao,
+            "Eu começaria pelo projeto P-2, porque tem compromisso explícito "
+            "(21-11-2026 às 10:00) que exige atenção.\n"
+            "Depois, eu olharia o projeto P-1, que está na etapa "
+            "“desenho aprovado” com histórico recente.",
+        )
+        self.assertNotIn("**", sugestao)
+        self.assertNotIn("Sugestão de ordem:", sugestao)
+
 
 class TestFerramentasIA(unittest.TestCase):
     # Calcular dias corridos e representar datas vencidas com valores negativos.

@@ -1,4 +1,5 @@
 import json
+import re
 from datetime import date, datetime, time
 from typing import Any
 
@@ -85,6 +86,63 @@ def _formatar_horario(valor: time | str) -> str:
     return valor.strftime("%H:%M") if isinstance(valor, time) else str(valor)
 
 
+# Converter listas comuns do modelo em frases naturais para exibição no chat.
+def _formatar_resposta_como_conversa(texto: str) -> str:
+    linhas = []
+    for linha in texto.splitlines():
+        linha = re.sub(r"^\s{0,3}#{1,6}\s*", "", linha.strip())
+        linha = re.sub(r"\*\*(.*?)\*\*|__(.*?)__", r"\1\2", linha)
+        linha = linha.replace("`", "")
+        if not linha or linha.rstrip(":").casefold() in {
+            "sugestão de ordem",
+            "ainda não dá para ordenar",
+            "dados insuficientes para ordenar",
+        }:
+            continue
+
+        item = re.match(r"^(?:\d+[.)]|[-*+])\s+(.+)$", linha)
+        if item:
+            conteudo = item.group(1).strip()
+            codigo = re.search(r"\bP-\d+\b", conteudo)
+            if codigo:
+                justificativa = conteudo[codigo.end():].lstrip(" \t:—–-")
+                justificativa = re.sub(
+                    r"^\([^)]*\)\s*", "", justificativa
+                )
+                justificativa = re.sub(
+                    r"\bPossui\b", "tem", justificativa, count=1
+                )
+                justificativa = re.sub(
+                    r"^Etapa\b", "está na etapa", justificativa
+                )
+                justificativa = re.sub(
+                    r"^Sem\b", "não tem", justificativa
+                )
+                if justificativa:
+                    justificativa = justificativa[0].lower() + justificativa[1:]
+                    if len(linhas) == 0:
+                        linha = (
+                            f"Eu começaria pelo projeto {codigo.group()}, "
+                            f"porque {justificativa}"
+                        )
+                    else:
+                        linha = (
+                            f"Depois, eu olharia o projeto {codigo.group()}, "
+                            f"que {justificativa}"
+                        )
+                else:
+                    linha = f"Eu olharia o projeto {codigo.group()}."
+            else:
+                linha = conteudo
+
+        linha = re.sub(
+            r"\b(\d{4})-(\d{2})-(\d{2})\b", r"\3-\2-\1", linha
+        )
+        linhas.append(linha)
+
+    return "\n".join(linhas)
+
+
 # Impedir que uma resposta longa ultrapasse o limite mostrado no painel.
 def _limitar_linhas_resposta(texto: str) -> str:
     linhas = texto.splitlines()
@@ -103,4 +161,5 @@ def gerar_sugestao(tatuagens: list[dict[str, Any]]) -> str:
 
     entrada = json.dumps({"projetos": projetos}, ensure_ascii=False)
     resposta = obter_resposta_com_ferramentas(INSTRUCAO, entrada, FERRAMENTAS).text
-    return _limitar_linhas_resposta(resposta)
+    resposta_chat = _formatar_resposta_como_conversa(resposta)
+    return _limitar_linhas_resposta(resposta_chat)
