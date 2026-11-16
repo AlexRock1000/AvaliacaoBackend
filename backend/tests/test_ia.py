@@ -6,7 +6,7 @@ from unittest.mock import Mock, patch
 
 from ia import modelos
 from ia.ferramentas import FERRAMENTAS, dias_ate
-from ia.sugestao import gerar_sugestao, preparar_projetos_para_sugestao
+from ia.sugestao import INSTRUCAO, gerar_sugestao, preparar_projetos_para_sugestao
 
 
 class TestFallbackIA(unittest.TestCase):
@@ -184,6 +184,11 @@ class TestFallbackIA(unittest.TestCase):
 
 
 class TestDadosParaSugestao(unittest.TestCase):
+    def test_instrucao_pede_conversa_em_texto_simples(self):
+        self.assertIn("Converse diretamente com a pessoa", INSTRUCAO)
+        self.assertIn("sem Markdown", INSTRUCAO)
+        self.assertIn("frases curtas e naturais", INSTRUCAO)
+
     # Limitar o contexto enviado ao modelo e excluir informações privadas do projeto.
     def test_prepara_eventos_sem_imagem_ideia_ou_dados_pessoais(self):
         tatuagens = [
