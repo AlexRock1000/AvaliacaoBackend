@@ -44,6 +44,14 @@ class TestFallbackIA(unittest.TestCase):
             [chamada.kwargs["api_key"] for chamada in criar.call_args_list],
             ["gemini-ficticia", "openrouter-ficticia", "claude-ficticia"],
         )
+        self.assertEqual(
+            [chamada.kwargs.get("http_options") for chamada in criar.call_args_list],
+            [{"timeout": 60_000}, None, None],
+        )
+        self.assertEqual(
+            [chamada.kwargs.get("timeout") for chamada in criar.call_args_list],
+            [None, 60, 60],
+        )
         fallback.assert_called_once_with(openrouter, claude)
 
     # Encaminhar a entrada e a instrução ao Jangada e devolver o texto recebido.
@@ -237,6 +245,19 @@ class TestDadosParaSugestao(unittest.TestCase):
         entrada = chamar_agente.call_args.args[1]
         self.assertIn('"P-123"', entrada)
         self.assertEqual(chamar_agente.call_args.args[2], FERRAMENTAS)
+
+    def test_gerar_sugestao_nao_ultrapassa_50_linhas(self):
+        tatuagem = {"id": 123, "etapa": "sessão agendada", "passos": []}
+        resposta = SimpleNamespace(text="\n".join(f"Linha {i}" for i in range(60)))
+        with patch(
+            "ia.sugestao.obter_resposta_com_ferramentas",
+            return_value=resposta,
+        ):
+            sugestao = gerar_sugestao([tatuagem])
+
+        linhas = sugestao.splitlines()
+        self.assertEqual(len(linhas), 50)
+        self.assertTrue(linhas[-1].startswith("… (resposta resumida"))
 
 
 class TestFerramentasIA(unittest.TestCase):

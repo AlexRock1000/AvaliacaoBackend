@@ -11,6 +11,7 @@ from jangada_ai import Agent, LLM, errors
 
 
 MAX_CHAMADAS_FERRAMENTAS = 3
+TIMEOUT_PROVEDOR_SEGUNDOS = 60
 
 
 # Centraliza os identificadores dos modelos usados nesta cadeia de fallback.
@@ -39,16 +40,19 @@ def criar_provedores(configuracao: Configuracao) -> tuple[LLM, LLM, LLM, LLM]:
         "gemini",
         MODELO_GEMINI,
         api_key=configuracao.chave_do_gemini,
+        http_options={"timeout": TIMEOUT_PROVEDOR_SEGUNDOS * 1000},
     )
     openrouter = LLM(
         "openrouter",
         MODELO_OPENROUTER,
         api_key=configuracao.chave_do_openrouter,
+        timeout=TIMEOUT_PROVEDOR_SEGUNDOS,
     )
     claude = LLM(
         "anthropic",
         MODELO_CLAUDE,
         api_key=configuracao.chave_do_claude,
+        timeout=TIMEOUT_PROVEDOR_SEGUNDOS,
     )
     llm = gemini.with_fallback(openrouter, claude)
     return gemini, openrouter, claude, llm

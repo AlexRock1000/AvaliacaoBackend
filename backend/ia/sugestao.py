@@ -19,12 +19,12 @@ LIMITES
 Não invente fatos, prazos, etapas, ações, responsáveis ou critérios de prioridade. Não atribua notas ou pesos. Se os sinais forem insuficientes ou não permitirem comparar projetos, diga isso claramente e identifique quais projetos não têm ordem determinável. Você pode usar somente a ferramenta dias_ate para calcular dias corridos até uma data explícita, convertida para DD-MM-AAAA. Não consulte outros sistemas nem altere dados. Não decida mudanças no processo; as regras da Cartilha são aplicadas pelo serviço.
 
 TOM E FORMATO DA RESPOSTA
-Fale em português brasileiro, num tom informal, simpático e direto, como numa conversa. Vá ao ponto: não faça introduções ou conclusões longas, não repita os dados e evite explicações extensas.
-Use “Sugestão de ordem” quando houver comparação possível e “Ainda não dá para ordenar” quando não houver. Liste cada projeto em um tópico com posição, código e uma justificativa curta baseada nos dados recebidos. Se algum projeto não puder ser comparado, mencione-o à parte e diga brevemente o que falta ou qual é o conflito.
+Responda em português brasileiro, num tom informal e direto. Use frases simples e curtas. Não faça introduções longas nem repita os dados. Responda em no máximo 50 linhas.
+Use “Sugestão de ordem” quando der para comparar e “Ainda não dá para ordenar” quando não der. Liste os projetos em tópicos; para cada um, informe a posição, o código e um motivo breve. Se algum não puder ser comparado, diga em uma frase o que falta ou qual é o conflito.
 Ao mencionar datas, use sempre DD-MM-AAAA. Apresente a ordem como recomendação para revisão, não como decisão definitiva.
 
 ENTRADA VAGA OU FORA DO ASSUNTO
-Se faltarem dados, não invente: diga de forma breve o que falta e peça os dados necessários. Se a entrada estiver fora da tarefa, explique em uma frase que você ajuda a ordenar projetos com base nos dados recebidos e peça a lista de projetos. Não responda a outros pedidos."""
+Se faltarem dados, diga brevemente o que falta. Se a entrada estiver fora do assunto, explique em uma frase que você ajuda a ordenar projetos e peça os dados. Não responda a outros pedidos."""
 
 
 # Preparar somente os campos necessários para priorizar, excluindo informações privadas.
@@ -85,6 +85,16 @@ def _formatar_horario(valor: time | str) -> str:
     return valor.strftime("%H:%M") if isinstance(valor, time) else str(valor)
 
 
+# Impedir que uma resposta longa ultrapasse o limite mostrado no painel.
+def _limitar_linhas_resposta(texto: str) -> str:
+    linhas = texto.splitlines()
+    if len(linhas) <= 50:
+        return texto
+    return "\n".join(
+        [*linhas[:49], "… (resposta resumida ao limite de 50 linhas)"]
+    )
+
+
 # Solicitar uma recomendação sem enviar dados pessoais nem alterar projetos.
 def gerar_sugestao(tatuagens: list[dict[str, Any]]) -> str:
     projetos = preparar_projetos_para_sugestao(tatuagens)
@@ -92,4 +102,5 @@ def gerar_sugestao(tatuagens: list[dict[str, Any]]) -> str:
         return "Não há projetos disponíveis para sugerir uma ordem de atenção."
 
     entrada = json.dumps({"projetos": projetos}, ensure_ascii=False)
-    return obter_resposta_com_ferramentas(INSTRUCAO, entrada, FERRAMENTAS).text
+    resposta = obter_resposta_com_ferramentas(INSTRUCAO, entrada, FERRAMENTAS).text
+    return _limitar_linhas_resposta(resposta)
