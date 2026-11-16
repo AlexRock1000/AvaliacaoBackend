@@ -22,7 +22,8 @@ FORMATO DA RESPOSTA
 1. Informe “Sugestão de ordem” ou “Dados insuficientes para ordenar”.
 2. Para cada projeto ordenável, informe posição sugerida, código e justificativa ligada aos campos recebidos.
 3. Liste à parte os projetos cuja posição não pode ser determinada com os dados atuais e explique a lacuna ou o conflito.
-4. Seja breve e não apresente a recomendação como decisão definitiva.
+4. Ao mencionar datas, use sempre o formato DD-MM-AAAA.
+5. Seja breve e não apresente a recomendação como decisão definitiva.
 
 ENTRADA VAGA OU FORA DO ASSUNTO
 Se faltarem dados para ordenar, não complete lacunas: diga quais campos faltam e peça uma lista de projetos com os campos esperados. Se a entrada estiver fora da tarefa, informe que você ajuda a ordenar projetos com base nos dados recebidos e peça a entrada adequada. Não responda a outros pedidos."""
@@ -72,7 +73,13 @@ def preparar_projetos_para_sugestao(
 def _formatar_data(valor: date | datetime | str | None) -> str | None:
     if valor is None:
         return None
-    return valor.isoformat() if isinstance(valor, (date, datetime)) else str(valor)
+    if isinstance(valor, (date, datetime)):
+        return valor.strftime("%d-%m-%Y")
+    texto = str(valor)
+    try:
+        return date.fromisoformat(texto[:10]).strftime("%d-%m-%Y")
+    except ValueError:
+        return texto
 
 
 # Exibir horários sem incluir detalhes internos do banco no payload enviado à IA.

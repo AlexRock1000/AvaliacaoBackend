@@ -207,10 +207,10 @@ class TestDadosParaSugestao(unittest.TestCase):
                     "codigo": "P-17",
                     "etapa_atual": "em sessões",
                     "historico_recente": [
-                        {"evento": "sessao", "data": "2026-11-12"}
+                        {"evento": "sessao", "data": "12-11-2026"}
                     ],
                     "proxima_acao_pendente": None,
-                    "compromissos_prazos": ["2026-11-12 às 14:30"],
+                    "compromissos_prazos": ["12-11-2026 às 14:30"],
                 }
             ],
         )
